@@ -92,3 +92,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Expanded certificate application forms to capture event location, identity references, parents and witness details in structured form data; selected family/witness details now appear on the certificate preview and archived PDF without printing private identity numbers.
 
 - Certificate document uploads now enforce the configured MIME allow-list and maximum file size for each requirement, with a 10 MB fallback limit.
+
+- Issued certificate PDF generation now honors the active default template's A4/Letter paper size and portrait/landscape orientation.
