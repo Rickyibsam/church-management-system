@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ClipboardList, Edit2, Plus, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local"; required?: boolean };
+type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?: boolean; defaultValue?: string };
 type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean };
 
 export default function DataModule({ churchId, table, title, description, fields, orderBy = "created_at", readOnly = false, postJournal = false }: Props) {
@@ -28,7 +28,7 @@ export default function DataModule({ churchId, table, title, description, fields
 
   useEffect(() => { void load(); }, [churchId, table]);
 
-  function openNew() { setValues({}); setEditingId(null); setShow(true); }
+  function openNew() { setValues(Object.fromEntries(fields.filter(field=>field.defaultValue!==undefined).map(field=>[field.name,field.defaultValue!] ))); setEditingId(null); setShow(true); }
   function openEdit(row: Record<string, unknown>) {
     const next: Record<string, string> = {};
     for (const field of fields) {
@@ -51,7 +51,7 @@ export default function DataModule({ churchId, table, title, description, fields
         if (field.required) { setSaving(false); setMessage(field.label + " is required."); return; }
         continue;
       }
-      if (field.type === "number") {
+      if (field.type === "boolean") { payload[field.name] = value === "true";\n      } else if (field.type === "number") {
         const number = Number(value);
         if (!Number.isFinite(number)) { setSaving(false); setMessage(field.label + " must be a valid number."); return; }
         payload[field.name] = number;
@@ -89,7 +89,7 @@ export default function DataModule({ churchId, table, title, description, fields
   return <>
     <div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div>{!readOnly && <button className="primary-button" disabled={!churchId} onClick={openNew}><Plus size={17}/> Add record</button>}</div>
     {message && <div className="notice"><span>{message}</span><button onClick={() => setMessage("")}><X size={15}/></button></div>}
-    {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label><input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/></div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
+    {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label>{field.type === "boolean" ? <input type="checkbox" checked={values[field.name] === "true"} onChange={event => setValues(old => ({ ...old, [field.name]: String(event.target.checked) }))}/> : <input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/>}</div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
     <div className="panel">{loading ? <div className="empty-state">Loading records...</div> : rows.length ? <div className="records-table"><div className="record-row record-head"><span>{title} record</span>{fields.slice(0,3).map(field=><span key={field.name}>{field.label}</span>)}{!readOnly && <span>Actions</span>}</div>{rows.map(row=><div className="record-row" key={String(row.id)}><b>{String(row[fields[0]?.name] ?? "Record")}</b>{fields.slice(0,3).map(field=><span key={field.name}>{String(row[field.name] ?? "—")}</span>)}{!readOnly && <span className="record-actions">{postJournal && row.status === "draft" && <button className="secondary-button" onClick={()=>void postEntry(row)}>Post</button>}<button className="icon-button" title="Edit record" onClick={()=>openEdit(row)}><Edit2 size={15}/></button><button className="icon-button" title="Delete record" onClick={()=>void remove(row)}><Trash2 size={15}/></button></span>}</div>)}</div> : <div className="empty-state"><ClipboardList/><b>No records yet</b><small>{churchId ? "Add the first record to start this register." : "Sign in and create a church workspace first."}</small></div>}</div>
   </>;
 }
