@@ -17,7 +17,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
  const [record,setRecord]=useState<CertificateRecord|null>(null);
  const [church,setChurch]=useState<ChurchRecord|null>(null);
  const [template,setTemplate]=useState<TemplateRecord|null>(null);
- const [templateAssets,setTemplateAssets]=useState<{signature:string;seal:string}>({signature:"",seal:""});
+ const [templateAssets,setTemplateAssets]=useState<{signature:string;seal:string;background:string}>({signature:"",seal:"",background:""});
  const [qr,setQr]=useState("");
  const [message,setMessage]=useState("Loading certificate...");
  const [savingPdf,setSavingPdf]=useState(false);
@@ -41,12 +41,13 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
  useEffect(()=>{
   let alive=true;
   async function loadAssets(){
-   if(!supabase||!template){setTemplateAssets({signature:"",seal:""});return;}
+   if(!supabase||!template){setTemplateAssets({signature:"",seal:"",background:""});return;}
    const [signature,seal]=await Promise.all([
-    template.pastor_signature_path?supabase.storage.from("church-private-documents").createSignedUrl(template.pastor_signature_path,60):Promise.resolve({data:null,error:null}),
-    template.seal_path?supabase.storage.from("church-private-documents").createSignedUrl(template.seal_path,60):Promise.resolve({data:null,error:null})
+    template.pastor_signature_path?supabase.storage.from("church-private-documents").createSignedUrl(template.pastor_signature_path,300):Promise.resolve({data:null,error:null}),
+    template.seal_path?supabase.storage.from("church-private-documents").createSignedUrl(template.seal_path,300):Promise.resolve({data:null,error:null}),
+    template.background_path?supabase.storage.from("church-private-documents").createSignedUrl(template.background_path,300):Promise.resolve({data:null,error:null})
    ]);
-   if(alive)setTemplateAssets({signature:signature.data?.signedUrl??"",seal:seal.data?.signedUrl??""});
+   if(alive)setTemplateAssets({signature:signature.data?.signedUrl??"",seal:seal.data?.signedUrl??"",background:background.data?.signedUrl??""});
   }
   void loadAssets();return()=>{alive=false;};
  },[template]);
@@ -56,6 +57,8 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   setSavingPdf(true);setMessage("");
   try{
    const pageSize=(template?.page_size??"A4").toLowerCase();const orientation=template?.orientation==="portrait"?"portrait":"landscape";const pageWidth=pageSize==="letter"?(orientation==="portrait"?216:279):(orientation==="portrait"?210:297);const pageHeight=pageSize==="letter"?(orientation==="portrait"?279:216):(orientation==="portrait"?297:210);const doc=new jsPDF({orientation,unit:"mm",format:pageSize==="letter"?"letter":"a4"});
+   const imageData=async(url:string)=>{const response=await fetch(url);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read template image."));reader.readAsDataURL(blob);});return {dataUrl,format:blob.type==="image/jpeg"?"JPEG":"PNG"};};
+   if(templateAssets.background){try{const asset=await imageData(templateAssets.background);doc.addImage(asset.dataUrl,asset.format,0,0,pageWidth,pageHeight);}catch{/* Optional background image */}}
    doc.setDrawColor(180,139,69);doc.setLineWidth(1.5);doc.rect(8,8,pageWidth-16,pageHeight-16);doc.setLineWidth(.5);doc.rect(11,11,pageWidth-22,pageHeight-22);
    doc.setTextColor(31,53,82);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text(church?.display_name??"Church",pageWidth/2,27,{align:"center"});
    if(template?.header_text||church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(template?.header_text||church?.header_text||"",pageWidth/2,34,{align:"center",maxWidth:pageWidth-65});}
@@ -75,7 +78,6 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,pageWidth/2,163,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",pageWidth-53,pageHeight-45,25,25);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,pageHeight-36,{align:"center"});doc.text("Pastor / Authorized Officer",55,pageHeight-30,{align:"center"});doc.text("Church Seal",pageWidth-90,pageHeight-36,{align:"center"});
-   const imageData=async(url:string)=>{const response=await fetch(url);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read template image."));reader.readAsDataURL(blob);});return {dataUrl,format:blob.type==="image/jpeg"?"JPEG":"PNG"};};
    if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,pageHeight-40,40,16);}catch{/* Optional signature image */}}
    if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,pageWidth-107,pageHeight-42,28,28);}catch{/* Optional seal image */}}
    doc.setDrawColor(180,139,69);doc.line(25,pageHeight-20,pageWidth-25,pageHeight-20);
@@ -100,7 +102,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
 
  return <div className="certificate-print-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
   <div className="certificate-print-dialog"><div className="print-toolbar"><b>Certificate preview</b><div><button className="secondary-button" onClick={()=>window.print()} disabled={!record||record.status!=="issued"}><Printer size={15}/> Print</button>{record?.status==="issued"&&<><button className="secondary-button" onClick={()=>void archivePdf()} disabled={savingPdf}>{savingPdf?"Archiving...":"Generate / Archive PDF"}</button>{record.issued_pdf_path&&<button className="secondary-button" onClick={()=>void openArchivedPdf()}>Open archived PDF</button>}</>}<button className="icon-button" onClick={onClose}><X/></button></div></div>
-   {!record?<div className="empty-state">{message||"Loading certificate..."}</div>:church?<>{message&&<div className="notice">{message}</div>}<div className="print-sheet">
+   {!record?<div className="empty-state">{message||"Loading certificate..."}</div>:church?<>{message&&<div className="notice">{message}</div>}<div className="print-sheet" style={templateAssets.background?{backgroundImage:"url("+templateAssets.background+")",backgroundSize:"cover"}:undefined}>
     <div className="print-border"><div className="print-brand">{logo&&<img src={logo} alt="Church logo"/>}<div><h2>{church.display_name}</h2>{(template?.header_text||church.header_text)&&<p>{template?.header_text||church.header_text}</p>}{church.address&&<small>{church.address}</small>}</div></div>
      <div className="print-rule"/>
      <div className="print-kicker">OFFICIAL CHURCH RECORD</div>
