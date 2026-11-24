@@ -11,6 +11,8 @@ import type { CertificateType, ModuleKey } from "./types";
 import DataModule from "./components/DataModule";
 import DocumentReview from "./components/DocumentReview";
 import TeamManagement from "./components/TeamManagement";
+import CertificatePrint from "./components/CertificatePrint";
+import CertificateVerify from "./components/CertificateVerify";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -111,7 +113,7 @@ function App() {
     await supabase?.auth.signOut(); setNotice("You have signed out.");
   }
 
-  return <div className="app-shell">
+  const verificationToken = new URLSearchParams(window.location.search).get("verify");\n  if (verificationToken) return <CertificateVerify token={verificationToken}/>;\n\n  return <div className="app-shell">
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={sidebarOpen ? "sidebar open" : "sidebar"}>
       <div className="brand"><div className="brand-mark"><Church size={22}/></div><div><b>Church360</b><small>Management System</small></div><button className="icon-button mobile-close" onClick={() => setSidebarOpen(false)}><X/></button></div>
@@ -164,7 +166,7 @@ function Dashboard({ onNavigate, onNew, churchName }: { onNavigate: (key: Module
   </>;
 }
 
-function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }) {
+function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }) {\n  const [printId,setPrintId] = useState<string|null>(null);
   const [records,setRecords] = useState<Array<Record<string,unknown>>>([]);
   const [message,setMessage] = useState("");
   useEffect(() => {
@@ -186,7 +188,7 @@ function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
     <div className="panel"><div className="panel-heading"><div><h3>Registration register</h3><p>Draft, submitted, approved and issued church records.</p></div></div>
       {message && <div className="notice">{message}</div>}
-      {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span><span className="row-actions">{String(r.status)==="draft"&&<button onClick={()=>void advance(String(r.id),"submitted")}>Submit</button>}{String(r.status)==="submitted"&&<button onClick={()=>void advance(String(r.id),"under_review")}>Start review</button>}{String(r.status)==="under_review"&&<button onClick={()=>void advance(String(r.id),"approved")}>Approve</button>}{String(r.status)==="approved"&&<button onClick={()=>void advance(String(r.id),"issued")}>Issue</button>}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
+      {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span><span className="row-actions">{String(r.status)==="draft"&&<button onClick={()=>void advance(String(r.id),"submitted")}>Submit</button>}{String(r.status)==="submitted"&&<button onClick={()=>void advance(String(r.id),"under_review")}>Start review</button>}{String(r.status)==="under_review"&&<button onClick={()=>void advance(String(r.id),"approved")}>Approve</button>}{String(r.status)==="approved"&&<button onClick={()=>void advance(String(r.id),"issued")}>Issue</button>}{String(r.status)==="issued"&&<button onClick={()=>setPrintId(String(r.id))}>Print</button>}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
     </div>
   </>;
 }
