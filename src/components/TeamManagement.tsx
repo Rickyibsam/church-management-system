@@ -25,7 +25,8 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   if(!supabase||!churchId){setRows([]);setPermissions([]);return;}
   const {data:userData}=await supabase.auth.getUser();
   if(userData.user){const {data:me}=await supabase.from("church_members").select("role").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();setCallerRole(me?.role??"member");}
-  const {data:branches}=await supabase.from("church_branches").select("id,name").eq("church_id",churchId).order("name");setBranchOptions((branches??[]) as Array<{id:string;name:string}>);\n  const {data,error}=await supabase.from("church_members").select("id,user_id,role,status,profiles(display_name)").eq("church_id",churchId).order("created_at",{ascending:true});
+  const {data:branches}=await supabase.from("church_branches").select("id,name").eq("church_id",churchId).order("name");setBranchOptions((branches??[]) as Array<{id:string;name:string}>);
+  const {data,error}=await supabase.from("church_members").select("id,user_id,role,status,profiles(display_name)").eq("church_id",churchId).order("created_at",{ascending:true});
   if(error){setMessage("Unable to load team: "+error.message);return;}
   const team=(data??[]) as unknown as TeamRow[];setRows(team);
   const {data:perms,error:permissionError}=await supabase.from("church_member_permissions").select("id,church_id,church_member_id,module_key,action_key,allowed").eq("church_id",churchId);
