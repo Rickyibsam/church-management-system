@@ -42,7 +42,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    doc.setDrawColor(180,139,69);doc.setLineWidth(1.5);doc.rect(8,8,281,194);doc.setLineWidth(.5);doc.rect(11,11,275,188);
    doc.setTextColor(31,53,82);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text(church?.display_name??"Church",148.5,27,{align:"center"});
    if(church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(church.header_text,148.5,34,{align:"center",maxWidth:230});}
-   if(logo){try{const response=await fetch(logo);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read church logo."));reader.readAsDataURL(blob);});doc.addImage(dataUrl, "PNG", 20, 16, 24, 24);}catch{/* The certificate remains printable if the optional logo cannot be embedded. */}}
+   if(logo){try{const response=await fetch(logo);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read church logo."));reader.readAsDataURL(blob);});doc.addImage(dataUrl, blob.type==="image/jpeg"?"JPEG":"PNG", 20, 16, 24, 24);}catch{/* The certificate remains printable if the optional logo cannot be embedded. */}}
    doc.setDrawColor(180,139,69);doc.line(25,43,272,43);
    doc.setTextColor(150,111,49);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("OFFICIAL CHURCH RECORD",148.5,55,{align:"center"});
    doc.setTextColor(31,53,82);doc.setFontSize(22);doc.text((record.certificate_type.replaceAll("_"," ")+" CERTIFICATE").toUpperCase(),148.5,68,{align:"center"});
@@ -57,7 +57,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(record.pastor_name??"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
    doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
    const footer=church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
-   if(footer)doc.setFontSize(8),doc.text(footer,148.5,196,{align:"center",maxWidth:240});
+   if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
    const blob=doc.output("blob");
    const path=record.church_id+"/"+record.id+"/issued-certificate.pdf";
    const {error:uploadError}=await supabase.storage.from("church-private-documents").upload(path,blob,{contentType:"application/pdf",upsert:true});
