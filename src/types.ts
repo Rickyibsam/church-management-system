@@ -1,5 +1,5 @@
 export type ModuleKey =
-  | "dashboard" | "churches" | "members" | "families" | "certificates"
+  | "dashboard" | "churches" | "team" | "members" | "families" | "certificates"
   | "documents" | "attendance" | "ministries" | "events" | "pastoral"
   | "finance" | "donations" | "assets" | "reports" | "settings";
 
