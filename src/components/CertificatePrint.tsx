@@ -7,7 +7,7 @@ type CertificateRecord={
  id:string;church_id:string;certificate_type:string;registration_number:string;
  primary_person_name:string;secondary_person_name:string|null;event_date:string|null;
  event_place:string|null;pastor_name:string|null;issued_at:string|null;
- qr_verification_token:string;issued_pdf_path:string|null
+ qr_verification_token:string;issued_pdf_path:string|null;status:string
 };
 type ChurchRecord={display_name:string;legal_name:string;address:string|null;phone:string|null;email:string|null;website:string|null;logo_path:string|null;header_text:string|null;footer_text:string|null};
 
@@ -20,7 +20,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   let alive=true;
   async function load(){
    if(!supabase)return;
-   const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path").eq("id",certificateId).maybeSingle();
+   const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path,status").eq("id",certificateId).maybeSingle();
    if(error||!data){if(alive)setMessage(error?.message??"Certificate not found.");return;}
    const {data:churchData}=await supabase.from("churches").select("display_name,legal_name,address,phone,email,website,logo_path,header_text,footer_text").eq("id",data.church_id).maybeSingle();
    if(!alive)return;
