@@ -255,6 +255,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   const family = kind === "families";
   const [rows,setRows] = useState<Array<Record<string,unknown>>>([]);
   const [familyOptions,setFamilyOptions] = useState<Array<{id:string;family_name:string}>>([]);
+  const [branchOptions,setBranchOptions]=useState<Array<{id:string;name:string}>>([]);
   const [show,setShow] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
   const [search,setSearch] = useState("");
@@ -278,9 +279,11 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     const activeChurchId=churchId;
     if(!activeChurchId){setRows([]);setFamilyOptions([]);setLoading(false);return;}
     const {data:familyData}=await supabase.from("families").select("id,family_name").eq("church_id",activeChurchId).order("family_name");
+    const {data:branchData}=await supabase.from("church_branches").select("id,name").eq("church_id",activeChurchId).order("name");
+    setBranchOptions((branchData??[]) as Array<{id:string;name:string}>);
     setFamilyOptions((familyData??[]) as Array<{id:string;family_name:string}>);
     const request=family
-      ? supabase.from("families").select("id,family_number,family_name,phone,address,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false})
+      ? supabase.from("families").select("id,family_number,family_name,phone,address,notes,branch_id,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false})
       : supabase.from("members").select("id,member_number,family_id,first_name,middle_name,last_name,gender,date_of_birth,phone,email,address,identity_type,identity_last4,membership_status,joined_on,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false});
     const {data,error}=await request;
     if(error)setMessage("Unable to load records: "+error.message);
@@ -313,12 +316,12 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     const required=family?["family_name"]:["first_name","last_name"];
     if(required.some(key=>!(form[key]??"").trim())){setMessage("Please complete all required fields.");return;}
     setSaving(true);setMessage("");
-    const keys=family?familyFields.map(([key])=>key):[...memberFields.map(([key])=>key),"family_id"];
+    const keys=family?[...familyFields.map(([key])=>key),"branch_id"]:[...memberFields.map(([key])=>key),"family_id","branch_id"];
     const payload:Record<string,unknown>={church_id:churchId};
     keys.forEach(key=>{
       const value=form[key]??"";
       if(value.trim())payload[key]=value.trim();
-      else if(["family_id","middle_name","date_of_birth","email","address","identity_type","identity_last4","notes"].includes(key))payload[key]=null;
+      else if(["family_id","branch_id","middle_name","date_of_birth","email","address","identity_type","identity_last4","notes"].includes(key))payload[key]=null;
     });
     const result=editingId
       ? await supabase.from(family?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId).select("id").maybeSingle()
@@ -355,6 +358,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     <div className="panel"><div className="form-grid"><div className="form-full"><label>Search register</label><input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder={family?"Search family name, number or phone":"Search name, member number, phone or email"}/></div></div></div>
     {message&&<div className="notice">{message}</div>}
     {show&&<div className="panel form-panel"><h3>{editingId?"Edit":"New"} {family?"family":"member profile"}</h3><div className="form-grid">
+      <div className="form-full"><label>Church branch</label><select className="field" value={form.branch_id??""} onChange={e=>change("branch_id",e.target.value)}><option value="">Main / default branch</option>{branchOptions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
       {(family?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="unspecified">Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
       {!family&&<><div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name}</option>)}</select></div>{!!form.family_id&&<><div><label>Family relationship</label><select className="field" value={form.relationship??"member"} onChange={e=>change("relationship",e.target.value)}>{["head","spouse","son","daughter","parent","sibling","guardian","dependent","member","other"].map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div className="form-full"><label><input type="checkbox" checked={form.is_primary_contact==="true"} onChange={e=>change("is_primary_contact",String(e.target.checked))}/> Primary family contact</label></div></>}</>}
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
