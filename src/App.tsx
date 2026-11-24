@@ -277,7 +277,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     if(!supabase){setLoading(false);return;}
     setLoading(true);
     const activeChurchId=churchId;
-    if(!activeChurchId){setRows([]);setFamilyOptions([]);setLoading(false);return;}
+    if(!activeChurchId){setRows([]);setFamilyOptions([]);setBranchOptions([]);setLoading(false);return;}
     const {data:familyData}=await supabase.from("families").select("id,family_name").eq("church_id",activeChurchId).order("family_name");
     const {data:branchData}=await supabase.from("church_branches").select("id,name").eq("church_id",activeChurchId).order("name");
     setBranchOptions((branchData??[]) as Array<{id:string;name:string}>);
