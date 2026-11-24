@@ -30,7 +30,8 @@ export default function DataModule({ churchId, table, title, description, fields
     await Promise.all(fields.filter(field=>field.lookup).map(async field=>{
       const lookup=field.lookup!;
       const valueField=lookup.valueField??"id";
-      const selectedFields=[...new Set([valueField,lookup.labelField])].join(",");\n      let query=supabase.from(lookup.table).select(selectedFields).eq("church_id",churchId).limit(500);
+      const selectedFields=[...new Set([valueField,lookup.labelField])].join(",");
+      let query=supabase.from(lookup.table).select(selectedFields).eq("church_id",churchId).limit(500);
       if(lookup.filterField&&lookup.filterValue)query=query.eq(lookup.filterField,lookup.filterValue);
       const {data:options}=await query;
       lookups[field.name]=(options??[]).map(item=>({value:String(item[valueField]),label:String(item[lookup.labelField]??item[valueField])}));
