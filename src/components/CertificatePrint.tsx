@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 import { Printer, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
