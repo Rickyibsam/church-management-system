@@ -138,3 +138,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 - Added ministry leader assignment and a ministry-team membership register with member/ministry selectors; database constraints prevent duplicate assignments and cross-church membership links.
 - Pastoral care workspace now uses controlled request categories and the database-supported open/in-progress/closed lifecycle; follow-up records expose due and completion timestamps for the care team.
+
+- Completed pastoral case forms with member linkage, active-pastor assignment and case status, plus follow-up scheduling/assignment. Assigned pastors receive private notifications when cases or follow-ups are assigned or updated.
