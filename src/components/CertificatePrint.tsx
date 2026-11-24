@@ -72,12 +72,12 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,148.5,143,{align:"center"});
    if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,148.5,149,{align:"center"});
    if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,148.5,155,{align:"center",maxWidth:210});
-   doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
-   if(qr)doc.addImage(qr,"PNG",242,157,30,30);
+   doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,163,{align:"center"});
+   if(qr)doc.addImage(qr,"PNG",244,165,25,25);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
    const imageData=async(url:string)=>{const response=await fetch(url);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read template image."));reader.readAsDataURL(blob);});return {dataUrl,format:blob.type==="image/jpeg"?"JPEG":"PNG"};};
-   if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,156,40,18);}catch{/* Optional signature image */}}
-   if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,190,155,32,32);}catch{/* Optional seal image */}}
+   if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,170,40,16);}catch{/* Optional signature image */}}
+   if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,190,168,28,28);}catch{/* Optional seal image */}}
    doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
    const footer=template?.footer_text||church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
    if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
