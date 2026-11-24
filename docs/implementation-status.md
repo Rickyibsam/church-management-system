@@ -144,3 +144,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Member and family profiles now support branch assignment from the active church's branch list, with same-church reference validation at the database layer.
 
 - Added branch assignment to certificate applications and branch selectors to event, ministry, donation, expense, service and asset registers, extending the multi-branch workflows.
+
+- Updated the secure invitation Edge Function to accept a validated branch assignment; new and existing-account invitations can now be assigned to a specific church branch. JWT verification remains enabled and only owners can invite administrators.
