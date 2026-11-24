@@ -439,7 +439,7 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
   const [documents,setDocuments] = useState<Record<string,File|null>>({});
   const [configuredRequirements,setConfiguredRequirements] = useState<Array<{code:string;label:string;required:boolean;acceptedMimeTypes?:string[];maxFileSizeBytes?:number}>>([]);
   const [documentError,setDocumentError]=useState("");
-  const requirements: Record<CertificateType,Array<{code:string;label:string;required:boolean}>> = {
+  const requirements: Record<CertificateType,Array<{code:string;label:string;required:boolean;acceptedMimeTypes?:string[];maxFileSizeBytes?:number}>> = {
     marriage:[{code:"bride_cnic",label:"Bride CNIC copy",required:true},{code:"groom_cnic",label:"Groom CNIC copy",required:true},{code:"witness_1_id",label:"Witness 1 identity copy",required:true},{code:"witness_2_id",label:"Witness 2 identity copy",required:true},{code:"marriage_application",label:"Marriage application / supporting record",required:true}],
     birth:[{code:"father_id",label:"Father identity document",required:true},{code:"mother_id",label:"Mother identity document",required:true},{code:"birth_evidence",label:"Hospital slip / available birth evidence",required:true}],
     death:[{code:"deceased_id",label:"Deceased identity document (if available)",required:false},{code:"applicant_id",label:"Applicant identity document",required:true},{code:"death_evidence",label:"Hospital / death / burial evidence",required:true}],
