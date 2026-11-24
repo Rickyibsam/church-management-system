@@ -135,3 +135,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 
 - Finance workspace hardening: removed duplicate Budget Lines navigation/register entry and removed the editable journal status field. Journal entries now start as drafts and must use the validated Post action to enter the ledger workflow; entry number, date and description are required in the draft form.
+
+- Added ministry leader assignment and a ministry-team membership register with member/ministry selectors; database constraints prevent duplicate assignments and cross-church membership links.
