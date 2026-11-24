@@ -245,13 +245,19 @@ function People({ kind }: { kind: "members" | "families" }) {
   function openNew(){
     const initial:Record<string,string>={};
     (family?familyFields:memberFields).forEach(([key])=>initial[key]="");
-    if(!family){initial.membership_status="active";initial.joined_on=new Date().toISOString().slice(0,10);}
+    if(!family){initial.membership_status="active";initial.joined_on=new Date().toISOString().slice(0,10);initial.relationship="member";initial.is_primary_contact="false";}
     setForm(initial);setEditingId(null);setShow(true);
   }
-  function openEdit(row:Record<string,unknown>){
+  async function openEdit(row:Record<string,unknown>){
     const initial:Record<string,string>={};
     (family?familyFields:memberFields).forEach(([key])=>initial[key]=row[key]==null?"":String(row[key]).slice(0,key==="date_of_birth"||key==="joined_on"?10:undefined));
-    if(!family)initial.family_id=String(row.family_id??"");
+    if(!family){
+      initial.family_id=String(row.family_id??"");initial.relationship="member";initial.is_primary_contact="false";
+      if(row.family_id&&supabase){
+        const {data}=await supabase.from("family_relationships").select("relationship,is_primary_contact").eq("church_id",churchId).eq("family_id",String(row.family_id)).eq("member_id",String(row.id)).maybeSingle();
+        if(data){initial.relationship=String(data.relationship??"member");initial.is_primary_contact=String(data.is_primary_contact??false);}
+      }
+    }
     setForm(initial);setEditingId(String(row.id));setShow(true);
   }
   function change(key:string,value:string){setForm(old=>({...old,[key]:value}));}
@@ -268,11 +274,24 @@ function People({ kind }: { kind: "members" | "families" }) {
       else if(["family_id","middle_name","date_of_birth","email","address","identity_type","identity_last4","notes"].includes(key))payload[key]=null;
     });
     const result=editingId
-      ? await supabase.from(family?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId)
-      : await supabase.from(family?"families":"members").insert(payload);
-    setSaving(false);
-    if(result.error){setMessage("Unable to save record: "+result.error.message);return;}
-    setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile saved.");await load(churchId);
+      ? await supabase.from(family?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId).select("id").maybeSingle()
+      : await supabase.from(family?"families":"members").insert(payload).select("id").single();
+    if(result.error){setSaving(false);setMessage("Unable to save record: "+result.error.message);return;}
+    const savedId=editingId??String(result.data?.id??"");
+    if(!family&&savedId){
+      const familyId=form.family_id??"";
+      if(familyId){
+        const {error:relationshipError}=await supabase.from("family_relationships").upsert({
+          church_id:churchId,family_id:familyId,member_id:savedId,
+          relationship:form.relationship||"member",is_primary_contact:form.is_primary_contact==="true"
+        },{onConflict:"family_id,member_id"});
+        if(relationshipError){setSaving(false);setMessage("Member saved, but family relationship could not be updated: "+relationshipError.message);await load(churchId);return;}
+      } else if(editingId) {
+        const {error:relationshipError}=await supabase.from("family_relationships").delete().eq("church_id",churchId).eq("member_id",savedId);
+        if(relationshipError){setSaving(false);setMessage("Member saved, but old family link could not be removed: "+relationshipError.message);await load(churchId);return;}
+      }
+    }
+    setSaving(false);setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile and family relationship saved.");await load(churchId);
   }
   async function archiveMember(row:Record<string,unknown>){
     if(!supabase||!churchId)return;
@@ -288,7 +307,7 @@ function People({ kind }: { kind: "members" | "families" }) {
     {message&&<div className="notice">{message}</div>}
     {show&&<div className="panel form-panel"><h3>{editingId?"Edit":"New"} {family?"family":"member profile"}</h3><div className="form-grid">
       {(family?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="unspecified">Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
-      {!family&&<div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name}</option>)}</select></div>}
+      {!family&&<><div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name}</option>)}</select></div>{!!form.family_id&&<><div><label>Family relationship</label><select className="field" value={form.relationship??"member"} onChange={e=>change("relationship",e.target.value)}>{["head","spouse","son","daughter","parent","sibling","guardian","dependent","member","other"].map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div className="form-full"><label><input type="checkbox" checked={form.is_primary_contact==="true"} onChange={e=>change("is_primary_contact",String(e.target.checked))}/> Primary family contact</label></div></>}</>}
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
     <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>Registration no.</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions"><button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>{!family&&<button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
   </>;
