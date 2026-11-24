@@ -10,10 +10,12 @@ import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import type { CertificateType, ModuleKey } from "./types";
 import DataModule from "./components/DataModule";
 import DocumentReview from "./components/DocumentReview";
+import TeamManagement from "./components/TeamManagement";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
   { key: "churches", label: "Churches & Branches", icon: Church, group: "Administration" },
+  { key: "team", label: "Users & Permissions", icon: ShieldCheck, group: "Administration" },
   { key: "members", label: "Members", icon: Users, group: "People" },
   { key: "families", label: "Family Register", icon: HeartHandshake, group: "People" },
   { key: "certificates", label: "Certificates & Registers", icon: FileBadge, group: "Records" },
@@ -131,7 +133,7 @@ function App() {
         {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)}/> :
           active === "certificates" ? <Certificates onNew={() => setCertOpen(true)} refresh={certificateRefresh}/> :
           active === "members" || active === "families" ? <People kind={active}/> :
-          active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
+          active === "team" ? <TeamManagement churchId={churchId}/> :\n          active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
           active === "documents" ? <DocumentReview/> :
           active === "attendance" ? <DataModule churchId={churchId} table="church_services" title="Services & Attendance" description="Create worship services and maintain the service register." fields={[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]}/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
