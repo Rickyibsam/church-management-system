@@ -120,3 +120,11 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Extended tenant integrity checks to branch assignments, pastoral case assignees and notification recipients so referenced users must belong to the same church workspace.
 
 - Deployed invitation function version 3 with JWT verification still enabled. Only active church owners/admins may invite; only the church owner may grant the administrator role. The team UI now labels the action as an invitation.
+
+
+## Hosting target update
+
+- Hosting target changed from Render to Cloudflare Workers Static Assets on the Free plan, using the existing Worker name `church-management-system`.
+- Added `wrangler.jsonc` for the `dist/` Vite output with SPA fallback, plus `cf:dev` and `cf:deploy` scripts.
+- Removed the obsolete Render Blueprint. Supabase remains the selected database, authentication and private file-storage backend; no database migration or data deletion is part of this hosting change.
+- Cloudflare production deployment has not been verified from this repository session. The existing Worker must be connected to this GitHub repository under Settings > Builds, with build command `npm install && npm run build`, deploy command `npx wrangler deploy`, and the two public `VITE_SUPABASE_*` build variables configured.
