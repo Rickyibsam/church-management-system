@@ -335,16 +335,16 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
         if(relationshipError){setSaving(false);setMessage("Member saved, but family relationship could not be updated: "+relationshipError.message);await load();return;}
       } else if(editingId) {
         const {error:relationshipError}=await supabase.from("family_relationships").delete().eq("church_id",churchId).eq("member_id",savedId);
-        if(relationshipError){setSaving(false);setMessage("Member saved, but old family link could not be removed: "+relationshipError.message);await load(churchId);return;}
+        if(relationshipError){setSaving(false);setMessage("Member saved, but old family link could not be removed: "+relationshipError.message);await load();return;}
       }
     }
-    setSaving(false);setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile and family relationship saved.");await load(churchId);
+    setSaving(false);setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile and family relationship saved.");await load();
   }
   async function archiveMember(row:Record<string,unknown>){
     if(!supabase||!churchId)return;
     const {error}=await supabase.from("members").update({membership_status:"inactive"}).eq("id",String(row.id)).eq("church_id",churchId);
     if(error)setMessage("Unable to archive member: "+error.message);
-    else{setMessage("Member archived. The historical record has been retained.");await load(churchId);}
+    else{setMessage("Member archived. The historical record has been retained.");await load();}
   }
   const visible=rows.filter(row=>JSON.stringify(row).toLowerCase().includes(search.toLowerCase()));
 
