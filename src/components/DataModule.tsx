@@ -131,7 +131,7 @@ export default function DataModule({ churchId, table, title, description, fields
     let y=23;
     doc.setFont("helvetica","bold");doc.text(allFields.map(field=>field.label).join(" | ").slice(0,180),12,y);y+=6;doc.setFont("helvetica","normal");
     rows.forEach(row=>{
-      const line=allFields.map(field=>String(row[field.name]??"—").replaceAll("\\n"," ").slice(0,24)).join(" | ").slice(0,180);
+      const line=allFields.map(field=>String(row[field.name]??"—").replaceAll("\n"," ").slice(0,24)).join(" | ").slice(0,180);
       if(y>190){doc.addPage();y=15;}doc.text(line,12,y);y+=5;
     });
     doc.save(table+"-"+new Date().toISOString().slice(0,10)+".pdf");
