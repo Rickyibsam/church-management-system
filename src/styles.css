@@ -30,7 +30,7 @@
 .permission-panel{padding:14px;background:#f8fafc;border:1px solid #e7edf4;border-radius:10px;margin:0 0 12px 45px}
 .permission-panel>p{font-size:10px;line-height:1.5}
 .permission-grid{display:grid;gap:0;overflow-x:auto}
-.permission-head,.permission-row{display:grid;grid-template-columns:minmax(150px,1fr) repeat(4,65px);gap:8px;align-items:center;padding:8px;border-bottom:1px solid #e9eef4;font-size:10px}
+.permission-head,.permission-row{display:grid;grid-template-columns:minmax(150px,1fr) repeat(6,58px);gap:8px;align-items:center;padding:8px;border-bottom:1px solid #e9eef4;font-size:10px}
 .permission-head{color:#738198;text-transform:uppercase;font-size:9px}
 .permission-check{display:flex;justify-content:center}
 .permission-check input{accent-color:#42698f}
@@ -44,7 +44,7 @@
  .team-row{flex-wrap:wrap}
  .team-main{min-width:55%}
  .permission-panel{margin-left:0}
- .permission-head,.permission-row{grid-template-columns:minmax(120px,1fr) repeat(4,48px)}
+ .permission-head,.permission-row{grid-template-columns:minmax(120px,1fr) repeat(6,44px)}
 }
 
 .settings-panel-stack{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}.settings-panel-stack>.panel{min-width:0}
