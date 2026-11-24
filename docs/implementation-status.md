@@ -142,3 +142,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Completed pastoral case forms with member linkage, active-pastor assignment and case status, plus follow-up scheduling/assignment. Assigned pastors receive private notifications when cases or follow-ups are assigned or updated.
 
 - Member and family profiles now support branch assignment from the active church's branch list, with same-church reference validation at the database layer.
+
+- Added branch assignment to certificate applications and branch selectors to event, ministry, donation, expense, service and asset registers, extending the multi-branch workflows.
