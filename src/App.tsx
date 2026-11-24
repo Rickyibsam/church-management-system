@@ -328,6 +328,8 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     if(!family&&savedId){
       const familyId=form.family_id??"";
       if(familyId){
+        const {error:clearError}=await supabase.from("family_relationships").delete().eq("church_id",churchId).eq("member_id",savedId).neq("family_id",familyId);
+        if(clearError){setSaving(false);setMessage("Member saved, but previous family link could not be cleared: "+clearError.message);await load();return;}
         const {error:relationshipError}=await supabase.from("family_relationships").upsert({
           church_id:churchId,family_id:familyId,member_id:savedId,
           relationship:form.relationship||"member",is_primary_contact:form.is_primary_contact==="true"
