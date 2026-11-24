@@ -51,7 +51,8 @@ export default function DataModule({ churchId, table, title, description, fields
         if (field.required) { setSaving(false); setMessage(field.label + " is required."); return; }
         continue;
       }
-      if (field.type === "boolean") { payload[field.name] = value === "true";\n      } else if (field.type === "number") {
+      if (field.type === "boolean") { payload[field.name] = value === "true";
+      } else if (field.type === "number") {
         const number = Number(value);
         if (!Number.isFinite(number)) { setSaving(false); setMessage(field.label + " must be a valid number."); return; }
         payload[field.name] = number;
