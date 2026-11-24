@@ -116,3 +116,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Family registration certificates can now link directly to an existing household during secure certificate creation; family and event-place references are validated and saved in the same database operation.
 
 - Added database-level same-church reference checks across member/family, certificate, attendance, pastoral, accounting, budget, asset, permission and document records to prevent cross-tenant foreign-key references.
+
+- Extended tenant integrity checks to branch assignments, pastoral case assignees and notification recipients so referenced users must belong to the same church workspace.
