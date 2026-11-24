@@ -4,22 +4,19 @@ import { supabase } from "../lib/supabase";
 
 type DocumentRow = { id:string; certificate_id:string; document_code:string; original_file_name:string; storage_path:string; verification_status:string; reviewer_notes:string|null; certificates?:{registration_number:string;primary_person_name:string}|null };
 
-export default function DocumentReview() {
+export default function DocumentReview({churchId}:{churchId:string|null}) {
   const [rows,setRows]=useState<DocumentRow[]>([]);
   const [message,setMessage]=useState("");
   const [notes,setNotes]=useState<Record<string,string>>({});
   const [loading,setLoading]=useState(true);
   async function load(){
-    if(!supabase){setLoading(false);return;}
-    const {data: membership}=await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
-    const churchId=membership?.[0]?.church_id as string|undefined;
-    if(!churchId){setRows([]);setLoading(false);return;}
+    if(!supabase||!churchId){setRows([]);setLoading(false);return;}
     const {data,error}=await supabase.from("certificate_attachments").select("id,certificate_id,document_code,original_file_name,storage_path,verification_status,reviewer_notes,certificates(registration_number,primary_person_name)").eq("church_id",churchId).order("uploaded_at",{ascending:false});
     if(error)setMessage(error.message);
     else setRows((data??[]) as unknown as DocumentRow[]);
     setLoading(false);
   }
-  useEffect(()=>{void load();},[]);
+  useEffect(()=>{void load();},[churchId]);
   async function review(id:string,status:"verified"|"rejected"){
     if(!supabase)return;
     const {error}=await supabase.rpc("review_certificate_document",{p_attachment_id:id,p_new_status:status,p_reviewer_notes:notes[id]??null});
