@@ -154,3 +154,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Existing branch-owned records without a branch were assigned to head office. New member, family, certificate, service, event, ministry, donation, expense and asset records now default to the active user's branch (or head office for central users).
 
 - Private Storage access now follows the same branch and action-level permissions as the database: member documents, certificate attachments and template assets are checked against their parent records before read/upload/update/delete.
+
+- New church workspaces now receive a starter chart of accounts and a mapped Cash on Hand account automatically; existing church workspaces were backfilled so donation, expense and asset workflows have usable account defaults.
