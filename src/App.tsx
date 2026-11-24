@@ -201,56 +201,96 @@ function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }
 function People({ kind }: { kind: "members" | "families" }) {
   const family = kind === "families";
   const [rows,setRows] = useState<Array<Record<string,unknown>>>([]);
+  const [familyOptions,setFamilyOptions] = useState<Array<{id:string;family_name:string}>>([]);
   const [show,setShow] = useState(false);
-  const [first,setFirst] = useState("");
-  const [last,setLast] = useState("");
-  const [phone,setPhone] = useState("");
-  const [address,setAddress] = useState("");
+  const [editingId,setEditingId] = useState<string|null>(null);
+  const [search,setSearch] = useState("");
+  const [form,setForm] = useState<Record<string,string>>({});
   const [churchId,setChurchId] = useState<string|null>(null);
   const [message,setMessage] = useState("");
   const [saving,setSaving] = useState(false);
+  const [loading,setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      if (!supabase) return;
-      const {data: membership} = await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
-      const id = membership?.[0]?.church_id as string|undefined;
-      if (!alive || !id) { setChurchId(null); setRows([]); return; }
-      setChurchId(id);
-      const query = family
-        ? supabase.from("families").select("id,family_number,family_name,phone,address").eq("church_id",id).order("created_at",{ascending:false})
-        : supabase.from("members").select("id,member_number,first_name,last_name,phone,membership_status").eq("church_id",id).order("created_at",{ascending:false});
-      const {data,error} = await query;
-      if (!alive) return;
-      if (error) setMessage(error.message); else setRows((data ?? []) as Array<Record<string,unknown>>);
+  const memberFields = [
+    ["first_name","First name"],["middle_name","Middle name"],["last_name","Last name"],
+    ["gender","Gender"],["date_of_birth","Date of birth"],["phone","Phone"],["email","Email"],
+    ["address","Address"],["identity_type","Identity type"],["identity_last4","Identity last 4 digits"],
+    ["membership_status","Membership status"],["joined_on","Joined on"],["notes","Notes"]
+  ] as const;
+  const familyFields = [["family_name","Family name"],["phone","Phone"],["address","Address"],["notes","Notes"]] as const;
+
+  async function load(id?:string) {
+    if(!supabase){setLoading(false);return;}
+    setLoading(true);
+    let activeChurchId=id??churchId;
+    if(!activeChurchId){
+      const {data:membership,error}=await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
+      if(error){setMessage("Unable to load church membership: "+error.message);setLoading(false);return;}
+      activeChurchId=membership?.[0]?.church_id as string|undefined;
     }
-    void load();
-    return () => { alive = false; };
-  },[family]);
-
-  async function save() {
-    if (!supabase || !churchId || !first.trim()) return;
-    setSaving(true); setMessage("");
-    const result = family
-      ? await supabase.from("families").insert({church_id:churchId,family_name:first.trim(),phone,address}).select("id").single()
-      : await supabase.from("members").insert({church_id:churchId,first_name:first.trim(),last_name:last.trim(),phone,membership_status:"active"}).select("id").single();
-    setSaving(false);
-    if (result.error) { setMessage(result.error.message); return; }
-    setShow(false); setFirst(""); setLast(""); setPhone(""); setAddress("");
-    const query = family
-      ? supabase.from("families").select("id,family_number,family_name,phone,address").eq("church_id",churchId).order("created_at",{ascending:false})
-      : supabase.from("members").select("id,member_number,first_name,last_name,phone,membership_status").eq("church_id",churchId).order("created_at",{ascending:false});
-    const {data} = await query;
-    setRows((data ?? []) as Array<Record<string,unknown>>);
-    setMessage(family ? "Family record saved." : "Member record saved.");
+    if(!activeChurchId){setChurchId(null);setRows([]);setFamilyOptions([]);setLoading(false);return;}
+    setChurchId(activeChurchId);
+    const {data:familyData}=await supabase.from("families").select("id,family_name").eq("church_id",activeChurchId).order("family_name");
+    setFamilyOptions((familyData??[]) as Array<{id:string;family_name:string}>);
+    const request=family
+      ? supabase.from("families").select("id,family_number,family_name,phone,address,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false})
+      : supabase.from("members").select("id,member_number,family_id,first_name,middle_name,last_name,gender,date_of_birth,phone,email,address,identity_type,identity_last4,membership_status,joined_on,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false});
+    const {data,error}=await request;
+    if(error)setMessage("Unable to load records: "+error.message);
+    else setRows((data??[]) as Array<Record<string,unknown>>);
+    setLoading(false);
   }
+  useEffect(()=>{void load();},[family]);
+
+  function openNew(){
+    const initial:Record<string,string>={};
+    (family?familyFields:memberFields).forEach(([key])=>initial[key]="");
+    if(!family){initial.membership_status="active";initial.joined_on=new Date().toISOString().slice(0,10);}
+    setForm(initial);setEditingId(null);setShow(true);
+  }
+  function openEdit(row:Record<string,unknown>){
+    const initial:Record<string,string>={};
+    (family?familyFields:memberFields).forEach(([key])=>initial[key]=row[key]==null?"":String(row[key]).slice(0,key==="date_of_birth"||key==="joined_on"?10:undefined));
+    if(!family)initial.family_id=String(row.family_id??"");
+    setForm(initial);setEditingId(String(row.id));setShow(true);
+  }
+  function change(key:string,value:string){setForm(old=>({...old,[key]:value}));}
+  async function save(){
+    if(!supabase||!churchId)return;
+    const required=family?["family_name"]:["first_name","last_name"];
+    if(required.some(key=>!(form[key]??"").trim())){setMessage("Please complete all required fields.");return;}
+    setSaving(true);setMessage("");
+    const keys=family?familyFields.map(([key])=>key):[...memberFields.map(([key])=>key),"family_id"];
+    const payload:Record<string,unknown>={church_id:churchId};
+    keys.forEach(key=>{
+      const value=form[key]??"";
+      if(value.trim())payload[key]=value.trim();
+      else if(["family_id","middle_name","date_of_birth","email","address","identity_type","identity_last4","notes"].includes(key))payload[key]=null;
+    });
+    const result=editingId
+      ? await supabase.from(family?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId)
+      : await supabase.from(family?"families":"members").insert(payload);
+    setSaving(false);
+    if(result.error){setMessage("Unable to save record: "+result.error.message);return;}
+    setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile saved.");await load(churchId);
+  }
+  async function archiveMember(row:Record<string,unknown>){
+    if(!supabase||!churchId)return;
+    const {error}=await supabase.from("members").update({membership_status:"inactive"}).eq("id",String(row.id)).eq("church_id",churchId);
+    if(error)setMessage("Unable to archive member: "+error.message);
+    else{setMessage("Member archived. The historical record has been retained.");await load(churchId);}
+  }
+  const visible=rows.filter(row=>JSON.stringify(row).toLowerCase().includes(search.toLowerCase()));
 
   return <>
-    <div className="page-intro"><div><h2>{family ? "Family Registration" : "Member Directory"}</h2><p>{family ? "Create family profiles and connect household records." : "Manage member profiles, contact details and membership status."}</p></div><button className="primary-button" onClick={() => setShow(true)} disabled={!churchId}><Plus size={17}/>{family ? "New family" : "Add member"}</button></div>
-    {message && <div className="notice">{message}</div>}
-    {show && <div className="panel form-panel"><div className="form-grid"><div><label>{family ? "Family name" : "First name"}</label><input className="field" value={first} onChange={e=>setFirst(e.target.value)}/></div>{!family && <div><label>Last name</label><input className="field" value={last} onChange={e=>setLast(e.target.value)}/></div>}<div><label>Phone</label><input className="field" value={phone} onChange={e=>setPhone(e.target.value)}/></div>{family && <div><label>Address</label><input className="field" value={address} onChange={e=>setAddress(e.target.value)}/></div>}</div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={!first.trim()||saving} onClick={()=>void save()}>{saving ? "Saving..." : "Save record"}</button></div></div>}
-    <div className="panel">{rows.length ? <div className="records-table">{rows.map(row=><div className="record-row" key={String(row.id)}><b>{family ? String(row.family_name ?? "") : [row.first_name,row.last_name].filter(Boolean).join(" ")}</b><span>{family ? String(row.family_number ?? "Family") : String(row.member_number ?? "Member")}</span><span>{String(row.phone ?? "—")}</span><span>{family ? String(row.address ?? "—") : String(row.membership_status ?? "active")}</span></div>)}</div> : <div className="empty-state"><Users/><b>{family ? "No families registered" : "No members registered"}</b><small>{churchId ? "Add the first record to begin your register." : "Sign in and create a church workspace first."}</small></div>}</div>
+    <div className="page-intro"><div><h2>{family?"Family Registration":"Member Directory"}</h2><p>{family?"Maintain household profiles and contact details.":"Manage member identity, contact, membership and family information."}</p></div><button className="primary-button" onClick={openNew} disabled={!churchId}><Plus size={17}/>{family?"New family":"Add member"}</button></div>
+    <div className="panel"><div className="form-grid"><div className="form-full"><label>Search register</label><input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder={family?"Search family name, number or phone":"Search name, member number, phone or email"}/></div></div></div>
+    {message&&<div className="notice">{message}</div>}
+    {show&&<div className="panel form-panel"><h3>{editingId?"Edit":"New"} {family?"family":"member profile"}</h3><div className="form-grid">
+      {(family?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
+      {!family&&<div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name}</option>)}</select></div>}
+    </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
+    <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>Registration no.</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions"><button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>{!family&&<button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
   </>;
 }
 function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: ReactNode; items: string[] }) {
