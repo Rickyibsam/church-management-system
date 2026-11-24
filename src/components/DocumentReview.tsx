@@ -19,7 +19,9 @@ export default function DocumentReview({churchId}:{churchId:string|null}) {
   useEffect(()=>{void load();},[churchId]);
   async function review(id:string,status:"verified"|"rejected"){
     if(!supabase)return;
-    const {error}=await supabase.rpc("review_certificate_document",{p_attachment_id:id,p_new_status:status,p_reviewer_notes:notes[id]??null});
+    const reviewerNote=(notes[id]??"").trim();
+    if(status==="rejected"&&!reviewerNote){setMessage("A reviewer note is required when rejecting a document.");return;}
+    const {error}=await supabase.rpc("review_certificate_document",{p_attachment_id:id,p_new_status:status,p_reviewer_notes:reviewerNote||null});
     if(error){setMessage(error.message);return;}
     setMessage("Document marked "+status+".");
     await load();
@@ -33,6 +35,6 @@ export default function DocumentReview({churchId}:{churchId:string|null}) {
   return <>
     <div className="page-intro"><div><h2>Document Verification</h2><p>Review private identity and supporting documents before certificates are approved.</p></div></div>
     {message&&<div className="notice">{message}</div>}
-    <div className="panel">{loading?<div className="empty-state">Loading documents...</div>:rows.length?<div className="review-list">{rows.map(row=><div className="review-card" key={row.id}><div className="review-icon"><FileText/></div><div className="review-main"><b>{row.original_file_name}</b><small>{row.document_code} · {row.certificates?.registration_number??"Registration"} · {row.certificates?.primary_person_name??""}</small><span className={"review-status "+row.verification_status}>{row.verification_status}</span><input className="field" placeholder="Reviewer note (required when rejecting)" value={notes[row.id]??""} onChange={e=>setNotes(old=>({...old,[row.id]:e.target.value}))}/></div><div className="review-actions"><button className="secondary-button" onClick={()=>void openFile(row.storage_path)}><ExternalLink size={14}/> Open</button><button className="secondary-button" onClick={()=>void review(row.id,"verified")}><CheckCircle2 size={14}/> Verify</button><button className="danger-button" onClick={()=>void review(row.id,"rejected")}><XCircle size={14}/> Reject</button></div></div>)}</div>:<div className="empty-state"><FileCheck2/><b>No documents to review</b><small>Uploaded registration documents will appear here.</small></div>}</div>
+    <div className="panel">{loading?<div className="empty-state">Loading documents...</div>:rows.length?<div className="review-list">{rows.map(row=><div className="review-card" key={row.id}><div className="review-icon"><FileText/></div><div className="review-main"><b>{row.original_file_name}</b><small>{row.document_code} · {row.certificates?.registration_number??"Registration"} · {row.certificates?.primary_person_name??""}</small><span className={"review-status "+row.verification_status}>{row.verification_status}</span><input className="field" placeholder="Reviewer note (required when rejecting)" aria-label={"Reviewer note for "+row.original_file_name} value={notes[row.id]??""} onChange={e=>setNotes(old=>({...old,[row.id]:e.target.value}))}/></div><div className="review-actions"><button className="secondary-button" onClick={()=>void openFile(row.storage_path)}><ExternalLink size={14}/> Open</button><button className="secondary-button" onClick={()=>void review(row.id,"verified")}><CheckCircle2 size={14}/> Verify</button><button className="danger-button" disabled={!(notes[row.id]??"").trim()} onClick={()=>void review(row.id,"rejected")}><XCircle size={14}/> Reject</button></div></div>)}</div>:<div className="empty-state"><FileCheck2/><b>No documents to review</b><small>Uploaded registration documents will appear here.</small></div>}</div>
   </>;
 }
