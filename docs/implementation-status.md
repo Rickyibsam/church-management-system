@@ -96,3 +96,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Issued certificate PDF generation now honors the active default template's A4/Letter paper size and portrait/landscape orientation.
 
 - Added a controlled certificate reissue workflow: issued certificates remain unchanged, a replacement draft receives a fresh registration number, links to the original record and records the correction reason in history.
+
+- Certificate creation, document review, approval and issuance now call the action-level permission helper; the team permission editor includes explicit approve and issue overrides as well as view/create/edit/delete.
