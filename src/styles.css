@@ -58,3 +58,6 @@
 .notification-main b{font-size:11px;color:#304863}
 .notification-main p{font-size:10px;color:#62738a;margin:4px 0;line-height:1.5}
 .notification-main small{font-size:9px;color:#94a0af}
+
+.record-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.record-toolbar .secondary-button{font-size:9px;padding:8px 10px}
+@media(max-width:760px){.record-toolbar{width:100%}.record-toolbar button{flex:1}}
