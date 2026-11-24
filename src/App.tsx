@@ -219,6 +219,16 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     void load();
     return () => { alive = false; };
   },[churchId,refresh]);
+  async function advance(id:string,status:string){
+    if(!supabase)return;
+    setMessage("");
+    const {error}=await supabase.rpc("transition_certificate",{p_certificate_id:id,p_target_status:status,p_reason:null});
+    if(error){setMessage("Unable to update certificate status: "+error.message);return;}
+    setMessage("Certificate status updated to "+status.replaceAll("_"," ")+".");
+    const {data,loadError}=await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
+    if(loadError)setMessage("Status updated, but the register could not refresh: "+loadError.message);
+    else setRecords((data??[]) as Array<Record<string,unknown>>);
+  }
   return <>
     <div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage applications, supporting documents, approvals and certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
