@@ -42,7 +42,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   let alive=true;
   async function loadAssets(){
    if(!supabase||!template){setTemplateAssets({signature:"",seal:"",background:""});return;}
-   const [signature,seal]=await Promise.all([
+   const [signature,seal,background]=await Promise.all([
     template.pastor_signature_path?supabase.storage.from("church-private-documents").createSignedUrl(template.pastor_signature_path,300):Promise.resolve({data:null,error:null}),
     template.seal_path?supabase.storage.from("church-private-documents").createSignedUrl(template.seal_path,300):Promise.resolve({data:null,error:null}),
     template.background_path?supabase.storage.from("church-private-documents").createSignedUrl(template.background_path,300):Promise.resolve({data:null,error:null})
