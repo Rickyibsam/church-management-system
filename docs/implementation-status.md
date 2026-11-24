@@ -35,3 +35,15 @@ Delivery order requested by the project owner:
 
 ## Testing and offline
 No functional, security or end-to-end test phase has been started, per the requested order. Offline caching, local queues and synchronization are deferred until online feature completion and testing.
+
+
+## Online build additions (current development pass)
+- Expanded the online database for member identity-document metadata and family-to-member relationships.
+- Extended attendance records for event attendance, visitor contact details and check-in attribution.
+- Added pastoral follow-up scheduling, chart of accounts, journal headers/lines, annual budgets and budget lines.
+- Added donation pledge tracking, asset maintenance records and audit-export job metadata.
+- Added a unified online operations workspace for pastoral care, finance/accounting registers, assets/maintenance, notifications and audit records.
+- Repaired literal escaped newline sequences in the main application source and connected the operations workspace to navigation.
+- The migration is applied to the selected Supabase project and its SQL is committed to the repository.
+- These are development additions, not a claim of complete production workflows. Posting controls, balanced journal enforcement, sensitive pastoral authorization, file retention/export generation, invitation delivery, complete member/family editing and full reports remain to be implemented.
+- Per project-owner instruction, functional, security and end-to-end testing remain deferred until the online feature build is complete.
