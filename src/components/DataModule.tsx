@@ -3,9 +3,9 @@ import { ClipboardList, Edit2, Plus, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?: boolean; defaultValue?: string };
-type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean };
+type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean; financialAction?: "donation" | "expense"; extraColumns?: string[] };
 
-export default function DataModule({ churchId, table, title, description, fields, orderBy = "created_at", readOnly = false, postJournal = false }: Props) {
+export default function DataModule({ churchId, table, title, description, fields, orderBy = "created_at", readOnly = false, postJournal = false, financialAction, extraColumns = [] }: Props) {
   const [rows, setRows] = useState<Array<Record<string, unknown>>>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export default function DataModule({ churchId, table, title, description, fields
   async function load() {
     if (!supabase || !churchId) { setRows([]); setLoading(false); return; }
     setLoading(true);
-    const columns = ["id", ...fields.map(field => field.name)].join(",");
+    const columns = [...new Set(["id", ...fields.map(field => field.name), ...extraColumns])].join(",");
     let request = supabase.from(table).select(columns).eq("church_id", churchId).limit(100);
     if (orderBy && (orderBy === "created_at" || fields.some(field => field.name === orderBy))) request = request.order(orderBy, { ascending: false });
     const { data, error } = await request;
@@ -79,6 +79,16 @@ export default function DataModule({ churchId, table, title, description, fields
     else { setMessage("Journal entry posted successfully."); await load(); }
   }
 
+  async function runFinancialAction(row:Record<string,unknown>) {
+    if(!supabase||!financialAction)return;
+    setMessage("");
+    const action=financialAction==="donation"?"post_donation":row.status==="draft"?"approve_expense":"post_expense";
+    const {error}=await supabase.rpc(action,{[financialAction==="donation"?"p_donation_id":"p_expense_id"]:String(row.id)});
+    if(error){setMessage("Unable to process financial record: "+error.message);return;}
+    setMessage(financialAction==="donation"?"Donation posted and receipt number generated.":action==="approve_expense"?"Expense approved. You can now post it to the ledger.":"Expense posted to the ledger.");
+    await load();
+  }
+
   async function remove(row: Record<string, unknown>) {
     if (!supabase || !churchId) return;
     if (!window.confirm("Delete this record? This action may be restricted by church policy.")) return;
@@ -91,6 +101,6 @@ export default function DataModule({ churchId, table, title, description, fields
     <div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div>{!readOnly && <button className="primary-button" disabled={!churchId} onClick={openNew}><Plus size={17}/> Add record</button>}</div>
     {message && <div className="notice"><span>{message}</span><button onClick={() => setMessage("")}><X size={15}/></button></div>}
     {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label>{field.type === "boolean" ? <input type="checkbox" checked={values[field.name] === "true"} onChange={event => setValues(old => ({ ...old, [field.name]: String(event.target.checked) }))}/> : <input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/>}</div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
-    <div className="panel">{loading ? <div className="empty-state">Loading records...</div> : rows.length ? <div className="records-table"><div className="record-row record-head"><span>{title} record</span>{fields.slice(0,3).map(field=><span key={field.name}>{field.label}</span>)}{!readOnly && <span>Actions</span>}</div>{rows.map(row=><div className="record-row" key={String(row.id)}><b>{String(row[fields[0]?.name] ?? "Record")}</b>{fields.slice(0,3).map(field=><span key={field.name}>{String(row[field.name] ?? "—")}</span>)}{!readOnly && <span className="record-actions">{postJournal && row.status === "draft" && <button className="secondary-button" onClick={()=>void postEntry(row)}>Post</button>}<button className="icon-button" title="Edit record" onClick={()=>openEdit(row)}><Edit2 size={15}/></button><button className="icon-button" title="Delete record" onClick={()=>void remove(row)}><Trash2 size={15}/></button></span>}</div>)}</div> : <div className="empty-state"><ClipboardList/><b>No records yet</b><small>{churchId ? "Add the first record to start this register." : "Sign in and create a church workspace first."}</small></div>}</div>
+    <div className="panel">{loading ? <div className="empty-state">Loading records...</div> : rows.length ? <div className="records-table"><div className="record-row record-head"><span>{title} record</span>{fields.slice(0,3).map(field=><span key={field.name}>{field.label}</span>)}{!readOnly && <span>Actions</span>}</div>{rows.map(row=><div className="record-row" key={String(row.id)}><b>{String(row[fields[0]?.name] ?? "Record")}</b>{fields.slice(0,3).map(field=><span key={field.name}>{String(row[field.name] ?? "—")}</span>)}{!readOnly && <span className="record-actions">{postJournal && row.status === "draft" && <button className="secondary-button" onClick={()=>void postEntry(row)}>Post</button>}{financialAction==="donation"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post donation</button>}{financialAction==="expense"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Approve</button>}{financialAction==="expense"&&row.status==="approved"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post expense</button>}<button className="icon-button" title="Edit record" onClick={()=>openEdit(row)}><Edit2 size={15}/></button><button className="icon-button" title="Delete record" onClick={()=>void remove(row)}><Trash2 size={15}/></button></span>}</div>)}</div> : <div className="empty-state"><ClipboardList/><b>No records yet</b><small>{churchId ? "Add the first record to start this register." : "Sign in and create a church workspace first."}</small></div>}</div>
   </>;
 }
