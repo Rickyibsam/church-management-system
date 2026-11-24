@@ -284,7 +284,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     setFamilyOptions((familyData??[]) as Array<{id:string;family_name:string}>);
     const request=family
       ? supabase.from("families").select("id,family_number,family_name,phone,address,notes,branch_id,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false})
-      : supabase.from("members").select("id,member_number,family_id,first_name,middle_name,last_name,gender,date_of_birth,phone,email,address,identity_type,identity_last4,membership_status,joined_on,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false});
+      : supabase.from("members").select("id,member_number,family_id,branch_id,first_name,middle_name,last_name,gender,date_of_birth,phone,email,address,identity_type,identity_last4,membership_status,joined_on,notes,created_at").eq("church_id",activeChurchId).order("created_at",{ascending:false});
     const {data,error}=await request;
     if(error)setMessage("Unable to load records: "+error.message);
     else setRows((data??[]) as Array<Record<string,unknown>>);
