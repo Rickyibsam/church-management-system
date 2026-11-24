@@ -66,3 +66,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Connected certificate status actions to the database workflow, including submission, review, approval, rejection with a reason, cancellation and issuance.
 - Added PDF generation and private storage archival for issued certificates, with signed-link access to the archived file.
 - Certificate approval now evaluates required supporting documents for the church's configured country rather than mixing requirements from other countries.
+
+- Reconciled the repository migration filenames with the actual applied Supabase migration versions, including the separate read-only certificate-history policy correction, to prevent duplicate migration execution during future deployment workflows.
