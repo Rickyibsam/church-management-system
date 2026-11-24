@@ -169,9 +169,59 @@ function Certificates({ onNew, churchId }: { onNew: () => void; churchId: string
 
 function People({ kind }: { kind: "members" | "families" }) {
   const family = kind === "families";
-  return <><div className="page-intro"><div><h2>{family ? "Family Registration" : "Member Directory"}</h2><p>{family ? "Create family profiles and connect spouses, children and dependents." : "Manage member profiles, contact details, membership and church history."}</p></div><button className="primary-button"><Plus size={17}/> {family ? "New family" : "Add member"}</button></div><div className="panel"><div className="empty-state"><Users/><b>{family ? "Family register is ready for setup" : "Member directory is ready for setup"}</b><small>Database-backed registration and search will be enabled after Supabase schema setup.</small></div></div></>;
-}
+  const [rows,setRows] = useState<Array<Record<string,unknown>>>([]);
+  const [show,setShow] = useState(false);
+  const [first,setFirst] = useState("");
+  const [last,setLast] = useState("");
+  const [phone,setPhone] = useState("");
+  const [address,setAddress] = useState("");
+  const [churchId,setChurchId] = useState<string|null>(null);
+  const [message,setMessage] = useState("");
+  const [saving,setSaving] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      if (!supabase) return;
+      const {data: membership} = await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
+      const id = membership?.[0]?.church_id as string|undefined;
+      if (!alive || !id) { setChurchId(null); setRows([]); return; }
+      setChurchId(id);
+      const query = family
+        ? supabase.from("families").select("id,family_number,family_name,phone,address").eq("church_id",id).order("created_at",{ascending:false})
+        : supabase.from("members").select("id,member_number,first_name,last_name,phone,membership_status").eq("church_id",id).order("created_at",{ascending:false});
+      const {data,error} = await query;
+      if (!alive) return;
+      if (error) setMessage(error.message); else setRows((data ?? []) as Array<Record<string,unknown>>);
+    }
+    void load();
+    return () => { alive = false; };
+  },[family]);
+
+  async function save() {
+    if (!supabase || !churchId || !first.trim()) return;
+    setSaving(true); setMessage("");
+    const result = family
+      ? await supabase.from("families").insert({church_id:churchId,family_name:first.trim(),phone,address}).select("id").single()
+      : await supabase.from("members").insert({church_id:churchId,first_name:first.trim(),last_name:last.trim(),phone,membership_status:"active"}).select("id").single();
+    setSaving(false);
+    if (result.error) { setMessage(result.error.message); return; }
+    setShow(false); setFirst(""); setLast(""); setPhone(""); setAddress("");
+    const query = family
+      ? supabase.from("families").select("id,family_number,family_name,phone,address").eq("church_id",churchId).order("created_at",{ascending:false})
+      : supabase.from("members").select("id,member_number,first_name,last_name,phone,membership_status").eq("church_id",churchId).order("created_at",{ascending:false});
+    const {data} = await query;
+    setRows((data ?? []) as Array<Record<string,unknown>>);
+    setMessage(family ? "Family record saved." : "Member record saved.");
+  }
+
+  return <>
+    <div className="page-intro"><div><h2>{family ? "Family Registration" : "Member Directory"}</h2><p>{family ? "Create family profiles and connect household records." : "Manage member profiles, contact details and membership status."}</p></div><button className="primary-button" onClick={() => setShow(true)} disabled={!churchId}><Plus size={17}/>{family ? "New family" : "Add member"}</button></div>
+    {message && <div className="notice">{message}</div>}
+    {show && <div className="panel form-panel"><div className="form-grid"><div><label>{family ? "Family name" : "First name"}</label><input className="field" value={first} onChange={e=>setFirst(e.target.value)}/></div>{!family && <div><label>Last name</label><input className="field" value={last} onChange={e=>setLast(e.target.value)}/></div>}<div><label>Phone</label><input className="field" value={phone} onChange={e=>setPhone(e.target.value)}/></div>{family && <div><label>Address</label><input className="field" value={address} onChange={e=>setAddress(e.target.value)}/></div>}</div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={!first.trim()||saving} onClick={()=>void save()}>{saving ? "Saving..." : "Save record"}</button></div></div>}
+    <div className="panel">{rows.length ? <div className="records-table">{rows.map(row=><div className="record-row" key={String(row.id)}><b>{family ? String(row.family_name ?? "") : [row.first_name,row.last_name].filter(Boolean).join(" ")}</b><span>{family ? String(row.family_number ?? "Family") : String(row.member_number ?? "Member")}</span><span>{String(row.phone ?? "—")}</span><span>{family ? String(row.address ?? "—") : String(row.membership_status ?? "active")}</span></div>)}</div> : <div className="empty-state"><Users/><b>{family ? "No families registered" : "No members registered"}</b><small>{churchId ? "Add the first record to begin your register." : "Sign in and create a church workspace first."}</small></div>}</div>
+  </>;
+}
 function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: ReactNode; items: string[] }) {
   return <><div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><button className="secondary-button"><Plus size={16}/> Add new</button></div><div className="feature-grid">{items.map((item, i) => <div className="feature-card" key={item}><span>{icon}</span><b>{item}</b><small>{i === 0 ? "Core workspace" : "Included in the full module"}</small></div>)}</div><div className="panel"><div className="empty-state"><ClipboardList/><b>{title} workspace</b><small>Module screen established. Database workflows and actions will be connected during implementation.</small></div></div></>;
 }
