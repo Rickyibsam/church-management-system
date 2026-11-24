@@ -44,7 +44,7 @@ const registers: Record<Kind, Register[]> = {
 
 const icons = { finance:Landmark, pastoral:HeartHandshake, reports:FileBarChart, assets:Package, attendance:ClipboardList };
 export default function OperationsHub({ churchId, kind }: { churchId: string | null; kind: Kind }) {
- const [selected,setSelected] = useState(registers[kind][0].key);
+ const [selected,setSelected] = useState(kind==="reports"?"notifications":registers[kind][0].key);
  const list = registers[kind];
  const active = list.find(item=>item.key===selected) ?? list[0];
  const Icon = icons[kind];
