@@ -49,3 +49,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Per project-owner instruction, functional, security and end-to-end testing remain deferred until the online feature build is complete.
 
 - Added a dedicated attendance workspace with service scheduling and member/visitor check-in registers; the generic register component now supports table-specific sort columns.
+
+- Added a JWT-protected Supabase Edge Function for church-owner/admin email invitations, including role validation, existing-account assignment, and server-side membership checks. Team management now invokes this function instead of requiring a raw user UUID.
+- Added an individual module/action permission editor and connected the database permission helper to RLS policies for core member, certificate, attendance, ministry, asset and finance tables. Certificate history remains read-only.
+- Expanded member and family registers with search, profile editing, family linking and archive-without-delete behavior.
+- Generic data registers now support record editing, deletion where RLS permits, required-field and numeric/date validation, loading states and read-only report registers.
