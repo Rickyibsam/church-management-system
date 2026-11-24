@@ -48,3 +48,13 @@
 }
 
 .settings-panel-stack{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}.settings-panel-stack>.panel{min-width:0}
+
+.notification-list{display:flex;flex-direction:column}
+.notification-row{display:flex;align-items:flex-start;gap:12px;padding:14px 10px;border-bottom:1px solid #edf0f4}
+.notification-row:last-child{border-bottom:0}
+.notification-row.unread{background:#f8fbfe}
+.notification-icon{width:30px;height:30px;border-radius:50%;background:#edf3f9;color:#58799a;display:grid;place-items:center;flex-shrink:0}
+.notification-main{flex:1;min-width:0}
+.notification-main b{font-size:11px;color:#304863}
+.notification-main p{font-size:10px;color:#62738a;margin:4px 0;line-height:1.5}
+.notification-main small{font-size:9px;color:#94a0af}
