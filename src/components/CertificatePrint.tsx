@@ -72,7 +72,10 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",242,157,30,30);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
-   if(templateAssets.signature){try{doc.addImage(templateAssets.signature,"PNG",35,156,40,18);}catch{/* Optional signature image */}}\n   if(templateAssets.seal){try{doc.addImage(templateAssets.seal,"PNG",190,155,32,32);}catch{/* Optional seal image */}}\n   doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
+   const imageData=async(url:string)=>{const response=await fetch(url);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read template image."));reader.readAsDataURL(blob);});return {dataUrl,format:blob.type==="image/jpeg"?"JPEG":"PNG"};};
+   if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,156,40,18);}catch{/* Optional signature image */}}
+   if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,190,155,32,32);}catch{/* Optional seal image */}}
+   doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
    const footer=template?.footer_text||church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
    if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
    const blob=doc.output("blob");
