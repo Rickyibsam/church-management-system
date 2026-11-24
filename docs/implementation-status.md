@@ -130,3 +130,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Cloudflare production deployment has not been verified from this repository session. The existing Worker must be connected to this GitHub repository under Settings > Builds, with build command `npm install && npm run build`, deploy command `npx wrangler deploy`, and the two public `VITE_SUPABASE_*` build variables configured.
 
 - Family relationship rules now enforce one household head and one primary contact per family; assigning a relationship as `head` synchronizes the family record's head-member reference.
+
+- Family member editing now removes stale household links when a member is moved. Family-head and primary-contact assignments automatically replace previous assignments and stay synchronized when relationships change or are removed.
