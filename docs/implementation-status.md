@@ -54,3 +54,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added an individual module/action permission editor and connected the database permission helper to RLS policies for core member, certificate, attendance, ministry, asset and finance tables. Certificate history remains read-only.
 - Expanded member and family registers with search, profile editing, family linking and archive-without-delete behavior.
 - Generic data registers now support record editing, deletion where RLS permits, required-field and numeric/date validation, loading states and read-only report registers.
+
+- Added country-specific certificate-document requirement lookup, with configured requirements taking precedence over built-in defaults for the selected church country.
+- Added multi-church workspace selection so users with multiple active church memberships can switch workspaces without signing out.
+- Added journal posting RPC with debit/credit balance validation, active same-church account validation, and immutable posted-entry/line triggers. Journal registers now expose a Post action.
+- Restricted pastoral follow-up records to church owners/admins, pastors, and the pastor assigned to the related case.
+- Added invitation-confirmation activation so newly invited users receive active church membership after email confirmation; the invite function was redeployed with existing-account handling.
