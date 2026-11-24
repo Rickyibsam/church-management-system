@@ -18,23 +18,24 @@ export default function DataModule({ churchId, table, title, description, fields
   const [lookupOptions,setLookupOptions]=useState<Record<string,Array<{value:string;label:string}>>>({});
 
   async function load() {
-    if (!supabase || !churchId) { setRows([]); setLoading(false); return; }
+    const db = supabase;
+    if (!db || !churchId) { setRows([]); setLoading(false); return; }
     setLoading(true);
     const columns = [...new Set(["id", ...fields.map(field => field.name), ...extraColumns, ...extraDisplay.map(field=>field.name)])].join(",");
-    let request = supabase.from(table).select(columns).eq("church_id", churchId).limit(100);
+    let request = db.from(table).select(columns).eq("church_id", churchId).limit(100);
     if (orderBy && (orderBy === "created_at" || fields.some(field => field.name === orderBy))) request = request.order(orderBy, { ascending: false });
     const { data, error } = await request;
     if (error) setMessage("Unable to load records: " + error.message);
-    else setRows((data ?? []) as Array<Record<string, unknown>>);
+    else setRows((data ?? []) as unknown as Array<Record<string, unknown>>);
     const lookups:Record<string,Array<{value:string;label:string}>>={};
     await Promise.all(fields.filter(field=>field.lookup).map(async field=>{
       const lookup=field.lookup!;
       const valueField=lookup.valueField??"id";
       const selectedFields=[...new Set([valueField,lookup.labelField])].join(",");
-      let query=supabase.from(lookup.table).select(selectedFields).eq("church_id",churchId).limit(500);
+      let query=db.from(lookup.table).select(selectedFields).eq("church_id",churchId).limit(500);
       if(lookup.filterField&&lookup.filterValue)query=query.eq(lookup.filterField,lookup.filterValue);
       const {data:options}=await query;
-      lookups[field.name]=(options??[]).map(item=>({value:String(item[valueField]),label:String(item[lookup.labelField]??item[valueField])}));
+      lookups[field.name]=(options??[]).map(item=>{const row=item as unknown as Record<string,unknown>;return {value:String(row[valueField]),label:String(row[lookup.labelField]??row[valueField])};});
     }));
     setLookupOptions(lookups);
     setLoading(false);
