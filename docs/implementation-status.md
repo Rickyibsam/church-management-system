@@ -82,3 +82,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Financial forms now use same-church account selectors rather than requiring staff to type account UUIDs. Donation registers show generated receipt numbers and posting status; expense registers show approval/posting status; the financial ledger displays the full posted transaction summary.
 
 - Added church-scoped, read-only reporting views for member directory, certificate register, attendance summaries, monthly posted financial summaries and donor statements; connected them to the Reports workspace.
+
+- Added a persistent notification inbox with per-user read/unread state and a mark-all-read action. Certificate status transitions and accepted church invitations now generate notifications, and the header bell opens the inbox.
