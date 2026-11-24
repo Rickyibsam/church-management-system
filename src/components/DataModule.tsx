@@ -112,8 +112,11 @@ export default function DataModule({ churchId, table, title, description, fields
     const allFields=[...new Map([...fields,...extraDisplay].map(field=>[field.name,field])).values()];
     const headers=allFields.map(field=>field.label);
     const lines=[headers,...rows.map(row=>allFields.map(field=>row[field.name]??""))];
-    const csv=lines.map(line=>line.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(",")).join("\r
-");
+    const csv=lines.map(line=>line.map(value=>{
+      const raw=String(value??"");
+      const safe=/^[\u0000-\u0020]*[=+\-@]/.test(raw)?"'"+raw:raw;
+      return '"'+safe.replaceAll('"','""')+'"';
+    }).join(",")).join("\r\n");
     const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download=table+"-"+new Date().toISOString().slice(0,10)+".csv";anchor.click();URL.revokeObjectURL(url);
   }
