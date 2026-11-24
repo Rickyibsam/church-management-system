@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ClipboardList, Edit2, Plus, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?: boolean; defaultValue?: string };
+type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?: boolean; defaultValue?: string; lookup?: {table:string;labelField:string;valueField?:string;filterField?:string;filterValue?:string} };
 type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean; financialAction?: "donation" | "expense"; extraColumns?: string[] };
 
 export default function DataModule({ churchId, table, title, description, fields, orderBy = "created_at", readOnly = false, postJournal = false, financialAction, extraColumns = [] }: Props) {
@@ -13,6 +13,7 @@ export default function DataModule({ churchId, table, title, description, fields
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lookupOptions,setLookupOptions]=useState<Record<string,Array<{value:string;label:string}>>>({});
 
   async function load() {
     if (!supabase || !churchId) { setRows([]); setLoading(false); return; }
@@ -23,6 +24,16 @@ export default function DataModule({ churchId, table, title, description, fields
     const { data, error } = await request;
     if (error) setMessage("Unable to load records: " + error.message);
     else setRows((data ?? []) as Array<Record<string, unknown>>);
+    const lookups:Record<string,Array<{value:string;label:string}>>={};
+    await Promise.all(fields.filter(field=>field.lookup).map(async field=>{
+      const lookup=field.lookup!;
+      const valueField=lookup.valueField??"id";
+      let query=supabase.from(lookup.table).select(valueField+","+lookup.labelField).eq("church_id",churchId).limit(500);
+      if(lookup.filterField&&lookup.filterValue)query=query.eq(lookup.filterField,lookup.filterValue);
+      const {data:options}=await query;
+      lookups[field.name]=(options??[]).map(item=>({value:String(item[valueField]),label:String(item[lookup.labelField]??item[valueField])}));
+    }));
+    setLookupOptions(lookups);
     setLoading(false);
   }
 
@@ -100,7 +111,7 @@ export default function DataModule({ churchId, table, title, description, fields
   return <>
     <div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div>{!readOnly && <button className="primary-button" disabled={!churchId} onClick={openNew}><Plus size={17}/> Add record</button>}</div>
     {message && <div className="notice"><span>{message}</span><button onClick={() => setMessage("")}><X size={15}/></button></div>}
-    {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label>{field.type === "boolean" ? <input type="checkbox" checked={values[field.name] === "true"} onChange={event => setValues(old => ({ ...old, [field.name]: String(event.target.checked) }))}/> : <input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/>}</div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
+    {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label>{field.type === "boolean" ? <input type="checkbox" checked={values[field.name] === "true"} onChange={event => setValues(old => ({ ...old, [field.name]: String(event.target.checked) }))}/> : field.lookup ? <select className="field" required={field.required} value={values[field.name]??""} onChange={event=>setValues(old=>({...old,[field.name]:event.target.value}))}><option value="">Select {field.label.toLowerCase()}</option>{(lookupOptions[field.name]??[]).map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/>}</div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
     <div className="panel">{loading ? <div className="empty-state">Loading records...</div> : rows.length ? <div className="records-table"><div className="record-row record-head"><span>{title} record</span>{fields.slice(0,3).map(field=><span key={field.name}>{field.label}</span>)}{!readOnly && <span>Actions</span>}</div>{rows.map(row=><div className="record-row" key={String(row.id)}><b>{String(row[fields[0]?.name] ?? "Record")}</b>{fields.slice(0,3).map(field=><span key={field.name}>{String(row[field.name] ?? "—")}</span>)}{!readOnly && <span className="record-actions">{postJournal && row.status === "draft" && <button className="secondary-button" onClick={()=>void postEntry(row)}>Post</button>}{financialAction==="donation"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post donation</button>}{financialAction==="expense"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Approve</button>}{financialAction==="expense"&&row.status==="approved"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post expense</button>}<button className="icon-button" title="Edit record" onClick={()=>openEdit(row)}><Edit2 size={15}/></button><button className="icon-button" title="Delete record" onClick={()=>void remove(row)}><Trash2 size={15}/></button></span>}</div>)}</div> : <div className="empty-state"><ClipboardList/><b>No records yet</b><small>{churchId ? "Add the first record to start this register." : "Sign in and create a church workspace first."}</small></div>}</div>
   </>;
 }
