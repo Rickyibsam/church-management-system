@@ -11,10 +11,12 @@ type CertificateRecord={
  qr_verification_token:string;issued_pdf_path:string|null;status:string
 };
 type ChurchRecord={display_name:string;legal_name:string;address:string|null;phone:string|null;email:string|null;website:string|null;logo_path:string|null;header_text:string|null;footer_text:string|null};
+type TemplateRecord={name:string;language_code:string;page_size:string;orientation:string;logo_path:string|null;header_text:string|null;footer_text:string|null;pastor_name:string|null;pastor_signature_path:string|null;seal_path:string|null;background_path:string|null};
 
 export default function CertificatePrint({certificateId,onClose}:{certificateId:string;onClose:()=>void}){
  const [record,setRecord]=useState<CertificateRecord|null>(null);
  const [church,setChurch]=useState<ChurchRecord|null>(null);
+ const [template,setTemplate]=useState<TemplateRecord|null>(null);
  const [qr,setQr]=useState("");
  const [message,setMessage]=useState("Loading certificate...");
  const [savingPdf,setSavingPdf]=useState(false);
@@ -25,8 +27,9 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path,status").eq("id",certificateId).maybeSingle();
    if(error||!data){if(alive)setMessage(error?.message??"Certificate not found.");return;}
    const {data:churchData}=await supabase.from("churches").select("display_name,legal_name,address,phone,email,website,logo_path,header_text,footer_text").eq("id",data.church_id).maybeSingle();
+   const {data:templateData}=await supabase.from("certificate_templates").select("name,language_code,page_size,orientation,logo_path,header_text,footer_text,pastor_name,pastor_signature_path,seal_path,background_path").eq("church_id",data.church_id).eq("certificate_type",data.certificate_type).eq("is_active",true).eq("is_default",true).order("created_at",{ascending:false}).limit(1).maybeSingle();
    if(!alive)return;
-   setRecord(data as CertificateRecord);setChurch(churchData as ChurchRecord|null);
+   setRecord(data as CertificateRecord);setChurch(churchData as ChurchRecord|null);setTemplate(templateData as TemplateRecord|null);
    const url=window.location.origin+"/?verify="+data.qr_verification_token;
    const image=await QRCode.toDataURL(url,{width:180,margin:1,errorCorrectionLevel:"M"});
    if(alive){setQr(image);setMessage("");}
@@ -41,7 +44,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
    doc.setDrawColor(180,139,69);doc.setLineWidth(1.5);doc.rect(8,8,281,194);doc.setLineWidth(.5);doc.rect(11,11,275,188);
    doc.setTextColor(31,53,82);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text(church?.display_name??"Church",148.5,27,{align:"center"});
-   if(church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(church.header_text,148.5,34,{align:"center",maxWidth:230});}
+   if(template?.header_text||church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(template?.header_text||church?.header_text||"",148.5,34,{align:"center",maxWidth:230});}
    if(logo){try{const response=await fetch(logo);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read church logo."));reader.readAsDataURL(blob);});doc.addImage(dataUrl, blob.type==="image/jpeg"?"JPEG":"PNG", 20, 16, 24, 24);}catch{/* The certificate remains printable if the optional logo cannot be embedded. */}}
    doc.setDrawColor(180,139,69);doc.line(25,43,272,43);
    doc.setTextColor(150,111,49);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("OFFICIAL CHURCH RECORD",148.5,55,{align:"center"});
@@ -54,9 +57,9 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",242,157,30,30);
-   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(record.pastor_name??"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
+   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
    doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
-   const footer=church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
+   const footer=template?.footer_text||church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
    if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
    const blob=doc.output("blob");
    const path=record.church_id+"/"+record.id+"/issued-certificate.pdf";
@@ -78,7 +81,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
  return <div className="certificate-print-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
   <div className="certificate-print-dialog"><div className="print-toolbar"><b>Certificate preview</b><div><button className="secondary-button" onClick={()=>window.print()} disabled={!record||record.status!=="issued"}><Printer size={15}/> Print</button>{record?.status==="issued"&&<><button className="secondary-button" onClick={()=>void archivePdf()} disabled={savingPdf}>{savingPdf?"Archiving...":"Generate / Archive PDF"}</button>{record.issued_pdf_path&&<button className="secondary-button" onClick={()=>void openArchivedPdf()}>Open archived PDF</button>}</>}<button className="icon-button" onClick={onClose}><X/></button></div></div>
    {!record?<div className="empty-state">{message||"Loading certificate..."}</div>:church?<>{message&&<div className="notice">{message}</div>}<div className="print-sheet">
-    <div className="print-border"><div className="print-brand">{logo&&<img src={logo} alt="Church logo"/>}<div><h2>{church.display_name}</h2>{church.header_text&&<p>{church.header_text}</p>}{church.address&&<small>{church.address}</small>}</div></div>
+    <div className="print-border"><div className="print-brand">{logo&&<img src={logo} alt="Church logo"/>}<div><h2>{church.display_name}</h2>{(template?.header_text||church.header_text)&&<p>{template?.header_text||church.header_text}</p>}{church.address&&<small>{church.address}</small>}</div></div>
      <div className="print-rule"/>
      <div className="print-kicker">OFFICIAL CHURCH RECORD</div>
      <h1>{record.certificate_type.replaceAll("_"," ").toUpperCase()} CERTIFICATE</h1>
@@ -88,9 +91,9 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
      <p className="print-detail">Record date: <b>{record.event_date??"—"}</b></p>
      {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}
      <div className="print-number">Registration No. {record.registration_number}</div>
-     <div className="print-bottom"><div className="print-sign"><div className="sign-line"/><b>{record.pastor_name??"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign"><div className="sign-line"/><b>Church Seal</b><small>Official stamp</small></div></div>
+     <div className="print-bottom"><div className="print-sign"><div className="sign-line"/><b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign"><div className="sign-line"/><b>Church Seal</b><small>Official stamp</small></div></div>
      <div className="print-rule"/>
-     <div className="print-footer">{church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
+     <div className="print-footer">{template?.footer_text||church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
      <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString():""} · {church.legal_name}</div>
     </div>
    </div>:null}
