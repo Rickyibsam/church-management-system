@@ -70,7 +70,15 @@ export default function DataModule({ churchId, table, title, description, fields
     closeForm(); setMessage(editingId ? "Record updated." : "Record saved."); await load();
   }
 
-  async function postEntry(row: Record<string, unknown>) {\n    if (!supabase) return;\n    setMessage("");\n    const { data, error } = await supabase.rpc("post_journal_entry", { p_entry_id: String(row.id) });\n    if (error) setMessage("Unable to post journal entry: " + error.message);\n    else { setMessage("Journal entry posted successfully."); await load(); }\n  }\n\n  async function remove(row: Record<string, unknown>) {
+  async function postEntry(row: Record<string, unknown>) {
+    if (!supabase) return;
+    setMessage("");
+    const { error } = await supabase.rpc("post_journal_entry", { p_entry_id: String(row.id) });
+    if (error) setMessage("Unable to post journal entry: " + error.message);
+    else { setMessage("Journal entry posted successfully."); await load(); }
+  }
+
+  async function remove(row: Record<string, unknown>) {
     if (!supabase || !churchId) return;
     if (!window.confirm("Delete this record? This action may be restricted by church policy.")) return;
     const { error } = await supabase.from(table).delete().eq("id", String(row.id)).eq("church_id", churchId);
