@@ -17,6 +17,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
  const [record,setRecord]=useState<CertificateRecord|null>(null);
  const [church,setChurch]=useState<ChurchRecord|null>(null);
  const [template,setTemplate]=useState<TemplateRecord|null>(null);
+ const [templateAssets,setTemplateAssets]=useState<{signature:string;seal:string}>({signature:"",seal:""});
  const [qr,setQr]=useState("");
  const [message,setMessage]=useState("Loading certificate...");
  const [savingPdf,setSavingPdf]=useState(false);
@@ -37,6 +38,19 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   void load();return()=>{alive=false;};
  },[certificateId]);
  const logo=church?.logo_path&&supabase?supabase.storage.from("church-branding").getPublicUrl(church.logo_path).data.publicUrl:"";
+ useEffect(()=>{
+  let alive=true;
+  async function loadAssets(){
+   if(!supabase||!template){setTemplateAssets({signature:"",seal:""});return;}
+   const [signature,seal]=await Promise.all([
+    template.pastor_signature_path?supabase.storage.from("church-private-documents").createSignedUrl(template.pastor_signature_path,60):Promise.resolve({data:null,error:null}),
+    template.seal_path?supabase.storage.from("church-private-documents").createSignedUrl(template.seal_path,60):Promise.resolve({data:null,error:null})
+   ]);
+   if(alive)setTemplateAssets({signature:signature.data?.signedUrl??"",seal:seal.data?.signedUrl??""});
+  }
+  void loadAssets();return()=>{alive=false;};
+ },[template]);
+
  async function archivePdf(){
   if(!supabase||!record||record.status!=="issued")return;
   setSavingPdf(true);setMessage("");
@@ -58,7 +72,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",242,157,30,30);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
-   doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
+   if(templateAssets.signature){try{doc.addImage(templateAssets.signature,"PNG",35,156,40,18);}catch{/* Optional signature image */}}\n   if(templateAssets.seal){try{doc.addImage(templateAssets.seal,"PNG",190,155,32,32);}catch{/* Optional seal image */}}\n   doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
    const footer=template?.footer_text||church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
    if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
    const blob=doc.output("blob");
@@ -91,7 +105,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
      <p className="print-detail">Record date: <b>{record.event_date??"—"}</b></p>
      {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}
      <div className="print-number">Registration No. {record.registration_number}</div>
-     <div className="print-bottom"><div className="print-sign"><div className="sign-line"/><b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign"><div className="sign-line"/><b>Church Seal</b><small>Official stamp</small></div></div>
+     <div className="print-bottom"><div className="print-sign">{templateAssets.signature?<img src={templateAssets.signature} alt="Pastor signature" style={{maxWidth:"120px",maxHeight:"42px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign">{templateAssets.seal?<img src={templateAssets.seal} alt="Church seal" style={{maxWidth:"85px",maxHeight:"65px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>Church Seal</b><small>Official stamp</small></div></div>
      <div className="print-rule"/>
      <div className="print-footer">{template?.footer_text||church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
      <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString():""} · {church.legal_name}</div>
