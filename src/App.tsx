@@ -9,6 +9,7 @@ import {
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import type { CertificateType, ModuleKey } from "./types";
 import DataModule from "./components/DataModule";
+import DocumentReview from "./components/DocumentReview";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -130,7 +131,7 @@ function App() {
           active === "certificates" ? <Certificates onNew={() => setCertOpen(true)}/> :
           active === "members" || active === "families" ? <People kind={active}/> :
           active === "churches" ? <Placeholder title="Churches & Branches" description="Set up church profiles, campuses, branches, denominations, country, currency and time zone." icon={<Church/>} items={["Church profile","Branches and campuses","Church branding","Pastors and staff","Church-specific settings"]}/> :
-          active === "documents" ? <Placeholder title="Document Verification" description="Review private supporting documents submitted with registrations." icon={<FolderLock/>} items={["Pending verification","Verified documents","Rejected documents","Private attachment storage","Reviewer activity log"]}/> :
+          active === "documents" ? <DocumentReview/> :
           active === "attendance" ? <DataModule churchId={churchId} table="church_services" title="Services & Attendance" description="Create worship services and maintain the service register." fields={[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]}/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
           active === "events" ? <DataModule churchId={churchId} table="church_events" title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." fields={[{name:"title",label:"Event title"},{name:"event_type",label:"Event type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"},{name:"description",label:"Description"}]}/> :
