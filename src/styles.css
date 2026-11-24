@@ -46,3 +46,5 @@
  .permission-panel{margin-left:0}
  .permission-head,.permission-row{grid-template-columns:minmax(120px,1fr) repeat(4,48px)}
 }
+
+.settings-panel-stack{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}.settings-panel-stack>.panel{min-width:0}
