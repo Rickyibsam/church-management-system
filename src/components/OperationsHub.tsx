@@ -4,7 +4,7 @@ import DataModule from "./DataModule";
 
 type Kind = "finance" | "pastoral" | "reports" | "assets" | "attendance";
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" };
-type Register = { key: string; label: string; table: string; description: string; fields: Field[]; orderBy?: string };
+type Register = { key: string; label: string; table: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean };
 
 const registers: Record<Kind, Register[]> = {
  finance: [
@@ -16,15 +16,15 @@ const registers: Record<Kind, Register[]> = {
   { key:"pledges",label:"Donation Pledges",table:"donation_pledges",description:"Track promised giving and outstanding pledges.",fields:[{name:"donor_name",label:"Donor name"},{name:"amount",label:"Pledge amount",type:"number"},{name:"currency_code",label:"Currency code"},{name:"due_on",label:"Due date",type:"date"}]}
  ],
  pastoral: [
-  { key:"requests",label:"Care Requests",table:"pastoral_requests",description:"Record confidential pastoral care requests. Access is controlled by church permissions.",fields:[{name:"request_type",label:"Request type"},{name:"subject",label:"Subject"},{name:"private_notes",label:"Private notes" }]},
-  { key:"followups",label:"Follow-ups",table:"pastoral_followups",description:"Schedule pastoral follow-ups and record completion.",fields:[{name:"due_at",label:"Due date",type:"datetime-local"},{name:"followup_notes",label:"Follow-up notes"}]}
+  { key:"requests",label:"Care Requests",table:"pastoral_requests",description:"Record confidential pastoral care requests. Access is controlled by church permissions.",fields:[{name:"request_type",label:"Request type"},{name:"subject",label:"Subject"},{name:"private_notes",label:"Private notes" },{name:"status",label:"Status"}]},
+  { key:"followups",label:"Follow-ups",table:"pastoral_followups",description:"Schedule pastoral follow-ups and record completion.",fields:[{name:"request_id",label:"Pastoral request ID"},{name:"due_at",label:"Due date",type:"datetime-local"},{name:"followup_notes",label:"Follow-up notes"}]}
  ],
  reports: [
-  { key:"notifications",label:"Notifications",table:"notifications",description:"Review church workspace notifications.",fields:[{name:"title",label:"Title"},{name:"body",label:"Message"},{name:"notification_type",label:"Type"}]},
-  { key:"audit",label:"Audit Register",table:"audit_logs",description:"Review recorded administrative changes. Access follows audit policies.",fields:[{name:"action",label:"Action"},{name:"table_name",label:"Table" }]}
+  { key:"notifications",label:"Notifications",table:"notifications",description:"Review church workspace notifications.",fields:[{name:"title",label:"Title"},{name:"body",label:"Message"},{name:"notification_type",label:"Type"}],readOnly:true},
+  { key:"audit",label:"Audit Register",table:"audit_logs",description:"Review recorded administrative changes. Access follows audit policies.",fields:[{name:"action",label:"Action"},{name:"table_name",label:"Table" },{name:"record_id",label:"Record ID"}],readOnly:true}
  ],
  attendance: [
-  { key:"services",label:"Service Schedule",table:"church_services",description:"Plan regular worship services and gatherings.",fields:[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]},
+  { key:"services",label:"Service Schedule",table:"church_services",description:"Plan regular worship services and gatherings.",fields:[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"ends_at",label:"Ends at",type:"datetime-local"},{name:"location",label:"Location"}]},
   { key:"checkins",label:"Attendance Register",table:"attendance_records",description:"Record member and visitor attendance for services and events.",orderBy:"check_in_at",fields:[{name:"service_id",label:"Service ID"},{name:"member_id",label:"Member ID (leave blank for visitor)"},{name:"visitor_name",label:"Visitor name"},{name:"visitor_phone",label:"Visitor phone"},{name:"attendance_status",label:"Status (present/late/excused/absent)"},{name:"attendance_method",label:"Method (manual/qr/import)"},{name:"check_in_at",label:"Check-in time",type:"datetime-local"},{name:"notes",label:"Notes"}]}
  ],
  assets: [
@@ -40,8 +40,8 @@ export default function OperationsHub({ churchId, kind }: { churchId: string | n
  const active = list.find(item=>item.key===selected) ?? list[0];
  const Icon = icons[kind];
  return <section>
-  <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
+  <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":kind==="attendance"?"Attendance Management":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
   <div className="quick-grid">{list.map(item=><button key={item.key} className={selected===item.key?"quick-card active":"quick-card"} onClick={()=>setSelected(item.key)}><span>{kind==="pastoral"?<HeartHandshake/>:kind==="reports"?<ShieldCheck/>:kind==="assets"?<Package/>:kind==="attendance"?<CalendarClock/>:<BookOpen/>}</span><b>{item.label}</b><small>{item.description}</small></button>)}</div>
-  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields} orderBy={active.orderBy}/>
+  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields} orderBy={active.orderBy} readOnly={active.readOnly}/>
  </section>;
 }
