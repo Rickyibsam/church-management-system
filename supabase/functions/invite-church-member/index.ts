@@ -19,7 +19,8 @@ Deno.serve(async (req: Request) => {
  if(!churchId||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!role||!allowedRoles.includes(role)) return json({error:"A valid church, email address and role are required."},400);
  const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:callerMembership,error:membershipError}=await admin.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
- if(membershipError||!callerMembership||callerMembership.status!=="active"||!["owner","admin"].includes(callerMembership.role)) return json({error:"Only an active church owner or administrator can invite users."},403);\n if(role==="admin"&&callerMembership.role!=="owner") return json({error:"Only the church owner can invite another administrator."},403);
+ if(membershipError||!callerMembership||callerMembership.status!=="active"||!["owner","admin"].includes(callerMembership.role)) return json({error:"Only an active church owner or administrator can invite users."},403);
+ if(role==="admin"&&callerMembership.role!=="owner") return json({error:"Only the church owner can invite another administrator."},403);
  let page=1; let existingUser: {id:string;email?:string;email_confirmed_at?:string|null}|null=null;
  while(page<=20){const {data,error}=await admin.auth.admin.listUsers({page,perPage:1000});if(error)return json({error:"Unable to look up account status: "+error.message},502);existingUser=data.users.find(user=>user.email?.toLowerCase()===email)??null;if(existingUser||data.users.length<1000)break;page++;}
  if(existingUser){
