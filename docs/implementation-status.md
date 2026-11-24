@@ -163,3 +163,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Removed a duplicate Journal Lines register definition so the finance navigation has a single unambiguous entry.
 - Hardened CSV export against spreadsheet formula injection by prefixing dangerous formula-leading cell values before quoting and exporting.
 - These are implementation changes only; the requested full functional/security/end-to-end test phase remains deferred until online feature development is complete.
+
+
+## Certificate document review refinement
+- The document review UI now requires a non-empty reviewer reason before a rejection can be submitted; the reject action remains disabled until a reason is entered.
+- The RPC receives the trimmed reviewer note. Database-side authorization and workflow constraints remain authoritative and still require comprehensive testing in the planned test phase.
