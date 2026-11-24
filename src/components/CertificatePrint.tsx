@@ -68,7 +68,10 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    if(record.secondary_person_name){doc.setFontSize(14);doc.text("and "+record.secondary_person_name,148.5,114,{align:"center",maxWidth:200});}
    doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(80,95,115);
    doc.text("Record date: "+(record.event_date??"—"),148.5,129,{align:"center"});
-   if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});\n   if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,148.5,143,{align:"center"});\n   if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,148.5,149,{align:"center"});\n   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,148.5,155,{align:"center",maxWidth:210});
+   if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});
+   if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,148.5,143,{align:"center"});
+   if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,148.5,149,{align:"center"});
+   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,148.5,155,{align:"center",maxWidth:210});
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",242,157,30,30);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
