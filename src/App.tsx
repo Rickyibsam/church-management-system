@@ -414,6 +414,14 @@ function SettingsPage({churchId}:{churchId:string|null}) {
         <p className="helper">Logo is stored in the public branding bucket. Identity documents and personal attachments remain in private storage.</p>
       </div>
     </div>
+    <div className="settings-panel-stack">
+      <DataModule churchId={churchId} table="certificate_document_requirements" title="Certificate document requirements" description="Configure required supporting documents by certificate type and country. Leave country blank for a general requirement." fields={[
+        {name:"certificate_type",label:"Certificate type",required:true},{name:"document_code",label:"Document code",required:true},{name:"document_label",label:"Document label",required:true},{name:"description",label:"Description"},{name:"applicable_country",label:"Country code (optional)"},{name:"is_required",label:"Required",type:"boolean",defaultValue:"true"},{name:"max_file_size_bytes",label:"Maximum file size in bytes",type:"number"},{name:"sort_order",label:"Display order",type:"number"},{name:"is_active",label:"Active",type:"boolean",defaultValue:"true"}
+      ]}/>
+      <DataModule churchId={churchId} table="certificate_templates" title="Certificate templates" description="Configure certificate type, language, page layout, church text, pastor details and uploaded asset paths." fields={[
+        {name:"certificate_type",label:"Certificate type",required:true},{name:"name",label:"Template name",required:true},{name:"language_code",label:"Language code",defaultValue:"en"},{name:"page_size",label:"Page size",defaultValue:"A4"},{name:"orientation",label:"Orientation",defaultValue:"landscape"},{name:"header_text",label:"Header text"},{name:"footer_text",label:"Footer text"},{name:"pastor_name",label:"Pastor name"},{name:"logo_path",label:"Logo storage path"},{name:"background_path",label:"Background storage path"},{name:"pastor_signature_path",label:"Pastor signature storage path"},{name:"seal_path",label:"Church seal storage path"},{name:"is_default",label:"Default template",type:"boolean",defaultValue:"false"},{name:"is_active",label:"Active",type:"boolean",defaultValue:"true"}
+      ]}/>
+    </div>
     <div className="settings-grid">{[{title:"Certificate templates",desc:"Template layouts, signatures, seals, paper size and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, country, currency and time zone"},{title:"Security & audit",desc:"Access history, data retention and backups"},{title:"Branches & campuses",desc:"Manage multiple church locations"}].map(x=><div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div>
   </>;
 }
