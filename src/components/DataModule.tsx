@@ -136,7 +136,7 @@ export default function DataModule({ churchId, table, title, description, fields
   async function runAssetAction(row:Record<string,unknown>,action:"depreciate"|"dispose"){
     if(!supabase||!assetAction)return;
     if(action==="depreciate"){
-      const now=new Date();const periodEnd=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
+      const now=new Date();const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0);const periodEnd=lastDay.getFullYear()+"-"+String(lastDay.getMonth()+1).padStart(2,"0")+"-"+String(lastDay.getDate()).padStart(2,"0");
       const {error}=await supabase.rpc("post_asset_depreciation",{p_asset_id:String(row.id),p_period_end:periodEnd});
       if(error)setMessage("Unable to post asset depreciation: "+error.message);
       else setMessage("Monthly depreciation posted to the general ledger.");
@@ -146,7 +146,7 @@ export default function DataModule({ churchId, table, title, description, fields
       const proceeds=Number(proceedsText);
       if(!Number.isFinite(proceeds)||proceeds<0){setMessage("Enter a valid non-negative disposal amount.");return;}
       if(!row.disposal_cash_account_id){setMessage("Select a disposal cash/bank account in the asset profile first.");return;}
-      const {error}=await supabase.rpc("dispose_church_asset",{p_asset_id:String(row.id),p_disposal_date:new Date().toISOString().slice(0,10),p_proceeds:proceeds,p_cash_account_id:String(row.disposal_cash_account_id)});
+      const {error}=await supabase.rpc("dispose_church_asset",{p_asset_id:String(row.id),p_disposal_date:(()=>{const today=new Date();return today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");})(),p_proceeds:proceeds,p_cash_account_id:String(row.disposal_cash_account_id)});
       if(error)setMessage("Unable to dispose of asset: "+error.message);
       else setMessage("Asset disposed and gain/loss posted to the general ledger.");
     }
