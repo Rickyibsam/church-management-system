@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import {
   Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
-  CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
+  CheckCircle2, ChevronDown, Church, FileBadge, FileText,
   FolderLock, HeartHandshake, Home, LayoutDashboard, LogOut,
   Menu, Plus, Search, Settings, ShieldCheck, Users, Wallet, X
 } from "lucide-react";
@@ -235,7 +234,7 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     if(!supabase)return;
     const reason=window.prompt("Enter the correction or reissue reason:");
     if(!reason?.trim())return;
-    const {data,error}=await supabase.rpc("reissue_certificate",{p_certificate_id:id,p_reason:reason.trim()});
+    const {error}=await supabase.rpc("reissue_certificate",{p_certificate_id:id,p_reason:reason.trim()});
     if(error){setMessage("Unable to reissue certificate: "+error.message);return;}
     setMessage("A replacement draft has been created. Complete its document review before issuing.");
     const {data:updated,error:loadError}=await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
@@ -249,6 +248,7 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
       {message && <div className="notice">{message}</div>}
       {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span><span className="row-actions">{String(r.status)==="draft"&&<><button onClick={()=>void advance(String(r.id),"submitted")}>Submit</button><button onClick={()=>void advance(String(r.id),"cancelled","Cancelled by church administrator")}>Cancel</button></>}{String(r.status)==="submitted"&&<button onClick={()=>void advance(String(r.id),"under_review")}>Start review</button>}{String(r.status)==="under_review"&&<><button onClick={()=>void advance(String(r.id),"approved")}>Approve</button><button onClick={()=>{const reason=window.prompt("Enter the reason for rejecting this certificate:");if(reason?.trim())void advance(String(r.id),"rejected",reason.trim());}}>Reject</button></>}{String(r.status)==="approved"&&<button onClick={()=>void advance(String(r.id),"issued")}>Issue</button>}{String(r.status)==="issued"&&<><button onClick={()=>setPrintId(String(r.id))}>Print</button><button onClick={()=>void reissue(String(r.id))}>Correct / Reissue</button></>}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
     </div>
+    {printId&&<CertificatePrint certificateId={printId} onClose={()=>setPrintId(null)}/>}
   </>;
 }
 function People({ kind, churchId }: { kind: "members" | "families"; churchId: string | null }) {
@@ -367,9 +367,6 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     {family&&churchId&&<DataModule churchId={churchId} table="family_relationships" title="Family relationships" description="Connect members to households and define family roles and primary contacts." fields={[{name:"family_id",label:"Family",required:true,lookup:{table:"families",labelField:"family_name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"relationship",label:"Relationship",required:true,options:["head","spouse","child","parent","sibling","guardian","other"].map(value=>({value,label:value.charAt(0).toUpperCase()+value.slice(1)}))},{name:"is_primary_contact",label:"Primary contact",type:"boolean",defaultValue:"false"}]}/>}
   
   </>;
-}
-function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: ReactNode; items: string[] }) {
-  return <><div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><button className="secondary-button"><Plus size={16}/> Add new</button></div><div className="feature-grid">{items.map((item, i) => <div className="feature-card" key={item}><span>{icon}</span><b>{item}</b><small>{i === 0 ? "Core workspace" : "Included in the full module"}</small></div>)}</div><div className="panel"><div className="empty-state"><ClipboardList/><b>{title} workspace</b><small>Module screen established. Database workflows and actions will be connected during implementation.</small></div></div></>;
 }
 
 function SettingsPage({churchId}:{churchId:string|null}) {
