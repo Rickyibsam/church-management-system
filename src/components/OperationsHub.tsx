@@ -1,0 +1,43 @@
+import { useState } from "react";
+import { BookOpen, CalendarClock, ClipboardList, FileBarChart, HeartHandshake, Landmark, Package, ShieldCheck } from "lucide-react";
+import DataModule from "./DataModule";
+
+type Kind = "finance" | "pastoral" | "reports" | "assets";
+type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" };
+type Register = { key: string; label: string; table: string; description: string; fields: Field[] };
+
+const registers: Record<Kind, Register[]> = {
+ finance: [
+  { key:"accounts",label:"Chart of Accounts",table:"chart_of_accounts",description:"Maintain the church's account codes and account hierarchy.",fields:[{name:"account_code",label:"Account code"},{name:"account_name",label:"Account name"},{name:"account_type",label:"Type (asset/liability/equity/income/expense)"}]},
+  { key:"cashbank",label:"Cash & Bank Accounts",table:"financial_accounts",description:"Register cash, bank and mobile wallet accounts.",fields:[{name:"name",label:"Account name"},{name:"account_type",label:"Type (cash/bank/mobile_wallet/other)"},{name:"currency_code",label:"Currency code"},{name:"opening_balance",label:"Opening balance",type:"number"}]},
+  { key:"expenses",label:"Expenses",table:"expenses",description:"Record operational expenses and supporting details.",fields:[{name:"expense_category",label:"Category"},{name:"description",label:"Description"},{name:"amount",label:"Amount",type:"number"},{name:"spent_at",label:"Expense date",type:"datetime-local"}]},
+  { key:"journals",label:"Journal Entries",table:"journal_entries",description:"Prepare general journal entries for review and posting.",fields:[{name:"entry_number",label:"Entry number"},{name:"entry_date",label:"Entry date",type:"date"},{name:"description",label:"Description"}]},
+  { key:"budgets",label:"Budgets",table:"financial_budgets",description:"Create annual financial budgets and track approval status.",fields:[{name:"name",label:"Budget name"},{name:"fiscal_year",label:"Fiscal year",type:"number"},{name:"currency_code",label:"Currency code"}]},
+  { key:"pledges",label:"Donation Pledges",table:"donation_pledges",description:"Track promised giving and outstanding pledges.",fields:[{name:"donor_name",label:"Donor name"},{name:"amount",label:"Pledge amount",type:"number"},{name:"currency_code",label:"Currency code"},{name:"due_on",label:"Due date",type:"date"}]}
+ ],
+ pastoral: [
+  { key:"requests",label:"Care Requests",table:"pastoral_requests",description:"Record confidential pastoral care requests. Access is controlled by church permissions.",fields:[{name:"request_type",label:"Request type"},{name:"subject",label:"Subject"},{name:"private_notes",label:"Private notes" }]},
+  { key:"followups",label:"Follow-ups",table:"pastoral_followups",description:"Schedule pastoral follow-ups and record completion.",fields:[{name:"due_at",label:"Due date",type:"datetime-local"},{name:"followup_notes",label:"Follow-up notes"}]}
+ ],
+ reports: [
+  { key:"notifications",label:"Notifications",table:"notifications",description:"Review church workspace notifications.",fields:[{name:"title",label:"Title"},{name:"body",label:"Message"},{name:"notification_type",label:"Type"}]},
+  { key:"audit",label:"Audit Register",table:"audit_logs",description:"Review recorded administrative changes. Access follows audit policies.",fields:[{name:"action",label:"Action"},{name:"table_name",label:"Table" }]}
+ ],
+ assets: [
+  { key:"assets",label:"Asset Register",table:"church_assets",description:"Register buildings, equipment, furniture and other church assets.",fields:[{name:"asset_code",label:"Asset code"},{name:"name",label:"Asset name"},{name:"category",label:"Category"},{name:"purchase_date",label:"Purchase date",type:"date"},{name:"purchase_cost",label:"Purchase cost",type:"number"},{name:"location",label:"Location"}]},
+  { key:"maintenance",label:"Maintenance",table:"asset_maintenance",description:"Record maintenance activity, costs and next due dates.",fields:[{name:"maintenance_date",label:"Maintenance date",type:"date"},{name:"description",label:"Work performed"},{name:"cost",label:"Cost",type:"number"},{name:"next_due_date",label:"Next due date",type:"date"},{name:"performed_by",label:"Performed by"}]}
+ ]
+};
+
+const icons = { finance:Landmark, pastoral:HeartHandshake, reports:FileBarChart, assets:Package };
+export default function OperationsHub({ churchId, kind }: { churchId: string | null; kind: Kind }) {
+ const [selected,setSelected] = useState(registers[kind][0].key);
+ const list = registers[kind];
+ const active = list.find(item=>item.key===selected) ?? list[0];
+ const Icon = icons[kind];
+ return <section>
+  <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
+  <div className="quick-grid">{list.map(item=><button key={item.key} className={selected===item.key?"quick-card active":"quick-card"} onClick={()=>setSelected(item.key)}><span>{kind==="pastoral"?<HeartHandshake/>:kind==="reports"?<ShieldCheck/>:kind==="assets"?<Package/>:<BookOpen/>}</span><b>{item.label}</b><small>{item.description}</small></button>)}</div>
+  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields}/>
+ </section>;
+}
