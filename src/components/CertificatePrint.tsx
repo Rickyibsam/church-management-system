@@ -71,7 +71,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    if(record.event_place)doc.text("Place: "+record.event_place,pageWidth/2,137,{align:"center"});
    if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,pageWidth/2,143,{align:"center"});
    if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,pageWidth/2,149,{align:"center"});
-   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,pageWidth/2,155,{align:"center",maxWidth:210});
+   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,pageWidth/2,155,{align:"center",maxWidth:pageWidth-85});
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,pageWidth/2,163,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",pageWidth-53,pageHeight-45,25,25);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,pageHeight-36,{align:"center"});doc.text("Pastor / Authorized Officer",55,pageHeight-30,{align:"center"});doc.text("Church Seal",pageWidth-90,pageHeight-36,{align:"center"});
