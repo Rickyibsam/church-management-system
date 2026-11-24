@@ -114,3 +114,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added a family-relationship register with household/member selectors, relationship types and primary-contact designation, linked from the Family Directory.
 
 - Family registration certificates can now link directly to an existing household during secure certificate creation; family and event-place references are validated and saved in the same database operation.
+
+- Added database-level same-church reference checks across member/family, certificate, attendance, pastoral, accounting, budget, asset, permission and document records to prevent cross-tenant foreign-key references.
