@@ -2,9 +2,9 @@ import { useState } from "react";
 import { BookOpen, CalendarClock, ClipboardList, FileBarChart, HeartHandshake, Landmark, Package, ShieldCheck } from "lucide-react";
 import DataModule from "./DataModule";
 
-type Kind = "finance" | "pastoral" | "reports" | "assets";
+type Kind = "finance" | "pastoral" | "reports" | "assets" | "attendance";
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" };
-type Register = { key: string; label: string; table: string; description: string; fields: Field[] };
+type Register = { key: string; label: string; table: string; description: string; fields: Field[]; orderBy?: string };
 
 const registers: Record<Kind, Register[]> = {
  finance: [
@@ -23,13 +23,13 @@ const registers: Record<Kind, Register[]> = {
   { key:"notifications",label:"Notifications",table:"notifications",description:"Review church workspace notifications.",fields:[{name:"title",label:"Title"},{name:"body",label:"Message"},{name:"notification_type",label:"Type"}]},
   { key:"audit",label:"Audit Register",table:"audit_logs",description:"Review recorded administrative changes. Access follows audit policies.",fields:[{name:"action",label:"Action"},{name:"table_name",label:"Table" }]}
  ],
- assets: [
+ attendance: [\n  { key:"services",label:"Service Schedule",table:"church_services",description:"Plan regular worship services and gatherings.",fields:[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]},\n  { key:"checkins",label:"Attendance Register",table:"attendance_records",description:"Record member and visitor attendance for services and events.",orderBy:"check_in_at",fields:[{name:"service_id",label:"Service ID"},{name:"member_id",label:"Member ID (leave blank for visitor)"},{name:"visitor_name",label:"Visitor name"},{name:"visitor_phone",label:"Visitor phone"},{name:"attendance_status",label:"Status (present/late/excused/absent)"},{name:"attendance_method",label:"Method (manual/qr/import)"},{name:"check_in_at",label:"Check-in time",type:"datetime-local"},{name:"notes",label:"Notes"}]}\n ],\n assets: [
   { key:"assets",label:"Asset Register",table:"church_assets",description:"Register buildings, equipment, furniture and other church assets.",fields:[{name:"asset_code",label:"Asset code"},{name:"name",label:"Asset name"},{name:"category",label:"Category"},{name:"purchase_date",label:"Purchase date",type:"date"},{name:"purchase_cost",label:"Purchase cost",type:"number"},{name:"location",label:"Location"}]},
   { key:"maintenance",label:"Maintenance",table:"asset_maintenance",description:"Record maintenance activity, costs and next due dates.",fields:[{name:"maintenance_date",label:"Maintenance date",type:"date"},{name:"description",label:"Work performed"},{name:"cost",label:"Cost",type:"number"},{name:"next_due_date",label:"Next due date",type:"date"},{name:"performed_by",label:"Performed by"}]}
  ]
 };
 
-const icons = { finance:Landmark, pastoral:HeartHandshake, reports:FileBarChart, assets:Package };
+const icons = { finance:Landmark, pastoral:HeartHandshake, reports:FileBarChart, assets:Package, attendance:ClipboardList };
 export default function OperationsHub({ churchId, kind }: { churchId: string | null; kind: Kind }) {
  const [selected,setSelected] = useState(registers[kind][0].key);
  const list = registers[kind];
@@ -37,7 +37,7 @@ export default function OperationsHub({ churchId, kind }: { churchId: string | n
  const Icon = icons[kind];
  return <section>
   <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
-  <div className="quick-grid">{list.map(item=><button key={item.key} className={selected===item.key?"quick-card active":"quick-card"} onClick={()=>setSelected(item.key)}><span>{kind==="pastoral"?<HeartHandshake/>:kind==="reports"?<ShieldCheck/>:kind==="assets"?<Package/>:<BookOpen/>}</span><b>{item.label}</b><small>{item.description}</small></button>)}</div>
-  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields}/>
+  <div className="quick-grid">{list.map(item=><button key={item.key} className={selected===item.key?"quick-card active":"quick-card"} onClick={()=>setSelected(item.key)}><span>{kind==="pastoral"?<HeartHandshake/>:kind==="reports"?<ShieldCheck/>:kind==="assets"?<Package/>:kind==="attendance"?<CalendarClock/>:<BookOpen/>}</span><b>{item.label}</b><small>{item.description}</small></button>)}</div>
+  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields} orderBy={active.orderBy}/>
  </section>;
 }
