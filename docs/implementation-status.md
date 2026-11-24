@@ -76,3 +76,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added private member-document upload and verification controls, and connected them to the member directory.
 - Added accounting links between cash/bank accounts and chart-of-accounts assets, donation income accounts and expense accounts. Donation posting generates a receipt number and balanced journal entry; expenses require approval before posting. Posted source records are locked.
 - Added a read-only posted financial ledger view and UI actions for donation posting and expense approval/posting.
+
+- Added church-scoped foreign-key dropdowns to operational forms for cash/bank accounts, chart accounts, journal entries, budgets, pastoral requests, attendance services/events/members and asset maintenance, replacing several manual UUID fields.
