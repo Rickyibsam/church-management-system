@@ -128,3 +128,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added `wrangler.jsonc` for the `dist/` Vite output with SPA fallback, plus `cf:dev` and `cf:deploy` scripts.
 - Removed the obsolete Render Blueprint. Supabase remains the selected database, authentication and private file-storage backend; no database migration or data deletion is part of this hosting change.
 - Cloudflare production deployment has not been verified from this repository session. The existing Worker must be connected to this GitHub repository under Settings > Builds, with build command `npm install && npm run build`, deploy command `npx wrangler deploy`, and the two public `VITE_SUPABASE_*` build variables configured.
+
+- Family relationship rules now enforce one household head and one primary contact per family; assigning a relationship as `head` synchronizes the family record's head-member reference.
