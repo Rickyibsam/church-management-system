@@ -1,0 +1,4 @@
+drop function if exists public.verify_certificate(uuid);
+create function public.verify_certificate(p_token uuid) returns table(church_name text,certificate_type text,registration_number text,issued_at timestamptz,valid boolean) language sql stable security definer set search_path='' as $$ select ch.display_name,c.certificate_type,c.registration_number,c.issued_at,true from public.certificates c join public.churches ch on ch.id=c.church_id where c.qr_verification_token=p_token and c.status='issued' limit 1; $$;
+revoke all on function public.verify_certificate(uuid) from public;
+grant execute on function public.verify_certificate(uuid) to anon,authenticated;
