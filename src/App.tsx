@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { ReactNode } from "react";
 import {
   Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
   CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
@@ -160,13 +159,32 @@ function Dashboard({ onNavigate, onNew, churchName }: { onNavigate: (key: Module
   </>;
 }
 
-function Certificates({ onNew, churchId }: { onNew: () => void; churchId: string | null }) {
-  return <><div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage certificate applications, supporting evidence, approvals and branded certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
+function Certificates({ onNew }: { onNew: () => void }) {
+  const [records,setRecords] = useState<Array<Record<string,unknown>>>([]);
+  const [message,setMessage] = useState("");
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      if (!supabase) return;
+      const {data: membership} = await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
+      const churchId = membership?.[0]?.church_id as string|undefined;
+      if (!churchId) { setRecords([]); return; }
+      const {data,error} = await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
+      if (!alive) return;
+      if (error) setMessage(error.message); else setRecords((data ?? []) as Array<Record<string,unknown>>);
+    }
+    void load();
+    return () => { alive = false; };
+  },[]);
+  return <>
+    <div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage applications, supporting documents, approvals and certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
-    <div className="panel"><div className="panel-heading"><div><h3>Registration workflow</h3><p>Every application keeps its document and approval history.</p></div></div><div className="workflow"><span>Draft</span><i/> <span>Documents pending</span><i/> <span>Under review</span><i/> <span>Approved</span><i/> <span>Issued</span></div><div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div></div>
+    <div className="panel"><div className="panel-heading"><div><h3>Registration register</h3><p>Draft, submitted, approved and issued church records.</p></div></div>
+      {message && <div className="notice">{message}</div>}
+      {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
+    </div>
   </>;
 }
-
 function People({ kind }: { kind: "members" | "families" }) {
   const family = kind === "families";
   const [rows,setRows] = useState<Array<Record<string,unknown>>>([]);
