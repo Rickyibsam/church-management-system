@@ -25,7 +25,7 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
    supabase.from("donation_pledge_allocations").select("id,pledge_id,donation_id,amount,allocated_at,donations(receipt_number,donor_name)").eq("church_id",churchId).order("allocated_at",{ascending:false}).limit(250)
   ]);
   if(p.error||d.error||a.error)setMessage("Unable to load pledge payment records: "+(p.error??d.error??a.error)!.message);
-  setPledges((p.data??[]) as Pledge[]);setDonations((d.data??[]) as Donation[]);setAllocations((a.data??[]) as Allocation[]);
+  setPledges((p.data??[]) as Pledge[]);setDonations((d.data??[]) as Donation[]);setAllocations((a.data??[]).map((row)=>{const raw=row as unknown as Record<string,unknown>;const related=raw.donations;const donation=Array.isArray(related)?related[0]:related;return {...raw,donations:donation??undefined} as unknown as Allocation;}));
   setLoading(false);
  }
  useEffect(()=>{void load();},[churchId]);
