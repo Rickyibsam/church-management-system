@@ -71,3 +71,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 - Added a private member-document manager for identity and supporting records, including file-type/size checks, signed-link viewing, document verification metadata and church-scoped access.
 - Added attendance integrity rules requiring a member or visitor name, restricting attendance statuses/methods and recording the authenticated check-in user by default.
+
+- Added editable certificate document-requirement and certificate-template registers in church settings, including country applicability, required/active flags, language, paper layout, header/footer and pastor details. Default template text and configured signature/seal assets are now reflected in certificate preview/PDF output.
+- Added private member-document upload and verification controls, and connected them to the member directory.
+- Added accounting links between cash/bank accounts and chart-of-accounts assets, donation income accounts and expense accounts. Donation posting generates a receipt number and balanced journal entry; expenses require approval before posting. Posted source records are locked.
+- Added a read-only posted financial ledger view and UI actions for donation posting and expense approval/posting.
