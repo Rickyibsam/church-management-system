@@ -90,3 +90,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added CSV, Excel (.xlsx) and PDF export actions to generic registers, including read-only report views and permission-filtered data.
 
 - Expanded certificate application forms to capture event location, identity references, parents and witness details in structured form data; selected family/witness details now appear on the certificate preview and archived PDF without printing private identity numbers.
+
+- Certificate document uploads now enforce the configured MIME allow-list and maximum file size for each requirement, with a 10 MB fallback limit.
