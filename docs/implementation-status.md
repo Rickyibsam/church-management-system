@@ -102,3 +102,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Applied action-level permissions to confidential pastoral requests and follow-ups while retaining access for the pastor assigned to an individual case. Owners/admins and explicit pastoral permission overrides are enforced through RLS.
 
 - Added a certificate-template asset uploader for pastor signatures, church seals and background images. Uploaded assets are stored in private church storage and applied to the print preview and archived PDF.
+
+- Replaced several free-text values with controlled dropdowns for chart-account types, cash/bank types, attendance status/method and certificate types; default attendance values are preselected.
