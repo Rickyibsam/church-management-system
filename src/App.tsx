@@ -228,7 +228,7 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     </div>
   </>;
 }
-function People({ kind }: { kind: "members" | "families" }) {
+function People({ kind, churchId }: { kind: "members" | "families"; churchId: string | null }) {
   const family = kind === "families";
   const [rows,setRows] = useState<Array<Record<string,unknown>>>([]);
   const [familyOptions,setFamilyOptions] = useState<Array<{id:string;family_name:string}>>([]);
@@ -236,7 +236,6 @@ function People({ kind }: { kind: "members" | "families" }) {
   const [editingId,setEditingId] = useState<string|null>(null);
   const [search,setSearch] = useState("");
   const [form,setForm] = useState<Record<string,string>>({});
-  const [churchId,setChurchId] = useState<string|null>(null);
   const [message,setMessage] = useState("");
   const [saving,setSaving] = useState(false);
   const [loading,setLoading] = useState(true);
@@ -249,17 +248,11 @@ function People({ kind }: { kind: "members" | "families" }) {
   ] as const;
   const familyFields = [["family_name","Family name"],["phone","Phone"],["address","Address"],["notes","Notes"]] as const;
 
-  async function load(id?:string) {
+  async function load() {
     if(!supabase){setLoading(false);return;}
     setLoading(true);
-    let activeChurchId=id??churchId;
-    if(!activeChurchId){
-      const {data:membership,error}=await supabase.from("church_members").select("church_id").eq("status","active").limit(1);
-      if(error){setMessage("Unable to load church membership: "+error.message);setLoading(false);return;}
-      activeChurchId=membership?.[0]?.church_id as string|undefined;
-    }
-    if(!activeChurchId){setChurchId(null);setRows([]);setFamilyOptions([]);setLoading(false);return;}
-    setChurchId(activeChurchId);
+    const activeChurchId=churchId;
+    if(!activeChurchId){setRows([]);setFamilyOptions([]);setLoading(false);return;}
     const {data:familyData}=await supabase.from("families").select("id,family_name").eq("church_id",activeChurchId).order("family_name");
     setFamilyOptions((familyData??[]) as Array<{id:string;family_name:string}>);
     const request=family
@@ -270,7 +263,7 @@ function People({ kind }: { kind: "members" | "families" }) {
     else setRows((data??[]) as Array<Record<string,unknown>>);
     setLoading(false);
   }
-  useEffect(()=>{void load();},[family]);
+  useEffect(()=>{void load();},[family,churchId]);
 
   function openNew(){
     const initial:Record<string,string>={};
@@ -315,7 +308,7 @@ function People({ kind }: { kind: "members" | "families" }) {
           church_id:churchId,family_id:familyId,member_id:savedId,
           relationship:form.relationship||"member",is_primary_contact:form.is_primary_contact==="true"
         },{onConflict:"family_id,member_id"});
-        if(relationshipError){setSaving(false);setMessage("Member saved, but family relationship could not be updated: "+relationshipError.message);await load(churchId);return;}
+        if(relationshipError){setSaving(false);setMessage("Member saved, but family relationship could not be updated: "+relationshipError.message);await load();return;}
       } else if(editingId) {
         const {error:relationshipError}=await supabase.from("family_relationships").delete().eq("church_id",churchId).eq("member_id",savedId);
         if(relationshipError){setSaving(false);setMessage("Member saved, but old family link could not be removed: "+relationshipError.message);await load(churchId);return;}
