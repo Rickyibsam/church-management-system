@@ -55,32 +55,32 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   if(!supabase||!record||record.status!=="issued")return;
   setSavingPdf(true);setMessage("");
   try{
-   const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
-   doc.setDrawColor(180,139,69);doc.setLineWidth(1.5);doc.rect(8,8,281,194);doc.setLineWidth(.5);doc.rect(11,11,275,188);
-   doc.setTextColor(31,53,82);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text(church?.display_name??"Church",148.5,27,{align:"center"});
-   if(template?.header_text||church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(template?.header_text||church?.header_text||"",148.5,34,{align:"center",maxWidth:230});}
+   const pageSize=(template?.page_size??"A4").toLowerCase();const orientation=template?.orientation==="portrait"?"portrait":"landscape";const pageWidth=pageSize==="letter"?(orientation==="portrait"?216:279):(orientation==="portrait"?210:297);const pageHeight=pageSize==="letter"?(orientation==="portrait"?279:216):(orientation==="portrait"?297:210);const doc=new jsPDF({orientation,unit:"mm",format:pageSize==="letter"?"letter":"a4"});
+   doc.setDrawColor(180,139,69);doc.setLineWidth(1.5);doc.rect(8,8,pageWidth-16,pageHeight-16);doc.setLineWidth(.5);doc.rect(11,11,pageWidth-22,pageHeight-22);
+   doc.setTextColor(31,53,82);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text(church?.display_name??"Church",pageWidth/2,27,{align:"center"});
+   if(template?.header_text||church?.header_text){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(template?.header_text||church?.header_text||"",pageWidth/2,34,{align:"center",maxWidth:pageWidth-65});}
    if(logo){try{const response=await fetch(logo);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read church logo."));reader.readAsDataURL(blob);});doc.addImage(dataUrl, blob.type==="image/jpeg"?"JPEG":"PNG", 20, 16, 24, 24);}catch{/* The certificate remains printable if the optional logo cannot be embedded. */}}
-   doc.setDrawColor(180,139,69);doc.line(25,43,272,43);
-   doc.setTextColor(150,111,49);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("OFFICIAL CHURCH RECORD",148.5,55,{align:"center"});
-   doc.setTextColor(31,53,82);doc.setFontSize(22);doc.text((record.certificate_type.replaceAll("_"," ")+" CERTIFICATE").toUpperCase(),148.5,68,{align:"center"});
-   doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(90,105,125);doc.text("This is to certify that the church record below has been registered in the official church register.",148.5,81,{align:"center",maxWidth:220});
-   doc.setFont("helvetica","bold");doc.setFontSize(24);doc.setTextColor(31,53,82);doc.text(record.primary_person_name,148.5,103,{align:"center",maxWidth:210});
-   if(record.secondary_person_name){doc.setFontSize(14);doc.text("and "+record.secondary_person_name,148.5,114,{align:"center",maxWidth:200});}
+   doc.setDrawColor(180,139,69);doc.line(25,43,pageWidth-25,43);
+   doc.setTextColor(150,111,49);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("OFFICIAL CHURCH RECORD",pageWidth/2,55,{align:"center"});
+   doc.setTextColor(31,53,82);doc.setFontSize(22);doc.text((record.certificate_type.replaceAll("_"," ")+" CERTIFICATE").toUpperCase(),pageWidth/2,68,{align:"center"});
+   doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(90,105,125);doc.text("This is to certify that the church record below has been registered in the official church register.",pageWidth/2,81,{align:"center",maxWidth:pageWidth-75});
+   doc.setFont("helvetica","bold");doc.setFontSize(24);doc.setTextColor(31,53,82);doc.text(record.primary_person_name,pageWidth/2,103,{align:"center",maxWidth:pageWidth-85});
+   if(record.secondary_person_name){doc.setFontSize(14);doc.text("and "+record.secondary_person_name,pageWidth/2,114,{align:"center",maxWidth:pageWidth-95});}
    doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(80,95,115);
-   doc.text("Record date: "+(record.event_date??"—"),148.5,129,{align:"center"});
-   if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});
-   if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,148.5,143,{align:"center"});
-   if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,148.5,149,{align:"center"});
-   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,148.5,155,{align:"center",maxWidth:210});
-   doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,163,{align:"center"});
-   if(qr)doc.addImage(qr,"PNG",244,165,25,25);
-   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
+   doc.text("Record date: "+(record.event_date??"—"),pageWidth/2,129,{align:"center"});
+   if(record.event_place)doc.text("Place: "+record.event_place,pageWidth/2,137,{align:"center"});
+   if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,pageWidth/2,143,{align:"center"});
+   if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,pageWidth/2,149,{align:"center"});
+   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,pageWidth/2,155,{align:"center",maxWidth:210});
+   doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,pageWidth/2,163,{align:"center"});
+   if(qr)doc.addImage(qr,"PNG",pageWidth-53,pageHeight-45,25,25);
+   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,pageHeight-36,{align:"center"});doc.text("Pastor / Authorized Officer",55,pageHeight-30,{align:"center"});doc.text("Church Seal",pageWidth-90,pageHeight-36,{align:"center"});
    const imageData=async(url:string)=>{const response=await fetch(url);const blob=await response.blob();const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Unable to read template image."));reader.readAsDataURL(blob);});return {dataUrl,format:blob.type==="image/jpeg"?"JPEG":"PNG"};};
-   if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,170,40,16);}catch{/* Optional signature image */}}
-   if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,190,168,28,28);}catch{/* Optional seal image */}}
-   doc.setDrawColor(180,139,69);doc.line(25,190,272,190);
+   if(templateAssets.signature){try{const asset=await imageData(templateAssets.signature);doc.addImage(asset.dataUrl,asset.format,35,pageHeight-40,40,16);}catch{/* Optional signature image */}}
+   if(templateAssets.seal){try{const asset=await imageData(templateAssets.seal);doc.addImage(asset.dataUrl,asset.format,pageWidth-107,pageHeight-42,28,28);}catch{/* Optional seal image */}}
+   doc.setDrawColor(180,139,69);doc.line(25,pageHeight-20,pageWidth-25,pageHeight-20);
    const footer=template?.footer_text||church?.footer_text||[church?.phone,church?.email,church?.website].filter(Boolean).join(" · ");
-   if(footer){doc.setFontSize(8);doc.text(footer,148.5,196,{align:"center",maxWidth:240});}
+   if(footer){doc.setFontSize(8);doc.text(footer,pageWidth/2,pageHeight-14,{align:"center",maxWidth:pageWidth-55});}
    const blob=doc.output("blob");
    const path=record.church_id+"/"+record.id+"/issued-certificate.pdf";
    const {error:uploadError}=await supabase.storage.from("church-private-documents").upload(path,blob,{contentType:"application/pdf",upsert:true});
