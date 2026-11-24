@@ -437,7 +437,8 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
   const [witnessDetails,setWitnessDetails] = useState("");
   const [notes,setNotes] = useState("");
   const [documents,setDocuments] = useState<Record<string,File|null>>({});
-  const [configuredRequirements,setConfiguredRequirements] = useState<Array<{code:string;label:string;required:boolean}>>([]);
+  const [configuredRequirements,setConfiguredRequirements] = useState<Array<{code:string;label:string;required:boolean;acceptedMimeTypes?:string[];maxFileSizeBytes?:number}>>([]);
+  const [documentError,setDocumentError]=useState("");
   const requirements: Record<CertificateType,Array<{code:string;label:string;required:boolean}>> = {
     marriage:[{code:"bride_cnic",label:"Bride CNIC copy",required:true},{code:"groom_cnic",label:"Groom CNIC copy",required:true},{code:"witness_1_id",label:"Witness 1 identity copy",required:true},{code:"witness_2_id",label:"Witness 2 identity copy",required:true},{code:"marriage_application",label:"Marriage application / supporting record",required:true}],
     birth:[{code:"father_id",label:"Father identity document",required:true},{code:"mother_id",label:"Mother identity document",required:true},{code:"birth_evidence",label:"Hospital slip / available birth evidence",required:true}],
@@ -455,13 +456,13 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
     async function loadRequirements() {
       if (!supabase || !churchId) { setConfiguredRequirements([]); return; }
       const { data, error } = await supabase.from("certificate_document_requirements")
-        .select("document_code,document_label,is_required")
+        .select("document_code,document_label,is_required,accepted_mime_types,max_file_size_bytes")
         .eq("church_id",churchId).eq("certificate_type",type).eq("is_active",true)
         .or("applicable_country.is.null,applicable_country.eq."+countryCode)
         .order("sort_order",{ascending:true});
       if (!alive) return;
       if (error) { setConfiguredRequirements([]); return; }
-      setConfiguredRequirements((data??[]).map(item=>({code:item.document_code,label:item.document_label,required:item.is_required})));
+      setConfiguredRequirements((data??[]).map(item=>({code:item.document_code,label:item.document_label,required:item.is_required,acceptedMimeTypes:item.accepted_mime_types as string[]|undefined,maxFileSizeBytes:Number(item.max_file_size_bytes??0)||undefined})));
     }
     void loadRequirements();
     return () => { alive = false; };
@@ -475,7 +476,7 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
       <div><label>{type==="marriage"?"Second party name":"Second person (if applicable)"}</label><input className="field" value={secondName} onChange={e=>setSecondName(e.target.value)} placeholder="Full name"/></div>
       <div><label>{type==="marriage"?"Marriage date":"Event / record date"}</label><input className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
       <div><label>Event place / venue</label><input className="field" value={eventPlace} onChange={e=>setEventPlace(e.target.value)} placeholder="City, church or venue"/></div><div><label>{type==="marriage"?"Bride CNIC / identity no.":type==="birth"?"Child B-Form / identity no.":type==="death"?"Deceased identity no.":"Primary person identity no."}</label><input className="field" value={primaryIdentity} onChange={e=>setPrimaryIdentity(e.target.value)}/></div>{type==="marriage"&&<div><label>Groom CNIC / identity no.</label><input className="field" value={secondaryIdentity} onChange={e=>setSecondaryIdentity(e.target.value)}/></div>}{["birth","death","dedication"].includes(type)&&<><div><label>Father name</label><input className="field" value={fatherName} onChange={e=>setFatherName(e.target.value)}/></div><div><label>Mother name</label><input className="field" value={motherName} onChange={e=>setMotherName(e.target.value)}/></div></>}{type==="marriage"&&<div className="form-full"><label>Witness names and details</label><textarea className="field" rows={2} value={witnessDetails} onChange={e=>setWitnessDetails(e.target.value)}/></div>}
-      <div className="form-full"><label>Required and supporting documents</label><div className="document-upload-list">{docs.map(item=><div className="document-upload-row" key={item.code}><div><b>{item.label}</b><small>{item.required?"Required":"Optional"}</small></div><input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>setDocuments(old=>({...old,[item.code]:e.target.files?.[0]??null}))}/></div>)}</div><small className="helper">Upload a separate PDF or image for each document. Documents are kept in private church storage.</small></div>
+      <div className="form-full"><label>Required and supporting documents</label><div className="document-upload-list">{docs.map(item=><div className="document-upload-row" key={item.code}><div><b>{item.label}</b><small>{item.required?"Required":"Optional"}</small></div><input type="file" accept={item.acceptedMimeTypes?.join(",")||".pdf,.jpg,.jpeg,.png"} onChange={e=>{const file=e.target.files?.[0]??null;const max=item.maxFileSizeBytes??10*1024*1024;if(file&&file.size>max){setDocumentError(item.label+" exceeds the allowed file size.");e.target.value="";return;}if(file&&item.acceptedMimeTypes?.length&&!item.acceptedMimeTypes.includes(file.type)){setDocumentError(item.label+" has an unsupported file type.");e.target.value="";return;}setDocumentError("");setDocuments(old=>({...old,[item.code]:file}));}}/></div>)}</div><small className="helper">Upload a separate accepted file for each document. Documents are kept in private church storage.</small>{documentError&&<div className="validation-note">{documentError}</div>}</div>
       <div className="form-full"><label>Notes</label><textarea className="field" rows={3} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Additional details"/></div>
     </div>
     <div className="legal-note"><ShieldCheck size={16}/> Church-issued records are separate from government civil certificates. Requirements must be checked for the applicable country and jurisdiction.</div>
