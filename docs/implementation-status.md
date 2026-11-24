@@ -112,3 +112,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added budget-line entry and approval workflow. Budgets must contain at least one line before approval; approved/closed budgets and their lines are protected from direct edits, and budget-vs-actual reporting is available.
 
 - Added a family-relationship register with household/member selectors, relationship types and primary-contact designation, linked from the Family Directory.
+
+- Family registration certificates can now link directly to an existing household during secure certificate creation; family and event-place references are validated and saved in the same database operation.
