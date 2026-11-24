@@ -43,6 +43,7 @@ create policy profiles_insert_self on public.profiles for insert to authenticate
 create policy profiles_update_self on public.profiles for update to authenticated using(id=(select auth.uid())) with check(id=(select auth.uid()));
 create policy church_members_select_self on public.church_members for select to authenticated using(user_id=(select auth.uid()));
 create policy churches_select_member on public.churches for select to authenticated using(exists(select 1 from public.church_members cm where cm.church_id=churches.id and cm.user_id=(select auth.uid()) and cm.status='active'));
+create policy certificate_history_member_select on public.certificate_history for select to authenticated using(exists(select 1 from public.church_members cm where cm.church_id=certificate_history.church_id and cm.user_id=(select auth.uid()) and cm.status='active'));
 
 do $$
 declare t text;
