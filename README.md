@@ -58,7 +58,7 @@ Do not place a database password or service-role key in frontend environment var
 
 ## Supabase invitation setup
 
-The `invite-church-member` Edge Function is deployed with JWT verification enabled. Before using real email invitations, configure a verified SMTP sender in Supabase Auth and set the function's `APP_ALLOWED_ORIGIN` secret to the deployed application origin. The function uses the platform-provided Supabase URL, anon key and service-role key at runtime; no service-role key belongs in this repository.
+The `invite-church-member` Edge Function is deployed with JWT verification enabled. Before using real email invitations, configure a verified SMTP sender in Supabase Auth and set the function's `APP_ALLOWED_ORIGIN` secret to the deployed application origin and `APP_REDIRECT_URL` to the app's invitation landing URL. The function uses the platform-provided Supabase URL, anon key and service-role key at runtime; no service-role key belongs in this repository.
 
 ## Current implementation status
 
