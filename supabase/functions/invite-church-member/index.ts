@@ -28,11 +28,13 @@ Deno.serve(async (req: Request) => {
   const {data:existingMembership}=await admin.from("church_members").select("id").eq("church_id",churchId).eq("user_id",existingUser.id).maybeSingle();
   if(existingMembership)return json({error:"This user already belongs to the church."},409);
   const status=existingUser.email_confirmed_at?"active":"invited";
+  if(status==="invited"){const redirectTo=Deno.env.get("APP_REDIRECT_URL");const {error:resendError}=await admin.auth.resend({type:"signup",email,options:redirectTo?{emailRedirectTo:redirectTo}:undefined});if(resendError)return json({error:"Unable to resend account confirmation: "+resendError.message},400);}
   const {error:addError}=await admin.from("church_members").insert({church_id:churchId,user_id:existingUser.id,role,status,branch_id:branchId});
   if(addError)return json({error:"Unable to assign the existing account: "+addError.message},400);
   return json({message:status==="active"?"Existing account added and activated for this church.":"Existing unconfirmed account added; access activates after email confirmation.",invited:false});
  }
- const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email);
+ const redirectTo=Deno.env.get("APP_REDIRECT_URL");
+ const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,redirectTo?{redirectTo}:undefined);
  if(inviteError||!inviteData.user)return json({error:"Unable to send the invitation. Configure a verified SMTP sender if email delivery is unavailable."},400);
  const {error:insertError}=await admin.from("church_members").insert({church_id:churchId,user_id:inviteData.user.id,role,status:"invited",branch_id:branchId});
  if(insertError)return json({error:"Invitation was created, but church access could not be assigned: "+insertError.message},500);
