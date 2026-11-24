@@ -168,3 +168,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Certificate document review refinement
 - The document review UI now requires a non-empty reviewer reason before a rejection can be submitted; the reject action remains disabled until a reason is entered.
 - The RPC receives the trimmed reviewer note. Database-side authorization and workflow constraints remain authoritative and still require comprehensive testing in the planned test phase.
+
+- Donation pledge status is displayed read-only in the register until pledge receipt/allocation workflows are implemented; users cannot manually mark a pledge partially paid or fulfilled without recorded payments.
