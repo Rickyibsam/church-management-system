@@ -180,3 +180,4 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added the Donation Pledge Payments workspace for selecting pledges and posted receipts, allocating a payment amount, and reviewing recent allocations.
 - Fixed a malformed currency field declaration in the pledge register discovered during source inspection.
 - This is implementation work only; end-to-end and security testing remain intentionally deferred until online feature development is complete. Production deployment is not confirmed.
+- Added a security-invoker pledge balance report showing pledged, allocated and outstanding amounts; it follows the underlying pledge/allocation row-level access rules.
