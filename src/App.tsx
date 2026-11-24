@@ -61,6 +61,7 @@ function App() {
   const [certificateRefresh, setCertificateRefresh] = useState(0);
   const [churchId, setChurchId] = useState<string | null>(null);
   const [churchName, setChurchName] = useState("");
+  const [churchOptions,setChurchOptions] = useState<Array<{id:string;display_name:string}>>([]);
   const [churchOpen, setChurchOpen] = useState(false);
   const [legalName, setLegalName] = useState("");
   const [countryCode, setCountryCode] = useState("PK");
@@ -77,11 +78,18 @@ function App() {
     let alive = true;
     async function loadWorkspace() {
       if (!supabase || !userEmail) { setChurchId(null); setChurchName(""); return; }
-      const { data: memberships } = await supabase.from("church_members").select("church_id, status").eq("status", "active").limit(1);
-      const id = memberships?.[0]?.church_id as string | undefined;
-      if (!alive || !id) { setChurchId(null); setChurchName(""); return; }
-      const { data: church } = await supabase.from("churches").select("id, display_name").eq("id", id).maybeSingle();
-      if (alive && church) { setChurchId(church.id); setChurchName(church.display_name); }
+      const { data: memberships, error: membershipError } = await supabase.from("church_members").select("church_id").eq("status", "active");
+      if (!alive) return;
+      if (membershipError) { setNotice("Unable to load church workspaces: " + membershipError.message); return; }
+      const ids = [...new Set((memberships ?? []).map(item => item.church_id as string))];
+      if (!ids.length) { setChurchId(null); setChurchName(""); setChurchOptions([]); return; }
+      const { data: churches, error: churchError } = await supabase.from("churches").select("id,display_name").in("id",ids).order("display_name");
+      if (!alive) return;
+      if (churchError) { setNotice("Unable to load church details: " + churchError.message); return; }
+      const options=(churches??[]) as Array<{id:string;display_name:string}>;
+      setChurchOptions(options);
+      const selected=options.find(item=>item.id===churchId)??options[0];
+      if (selected) { setChurchId(selected.id); setChurchName(selected.display_name); }
     }
     void loadWorkspace();
     return () => { alive = false; };
@@ -108,7 +116,7 @@ function App() {
     if (!supabase) return;
     const { data, error } = await supabase.rpc("create_church", { p_legal_name: legalName, p_display_name: legalName, p_country_code: countryCode, p_currency_code: currencyCode, p_timezone: countryCode === "PK" ? "Asia/Karachi" : "UTC" });
     if (error) { setNotice(error.message); return; }
-    setChurchId(data as string); setChurchName(legalName); setChurchOpen(false); setNotice("Church workspace created. You are its owner.");
+    setChurchId(data as string); setChurchName(legalName); setChurchOptions(old=>[...old,{id:data as string,display_name:legalName}]); setChurchOpen(false); setNotice("Church workspace created. You are its owner.");
   }
   async function signOut() {
     await supabase?.auth.signOut(); setNotice("You have signed out.");
@@ -153,7 +161,7 @@ function App() {
       </div>
     </main>
 
-    {churchOpen && <Modal title="Create church workspace" onClose={() => setChurchOpen(false)}><p className="muted">Create your church profile. Your signed-in account will become the first church owner.</p><label>Church legal / registered name</label><input className="field" value={legalName} onChange={e => setLegalName(e.target.value)} placeholder="Church registered name"/><label>Country code</label><input className="field" value={countryCode} maxLength={2} onChange={e => setCountryCode(e.target.value.toUpperCase())}/><label>Default currency</label><input className="field" value={currencyCode} maxLength={3} onChange={e => setCurrencyCode(e.target.value.toUpperCase())}/><div className="modal-actions"><button className="secondary-button" onClick={() => setChurchOpen(false)}>Cancel</button><button className="primary-button" onClick={createChurch} disabled={!userEmail || !legalName.trim()}>Create workspace</button></div></Modal>}
+    {churchOpen && <Modal title="Church workspaces" onClose={() => setChurchOpen(false)}><div className="workspace-list"><h3>Your churches</h3>{churchOptions.length?churchOptions.map(item=><button key={item.id} className={item.id===churchId?"workspace-option selected":"workspace-option"} onClick={()=>{setChurchId(item.id);setChurchName(item.display_name);setChurchOpen(false);}}><Church size={18}/><span>{item.display_name}</span>{item.id===churchId&&<CheckCircle2 size={16}/>}</button>):<p className="muted">No church workspaces are assigned to this account yet.</p>}<div className="divider-line"></div><h3>Create another church</h3><p className="muted">Your signed-in account will become the first owner.</p><label>Church legal / registered name</label><input className="field" value={legalName} onChange={e => setLegalName(e.target.value)} placeholder="Church registered name"/><label>Country code</label><input className="field" value={countryCode} maxLength={2} onChange={e => setCountryCode(e.target.value.toUpperCase())}/><label>Default currency</label><input className="field" value={currencyCode} maxLength={3} onChange={e => setCurrencyCode(e.target.value.toUpperCase())}/><div className="modal-actions"><button className="secondary-button" onClick={() => setChurchOpen(false)}>Cancel</button><button className="primary-button" onClick={createChurch} disabled={!userEmail || !legalName.trim()}>Create workspace</button></div></Modal>}
     {authOpen && <Modal title="Sign in to Church360" onClose={() => setAuthOpen(false)}><p className="muted">Use your church account. New accounts require an administrator to assign a church and role.</p><label>Email address</label><input className="field" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"/><label>Password</label><input className="field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"/><div className="modal-actions"><button className="secondary-button" onClick={signUp}>Create account</button><button className="primary-button" onClick={signIn}>Sign in</button></div></Modal>}
     {certOpen && <CertificateModal type={certType} setType={setCertType} churchId={churchId} countryCode={countryCode} onClose={() => setCertOpen(false)} onSave={async (payload) => { if (!supabase || !churchId) { setNotice("Sign in and create/select a church workspace before saving registrations."); return; } const { data, error } = await supabase.rpc("create_certificate_application", { p_church_id: churchId, p_certificate_type: certType, p_primary_person_name: payload.fullName, p_secondary_person_name: payload.secondName || null, p_event_date: payload.date || null, p_form_data: {}, p_notes: payload.notes || null }); if (error) { setNotice(error.message); return; } const certId = data as string; const { data: authData } = await supabase.auth.getUser(); const { data: requirements } = await supabase.from("certificate_document_requirements").select("id,document_code").eq("church_id",churchId).eq("certificate_type",certType).eq("is_active",true); for (const document of payload.documents.filter(item => item.file)) { const file = document.file!; const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_"); const path = churchId + "/" + certId + "/" + crypto.randomUUID() + "-" + safeName; const upload = await supabase.storage.from("church-private-documents").upload(path,file,{contentType:file.type,upsert:false}); if (upload.error) { setNotice("Registration saved, but an attachment upload failed: " + upload.error.message); return; } const requirement = requirements?.find(item => item.document_code === document.code); const saved = await supabase.from("certificate_attachments").insert({church_id:churchId,certificate_id:certId,requirement_id:requirement?.id??null,document_code:document.code,original_file_name:file.name,storage_path:path,mime_type:file.type,file_size_bytes:file.size,uploaded_by:authData.user?.id??null}); if (saved.error) { setNotice("Registration saved, but attachment metadata could not be saved: " + saved.error.message); return; } } const { data: record } = await supabase.from("certificates").select("registration_number").eq("id", certId).maybeSingle(); setCertOpen(false); setCertificateRefresh(value=>value+1); setNotice("Registration draft saved: " + (record?.registration_number ?? certId)); }}/>}
   </div>;
