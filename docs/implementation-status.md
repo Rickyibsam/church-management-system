@@ -19,7 +19,7 @@ Delivery order requested by the project owner:
 - Church logo/header/footer profile settings.
 - Branded print preview, browser Print/Save PDF and privacy-minimized QR verification.
 - Church team membership and custom permission storage foundation.
-- Audit trigger foundation and Render static-site blueprint.
+- Audit trigger foundation and Cloudflare Workers Static Assets hosting configuration.
 
 ## Still to build before testing
 - Full CRUD/edit/delete/restore policies and action-level permission enforcement across every module.
@@ -132,3 +132,6 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Family relationship rules now enforce one household head and one primary contact per family; assigning a relationship as `head` synchronizes the family record's head-member reference.
 
 - Family member editing now removes stale household links when a member is moved. Family-head and primary-contact assignments automatically replace previous assignments and stay synchronized when relationships change or are removed.
+
+
+- Finance workspace hardening: removed duplicate Budget Lines navigation/register entry and removed the editable journal status field. Journal entries now start as drafts and must use the validated Post action to enter the ledger workflow; entry number, date and description are required in the draft form.
