@@ -100,26 +100,73 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   window.open(data.signedUrl,"_blank","noopener,noreferrer");
  }
 
- return <div className="certificate-print-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
-  <div className="certificate-print-dialog"><div className="print-toolbar"><b>Certificate preview</b><div><button className="secondary-button" onClick={()=>window.print()} disabled={!record||record.status!=="issued"}><Printer size={15}/> Print</button>{record?.status==="issued"&&<><button className="secondary-button" onClick={()=>void archivePdf()} disabled={savingPdf}>{savingPdf?"Archiving...":"Generate / Archive PDF"}</button>{record.issued_pdf_path&&<button className="secondary-button" onClick={()=>void openArchivedPdf()}>Open archived PDF</button>}</>}<button className="icon-button" onClick={onClose}><X/></button></div></div>
-   {!record?<div className="empty-state">{message||"Loading certificate..."}</div>:church?<>{message&&<div className="notice">{message}</div>}<div className="print-sheet" style={templateAssets.background?{backgroundImage:"url("+templateAssets.background+")",backgroundSize:"cover"}:undefined}>
-    <div className="print-border"><div className="print-brand">{logo&&<img src={logo} alt="Church logo"/>}<div><h2>{church.display_name}</h2>{(template?.header_text||church.header_text)&&<p>{template?.header_text||church.header_text}</p>}{church.address&&<small>{church.address}</small>}</div></div>
-     <div className="print-rule"/>
-     <div className="print-kicker">OFFICIAL CHURCH RECORD</div>
-     <h1>{record.certificate_type.replaceAll("_"," ").toUpperCase()} CERTIFICATE</h1>
-     <p className="print-intro">This is to certify that the church record below has been registered in the official church register.</p>
-     <div className="print-person">{record.primary_person_name}</div>
-     {record.secondary_person_name&&<div className="print-secondary">and {record.secondary_person_name}</div>}
-     <p className="print-detail">Record date: <b>{record.event_date??"—"}</b></p>
-     {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}{record.form_data?.father_name&&<p className="print-detail">Father: <b>{record.form_data.father_name}</b></p>}{record.form_data?.mother_name&&<p className="print-detail">Mother: <b>{record.form_data.mother_name}</b></p>}{record.form_data?.witness_details&&<p className="print-detail">Witnesses: <b>{record.form_data.witness_details}</b></p>}
-     <div className="print-number">Registration No. {record.registration_number}</div>
-     <div className="print-bottom"><div className="print-sign">{templateAssets.signature?<img src={templateAssets.signature} alt="Pastor signature" style={{maxWidth:"120px",maxHeight:"42px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign">{templateAssets.seal?<img src={templateAssets.seal} alt="Church seal" style={{maxWidth:"85px",maxHeight:"65px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>Church Seal</b><small>Official stamp</small></div></div>
-     <div className="print-rule"/>
-     <div className="print-footer">{template?.footer_text||church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
-     <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString():""} · {church.legal_name}</div>
+ return (
+  <div className="certificate-print-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+   <div className="certificate-print-dialog">
+    <div className="print-toolbar">
+     <b>Certificate preview</b>
+     <div>
+      <button className="secondary-button" onClick={()=>window.print()} disabled={!record||record.status!=="issued"}><Printer size={15}/> Print</button>
+      {record?.status==="issued"&&(
+       <>
+        <button className="secondary-button" onClick={()=>void archivePdf()} disabled={savingPdf}>{savingPdf?"Archiving...":"Generate / Archive PDF"}</button>
+        {record.issued_pdf_path&&<button className="secondary-button" onClick={()=>void openArchivedPdf()}>Open archived PDF</button>}
+       </>
+      )}
+      <button className="icon-button" onClick={onClose}><X/></button>
+     </div>
     </div>
-    </div>
-   </>:null}
+    {!record ? (
+     <div className="empty-state">{message||"Loading certificate..."}</div>
+    ) : church ? (
+     <>
+      {message&&<div className="notice">{message}</div>}
+      <div className="print-sheet" style={templateAssets.background?{backgroundImage:"url("+templateAssets.background+")",backgroundSize:"cover"}:undefined}>
+       <div className="print-border">
+        <div className="print-brand">
+         {logo&&<img src={logo} alt="Church logo"/>}
+         <div>
+          <h2>{church.display_name}</h2>
+          {(template?.header_text||church.header_text)&&<p>{template?.header_text||church.header_text}</p>}
+          {church.address&&<small>{church.address}</small>}
+         </div>
+        </div>
+        <div className="print-rule"/>
+        <div className="print-kicker">OFFICIAL CHURCH RECORD</div>
+        <h1>{record.certificate_type.replaceAll("_"," ").toUpperCase()} CERTIFICATE</h1>
+        <p className="print-intro">This is to certify that the church record below has been registered in the official church register.</p>
+        <div className="print-person">{record.primary_person_name}</div>
+        {record.secondary_person_name&&<div className="print-secondary">and {record.secondary_person_name}</div>}
+        <p className="print-detail">Record date: <b>{record.event_date??"—"}</b></p>
+        {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}
+        {record.form_data?.father_name&&<p className="print-detail">Father: <b>{record.form_data.father_name}</b></p>}
+        {record.form_data?.mother_name&&<p className="print-detail">Mother: <b>{record.form_data.mother_name}</b></p>}
+        {record.form_data?.witness_details&&<p className="print-detail">Witnesses: <b>{record.form_data.witness_details}</b></p>}
+        <div className="print-number">Registration No. {record.registration_number}</div>
+        <div className="print-bottom">
+         <div className="print-sign">
+          {templateAssets.signature?<img src={templateAssets.signature} alt="Pastor signature" style={{maxWidth:"120px",maxHeight:"42px",objectFit:"contain"}}/>:<div className="sign-line"/>}
+          <b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b>
+          <small>Pastor / Authorized Officer</small>
+         </div>
+         <div className="print-qr">
+          {qr&&<img src={qr} alt="Certificate verification QR code"/>}
+          <small>Scan to verify this issued record</small>
+         </div>
+         <div className="print-sign">
+          {templateAssets.seal?<img src={templateAssets.seal} alt="Church seal" style={{maxWidth:"85px",maxHeight:"65px",objectFit:"contain"}}/>:<div className="sign-line"/>}
+          <b>Church Seal</b>
+          <small>Official stamp</small>
+         </div>
+        </div>
+        <div className="print-rule"/>
+        <div className="print-footer">{template?.footer_text||church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
+        <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString():""} · {church.legal_name}</div>
+       </div>
+      </div>
+     </>
+    ) : null}
+   </div>
   </div>
- </div>;
+ );
 }
