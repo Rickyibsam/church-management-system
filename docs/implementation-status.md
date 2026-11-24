@@ -170,3 +170,13 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The RPC receives the trimmed reviewer note. Database-side authorization and workflow constraints remain authoritative and still require comprehensive testing in the planned test phase.
 
 - Donation pledge status is displayed read-only in the register until pledge receipt/allocation workflows are implemented; users cannot manually mark a pledge partially paid or fulfilled without recorded payments.
+
+## Donation pledge payment allocation (online development)
+
+- Added an append-only `donation_pledge_allocations` register linking posted donation receipts to pledges.
+- Added the `allocate_donation_to_pledge` RPC. It requires an authenticated user with donation edit permission, checks same-church and branch access, requires a posted receipt and matching currency, and prevents allocation beyond either the pledge balance or receipt balance.
+- Pledge status is recalculated as open, partially paid, or fulfilled from recorded allocations. Direct status edits are blocked; amount/currency changes are blocked after allocations exist.
+- Allocation records cannot be edited or deleted through the client. Multiple partial allocations from the same receipt to the same pledge are supported.
+- Added the Donation Pledge Payments workspace for selecting pledges and posted receipts, allocating a payment amount, and reviewing recent allocations.
+- Fixed a malformed currency field declaration in the pledge register discovered during source inspection.
+- This is implementation work only; end-to-end and security testing remain intentionally deferred until online feature development is complete. Production deployment is not confirmed.
