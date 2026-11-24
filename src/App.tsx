@@ -15,6 +15,7 @@ import CertificatePrint from "./components/CertificatePrint";
 import CertificateVerify from "./components/CertificateVerify";
 import OperationsHub from "./components/OperationsHub";
 import MemberDocuments from "./components/MemberDocuments";
+import CertificateTemplateAssets from "./components/CertificateTemplateAssets";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -433,6 +434,7 @@ function SettingsPage({churchId}:{churchId:string|null}) {
         {name:"certificate_type",label:"Certificate type",required:true},{name:"name",label:"Template name",required:true},{name:"language_code",label:"Language code",defaultValue:"en"},{name:"page_size",label:"Page size",defaultValue:"A4"},{name:"orientation",label:"Orientation",defaultValue:"landscape"},{name:"header_text",label:"Header text"},{name:"footer_text",label:"Footer text"},{name:"pastor_name",label:"Pastor name"},{name:"logo_path",label:"Logo storage path"},{name:"background_path",label:"Background storage path"},{name:"pastor_signature_path",label:"Pastor signature storage path"},{name:"seal_path",label:"Church seal storage path"},{name:"is_default",label:"Default template",type:"boolean",defaultValue:"false"},{name:"is_active",label:"Active",type:"boolean",defaultValue:"true"}
       ]}/>
     </div>
+    <CertificateTemplateAssets churchId={churchId}/>
     <div className="settings-grid">{[{title:"Certificate templates",desc:"Template layouts, signatures, seals, paper size and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, country, currency and time zone"},{title:"Security & audit",desc:"Access history, data retention and backups"},{title:"Branches & campuses",desc:"Manage multiple church locations"}].map(x=><div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div>
   </>;
 }
