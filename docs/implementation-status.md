@@ -88,3 +88,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Completed the default document-requirement catalogue for every certificate type (including membership, dedication, confirmation, ordination and transfer) and seeded both new and existing church workspaces. Approval checks now have configured requirements to validate against.
 
 - Added CSV, Excel (.xlsx) and PDF export actions to generic registers, including read-only report views and permission-filtered data.
+
+- Expanded certificate application forms to capture event location, identity references, parents and witness details in structured form data; selected family/witness details now appear on the certificate preview and archived PDF without printing private identity numbers.
