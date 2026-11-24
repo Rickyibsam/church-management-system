@@ -225,7 +225,7 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     const {error}=await supabase.rpc("transition_certificate",{p_certificate_id:id,p_target_status:status,p_reason:null});
     if(error){setMessage("Unable to update certificate status: "+error.message);return;}
     setMessage("Certificate status updated to "+status.replaceAll("_"," ")+".");
-    const {data,loadError}=await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
+    const {data,error:loadError}=await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
     if(loadError)setMessage("Status updated, but the register could not refresh: "+loadError.message);
     else setRecords((data??[]) as Array<Record<string,unknown>>);
   }
