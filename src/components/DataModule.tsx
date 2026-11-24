@@ -41,7 +41,7 @@ export default function DataModule({ churchId, table, title, description, fields
 
   useEffect(() => { void load(); }, [churchId, table]);
 
-  function openNew() { setValues(Object.fromEntries(fields.filter(field=>field.defaultValue!==undefined).map(field=>[field.name,field.defaultValue!] ))); setEditingId(null); setShow(true); }
+  async function openNew() { const initial=Object.fromEntries(fields.filter(field=>field.defaultValue!==undefined).map(field=>[field.name,field.defaultValue!] ));if(fields.some(field=>field.name==="currency_code"&&field.defaultValue===undefined)&&supabase&&churchId){const {data}=await supabase.from("churches").select("currency_code").eq("id",churchId).maybeSingle();if(data?.currency_code)initial.currency_code=data.currency_code;}setValues(initial);setEditingId(null);setShow(true); }
   function openEdit(row: Record<string, unknown>) {
     const next: Record<string, string> = {};
     for (const field of fields) {
