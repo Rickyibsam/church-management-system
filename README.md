@@ -21,7 +21,7 @@ A multi-church management platform for churches in Pakistan and international co
 
 - Frontend: React, TypeScript and Vite
 - Backend/database: Supabase PostgreSQL, Auth, Row Level Security, private Storage and Edge Functions
-- Hosting target: Render (not deployed yet)
+- Hosting target: Cloudflare Workers Static Assets (Free plan); Supabase remains the database/auth/storage backend
 - Source control: GitHub
 
 ## Security principles
@@ -32,6 +32,18 @@ A multi-church management platform for churches in Pakistan and international co
 - Email invitations are handled by a JWT-protected Supabase Edge Function that checks active owner/admin membership server-side.
 - Never commit database passwords, Supabase secret/service-role keys, access tokens or real member data.
 - Church-issued records are distinct from government-issued civil certificates. Requirements must be checked for the applicable country and jurisdiction.
+
+## Cloudflare Workers Free deployment
+
+This repository deploys the Vite single-page app to the existing Cloudflare Worker named `church-management-system`. `wrangler.jsonc` publishes `dist/` as static assets and routes unknown paths to the SPA entry point. Static asset delivery is free and unlimited under Workers Static Assets; Worker-invoked requests remain subject to the Free plan limits.
+
+1. In the Cloudflare Worker `church-management-system`, connect this GitHub repository and select the production branch.
+2. Set the build command to `npm ci && npm run build` (or `npm install && npm run build` if no lockfile is present) and configure the build output through `wrangler.jsonc`.
+3. Add the public build variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Cloudflare build environment. These are public client configuration values; never add a database password or service-role key.
+4. For manual deployment, run `npm install`, then `npm run cf:deploy` after authenticating Wrangler with `npx wrangler login`.
+5. Use `npm run cf:dev` to preview the built static app through Wrangler.
+
+The current database remains on the selected Supabase project. Cloudflare hosts the web application; no paid Cloudflare feature is required for the static frontend. Do not migrate or delete Supabase data as part of this hosting change.
 
 ## Local setup
 
@@ -52,6 +64,6 @@ The `invite-church-member` Edge Function is deployed with JWT verification enabl
 
 The online build is in progress. The database schema and a growing set of online workflows are implemented, including member/family registers, certificates, private documents, permissions, invitations, attendance, pastoral care, accounting, reports and notifications. Some modules and advanced workflows are still incomplete.
 
-**The application is not production-ready and has not been deployed to Render.** Per project-owner instruction, functional, security and end-to-end testing are deferred until online feature development is complete. The offline edition will begin only after the online build is complete and its testing/bug-fixing phase has passed.
+**The application is not production-ready. Cloudflare hosting configuration is now in the repository; a successful production deployment has not yet been verified.** Per project-owner instruction, functional, security and end-to-end testing are deferred until online feature development is complete. The offline edition will begin only after the online build is complete and its testing/bug-fixing phase has passed.
 
 See `docs/implementation-status.md` for the current implementation and remaining work.
