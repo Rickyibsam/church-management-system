@@ -144,12 +144,12 @@ function App() {
 
       <div className="content">
         {notice && <div className="notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={15}/></button></div>}
-        {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)} churchName={churchName}/> :
-          active === "certificates" ? <Certificates onNew={() => setCertOpen(true)} refresh={certificateRefresh}/> :
-          active === "members" || active === "families" ? <People kind={active}/> :
+        {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)} churchName={churchName} churchId={churchId}/> :
+          active === "certificates" ? <Certificates churchId={churchId} onNew={() => setCertOpen(true)} refresh={certificateRefresh}/> :
+          active === "members" || active === "families" ? <People kind={active} churchId={churchId}/> :
           active === "team" ? <TeamManagement churchId={churchId}/> :
           active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
-          active === "documents" ? <DocumentReview/> :
+          active === "documents" ? <DocumentReview churchId={churchId}/> :
           active === "attendance" ? <OperationsHub churchId={churchId} kind="attendance"/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
           active === "events" ? <DataModule churchId={churchId} table="church_events" title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." fields={[{name:"title",label:"Event title"},{name:"event_type",label:"Event type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"},{name:"description",label:"Description"}]}/> :
@@ -167,15 +167,40 @@ function App() {
   </div>;
 }
 
-function Dashboard({ onNavigate, onNew, churchName }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string }) {
-  const stats = [{ label: "Registered Members", value: "—", hint: "Connect your church workspace", icon: Users }, { label: "Families", value: "—", hint: "Family register", icon: HeartHandshake }, { label: "Certificates Issued", value: "—", hint: "Certificate register", icon: FileBadge }, { label: "Donations This Month", value: "—", hint: "Financial overview", icon: Banknote }];
-  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
-    <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>Your workspace setup is next</b><p>Connect Supabase, create your first church, then invite authorized staff. Live statistics will appear after database setup.</p></div><span className="status-pill">Setup pending</span></div>
-    <div className="stat-grid">{stats.map(s => { const Icon = s.icon; return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>; })}</div>
+function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string; churchId: string | null }) {
+  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Donations This Month",value:"—",hint:"Financial overview",icon:Banknote}]);
+  const [loading,setLoading]=useState(false);
+  useEffect(()=>{
+    let alive=true;
+    async function load(){
+      if(!supabase||!churchId){setStats(old=>old.map(item=>({...item,value:"—"})));return;}
+      setLoading(true);
+      const now=new Date();const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString();const nextMonth=new Date(now.getFullYear(),now.getMonth()+1,1).toISOString();
+      const [members,families,certificates,donations]=await Promise.all([
+        supabase.from("members").select("id",{count:"exact",head:true}).eq("church_id",churchId),
+        supabase.from("families").select("id",{count:"exact",head:true}).eq("church_id",churchId),
+        supabase.from("certificates").select("id",{count:"exact",head:true}).eq("church_id",churchId).eq("status","issued"),
+        supabase.from("donations").select("amount").eq("church_id",churchId).gte("donated_at",monthStart).lt("donated_at",nextMonth)
+      ]);
+      if(!alive)return;
+      const total=(donations.data??[]).reduce((sum,row)=>sum+Number(row.amount??0),0);
+      setStats([
+        {label:"Registered Members",value:String(members.count??0),hint:"Member directory",icon:Users},
+        {label:"Families",value:String(families.count??0),hint:"Family register",icon:HeartHandshake},
+        {label:"Certificates Issued",value:String(certificates.count??0),hint:"Certificate register",icon:FileBadge},
+        {label:"Donations This Month",value:new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(total),hint:"Current church currency",icon:Banknote}
+      ]);
+      setLoading(false);
+    }
+    void load();return()=>{alive=false;};
+  },[churchId]);
+  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew} disabled={!churchId}><Plus size={17}/> New registration</button></div>
+    <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>{churchId?"Church workspace connected":"Your workspace setup is next"}</b><p>{churchId?"Live summary data is being loaded from this church workspace.":"Sign in and create your first church workspace to manage records and invite authorized staff."}</p></div><span className="status-pill">{churchId?(loading?"Loading":"Connected"):"Setup pending"}</span></div>
+    <div className="stat-grid">{stats.map(s=>{const Icon=s.icon;return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>;})}</div>
     <div className="section-heading"><div><h3>Quick access</h3><p>Open a core area of your church administration.</p></div></div>
-    <div className="quick-grid">{[{label:"Register a member",icon:Users,key:"members" as ModuleKey,desc:"Member profiles and household links"},{label:"Family register",icon:HeartHandshake,key:"families" as ModuleKey,desc:"Households and family relationships"},{label:"Certificates",icon:FileBadge,key:"certificates" as ModuleKey,desc:"Marriage, birth, death and baptism"},{label:"Church settings",icon:Settings,key:"settings" as ModuleKey,desc:"Branding, language and permissions"}].map(x => { const Icon=x.icon; return <button className="quick-card" key={x.label} onClick={() => onNavigate(x.key)}><span><Icon/></span><b>{x.label}</b><small>{x.desc}</small></button>; })}</div>
+    <div className="quick-grid">{[{label:"Register a member",icon:Users,key:"members" as ModuleKey,desc:"Member profiles and household links"},{label:"Family register",icon:HeartHandshake,key:"families" as ModuleKey,desc:"Households and family relationships"},{label:"Certificates",icon:FileBadge,key:"certificates" as ModuleKey,desc:"Marriage, birth, death and baptism"},{label:"Church settings",icon:Settings,key:"settings" as ModuleKey,desc:"Branding, language and permissions"}].map(x=>{const Icon=x.icon;return <button className="quick-card" key={x.label} onClick={()=>onNavigate(x.key)}><span><Icon/></span><b>{x.label}</b><small>{x.desc}</small></button>;})}</div>
     <div className="section-heading"><div><h3>Development roadmap</h3><p>Build the full online system before beginning the testing phase.</p></div></div>
-    <div className="roadmap"><div className="roadmap-step done"><CheckCircle2/><span><b>Project foundation</b><small>Repository and product scope</small></span><em>Created</em></div><div className="roadmap-step current"><Activity/><span><b>Core application and database</b><small>Modules, workflows and security policies</small></span><em>In progress</em></div><div className="roadmap-step"><ShieldCheck/><span><b>Complete feature implementation</b><small>All administration and church operations</small></span><em>Next</em></div><div className="roadmap-step"><CheckCircle2/><span><b>Full testing and bug fixing</b><small>Functional, security and end-to-end testing</small></span><em>After build</em></div><div className="roadmap-step"><Baby/><span><b>Offline-capable edition</b><small>Installable PWA, local encrypted queue and sync</small></span><em>After testing</em></div></div>
+    <div className="roadmap"><div className="roadmap-step done"><CheckCircle2/><span><b>Project foundation</b><small>Repository and product scope</small></span><em>Created</em></div><div className="roadmap-step current"><Activity/><span><b>Core application and database</b><small>Modules, workflows and security policies</small></span><em>In progress</em></div><div className="roadmap-step"><ShieldCheck/><span><b>Complete feature implementation</b><small>All administration and church operations</small></span><em>In progress</em></div><div className="roadmap-step"><CheckCircle2/><span><b>Full testing and bug fixing</b><small>Functional, security and end-to-end testing</small></span><em>After build</em></div><div className="roadmap-step"><Baby/><span><b>Offline-capable edition</b><small>Installable PWA, local encrypted queue and sync</small></span><em>After testing</em></div></div>
   </>;
 }
 
