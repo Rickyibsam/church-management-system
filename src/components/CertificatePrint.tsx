@@ -8,7 +8,7 @@ type CertificateRecord={
  id:string;church_id:string;certificate_type:string;registration_number:string;
  primary_person_name:string;secondary_person_name:string|null;event_date:string|null;
  event_place:string|null;pastor_name:string|null;issued_at:string|null;
- qr_verification_token:string;issued_pdf_path:string|null;status:string
+ qr_verification_token:string;issued_pdf_path:string|null;status:string;form_data:Record<string,string>|null
 };
 type ChurchRecord={display_name:string;legal_name:string;address:string|null;phone:string|null;email:string|null;website:string|null;logo_path:string|null;header_text:string|null;footer_text:string|null};
 type TemplateRecord={name:string;language_code:string;page_size:string;orientation:string;logo_path:string|null;header_text:string|null;footer_text:string|null;pastor_name:string|null;pastor_signature_path:string|null;seal_path:string|null;background_path:string|null};
@@ -25,7 +25,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
   let alive=true;
   async function load(){
    if(!supabase)return;
-   const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path,status").eq("id",certificateId).maybeSingle();
+   const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path,status,form_data").eq("id",certificateId).maybeSingle();
    if(error||!data){if(alive)setMessage(error?.message??"Certificate not found.");return;}
    const {data:churchData}=await supabase.from("churches").select("display_name,legal_name,address,phone,email,website,logo_path,header_text,footer_text").eq("id",data.church_id).maybeSingle();
    const {data:templateData}=await supabase.from("certificate_templates").select("name,language_code,page_size,orientation,logo_path,header_text,footer_text,pastor_name,pastor_signature_path,seal_path,background_path").eq("church_id",data.church_id).eq("certificate_type",data.certificate_type).eq("is_active",true).eq("is_default",true).order("created_at",{ascending:false}).limit(1).maybeSingle();
@@ -68,7 +68,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    if(record.secondary_person_name){doc.setFontSize(14);doc.text("and "+record.secondary_person_name,148.5,114,{align:"center",maxWidth:200});}
    doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(80,95,115);
    doc.text("Record date: "+(record.event_date??"—"),148.5,129,{align:"center"});
-   if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});
+   if(record.event_place)doc.text("Place: "+record.event_place,148.5,137,{align:"center"});\n   if(record.form_data?.father_name)doc.text("Father: "+record.form_data.father_name,148.5,143,{align:"center"});\n   if(record.form_data?.mother_name)doc.text("Mother: "+record.form_data.mother_name,148.5,149,{align:"center"});\n   if(record.form_data?.witness_details)doc.text("Witnesses: "+record.form_data.witness_details,148.5,155,{align:"center",maxWidth:210});
    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(150,111,49);doc.text("Registration No. "+record.registration_number,148.5,151,{align:"center"});
    if(qr)doc.addImage(qr,"PNG",242,157,30,30);
    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(90,105,125);doc.text(template?.pastor_name||record.pastor_name||"Authorized Pastor",55,174,{align:"center"});doc.text("Pastor / Authorized Officer",55,180,{align:"center"});doc.text("Church Seal",207,174,{align:"center"});
@@ -106,7 +106,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
      <div className="print-person">{record.primary_person_name}</div>
      {record.secondary_person_name&&<div className="print-secondary">and {record.secondary_person_name}</div>}
      <p className="print-detail">Record date: <b>{record.event_date??"—"}</b></p>
-     {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}
+     {record.event_place&&<p className="print-detail">Place: <b>{record.event_place}</b></p>}{record.form_data?.father_name&&<p className="print-detail">Father: <b>{record.form_data.father_name}</b></p>}{record.form_data?.mother_name&&<p className="print-detail">Mother: <b>{record.form_data.mother_name}</b></p>}{record.form_data?.witness_details&&<p className="print-detail">Witnesses: <b>{record.form_data.witness_details}</b></p>}
      <div className="print-number">Registration No. {record.registration_number}</div>
      <div className="print-bottom"><div className="print-sign">{templateAssets.signature?<img src={templateAssets.signature} alt="Pastor signature" style={{maxWidth:"120px",maxHeight:"42px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>{template?.pastor_name||record.pastor_name||"Authorized Pastor"}</b><small>Pastor / Authorized Officer</small></div><div className="print-qr">{qr&&<img src={qr} alt="Certificate verification QR code"/>}<small>Scan to verify this issued record</small></div><div className="print-sign">{templateAssets.seal?<img src={templateAssets.seal} alt="Church seal" style={{maxWidth:"85px",maxHeight:"65px",objectFit:"contain"}}/>:<div className="sign-line"/>}<b>Church Seal</b><small>Official stamp</small></div></div>
      <div className="print-rule"/>
