@@ -108,12 +108,11 @@ export default function DataModule({ churchId, table, title, description, fields
     return {displayFields,allFields,data:rows.map(row=>Object.fromEntries(allFields.map(field=>[field.label,row[field.name]??""])))};
   }
   function exportCsv(){
-    const {displayFields}=exportRows();
     const allFields=[...new Map([...fields,...extraDisplay].map(field=>[field.name,field])).values()];
     const headers=allFields.map(field=>field.label);
     const lines=[headers,...rows.map(row=>allFields.map(field=>row[field.name]??""))];
-    const csv=lines.map(line=>line.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(",")).join("\\r\\n");
-    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const csv=lines.map(line=>line.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(",")).join("\r\n");
+    const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download=table+"-"+new Date().toISOString().slice(0,10)+".csv";anchor.click();URL.revokeObjectURL(url);
   }
   function exportExcel(){
@@ -123,10 +122,10 @@ export default function DataModule({ churchId, table, title, description, fields
   function exportPdf(){
     const {allFields}=exportRows();const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
     doc.setFontSize(15);doc.text(title,12,14);doc.setFontSize(7);
-    const widths=allFields.length?260/allFields.length:260;let y=23;
+    let y=23;
     doc.setFont("helvetica","bold");doc.text(allFields.map(field=>field.label).join(" | ").slice(0,180),12,y);y+=6;doc.setFont("helvetica","normal");
     rows.forEach(row=>{
-      const line=allFields.map(field=>String(row[field.name]??"—").replaceAll("\\n"," ").slice(0,24)).join(" | ").slice(0,180);
+      const line=allFields.map(field=>String(row[field.name]??"—").replaceAll("\n"," ").slice(0,24)).join(" | ").slice(0,180);
       if(y>190){doc.addPage();y=15;}doc.text(line,12,y);y+=5;
     });
     doc.save(table+"-"+new Date().toISOString().slice(0,10)+".pdf");
