@@ -120,7 +120,7 @@ function App() {
           const Icon = item.icon; return <button key={item.key} className={active === item.key ? "nav-item active" : "nav-item"} onClick={() => { setActive(item.key); setSidebarOpen(false); }}><Icon size={18}/><span>{item.label}</span></button>;
         })}</section>
       )}</nav>
-      <div className="sidebar-bottom"><div className="secure-note"><ShieldCheck size={17}/><span>Church data protection<br/><small>Tenant isolation planned</small></span></div><small>Church360 · Initial build</small></div>
+      <div className="sidebar-bottom"><div className="secure-note"><ShieldCheck size={17}/><span>Church data protection<br/><small>Tenant isolation active</small></span></div><small>Church360 · Initial build</small></div>
     </aside>
 
     <main className="main-area">
@@ -131,7 +131,7 @@ function App() {
         {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)}/> :
           active === "certificates" ? <Certificates onNew={() => setCertOpen(true)} refresh={certificateRefresh}/> :
           active === "members" || active === "families" ? <People kind={active}/> :
-          active === "churches" ? <Placeholder title="Churches & Branches" description="Set up church profiles, campuses, branches, denominations, country, currency and time zone." icon={<Church/>} items={["Church profile","Branches and campuses","Church branding","Pastors and staff","Church-specific settings"]}/> :
+          active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
           active === "documents" ? <DocumentReview/> :
           active === "attendance" ? <DataModule churchId={churchId} table="church_services" title="Services & Attendance" description="Create worship services and maintain the service register." fields={[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]}/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
