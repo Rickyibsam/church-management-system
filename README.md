@@ -36,7 +36,7 @@ A global, multi-church management platform for churches in Pakistan and worldwid
 4. Run `npm install` after the frontend workspace is added.
 5. Follow the Supabase CLI documentation and use `supabase --help` to confirm commands supported by your installed CLI version.
 
-No production database migrations have been applied yet. Review each migration and its RLS/storage policies before applying it to the linked Supabase project.
+The dedicated Supabase project has the initial church, membership, certificate, document-storage, audit and permission schema applied. Versioned SQL migrations are stored in `supabase/migrations/`. The full application is still under development; do not treat the current screens as production-ready.
 
 ## Project status
 
