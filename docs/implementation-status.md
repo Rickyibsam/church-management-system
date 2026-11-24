@@ -68,3 +68,6 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Certificate approval now evaluates required supporting documents for the church's configured country rather than mixing requirements from other countries.
 
 - Reconciled the repository migration filenames with the actual applied Supabase migration versions, including the separate read-only certificate-history policy correction, to prevent duplicate migration execution during future deployment workflows.
+
+- Added a private member-document manager for identity and supporting records, including file-type/size checks, signed-link viewing, document verification metadata and church-scoped access.
+- Added attendance integrity rules requiring a member or visitor name, restricting attendance statuses/methods and recording the authenticated check-in user by default.
