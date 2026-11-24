@@ -94,3 +94,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Certificate document uploads now enforce the configured MIME allow-list and maximum file size for each requirement, with a 10 MB fallback limit.
 
 - Issued certificate PDF generation now honors the active default template's A4/Letter paper size and portrait/landscape orientation.
+
+- Added a controlled certificate reissue workflow: issued certificates remain unchanged, a replacement draft receives a fresh registration number, links to the original record and records the correction reason in history.
