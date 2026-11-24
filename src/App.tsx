@@ -140,7 +140,7 @@ function App() {
           active === "finance" ? <DataModule churchId={churchId} table="expenses" title="Accounts & Expenses" description="Record church expenses with finance-role restrictions." fields={[{name:"expense_category",label:"Expense category"},{name:"description",label:"Description"},{name:"amount",label:"Amount",type:"number"},{name:"spent_at",label:"Expense date",type:"datetime-local"}]}/> : active === "donations" ? <DataModule churchId={churchId} table="donations" title="Tithes & Donations" description="Record tithes, offerings, mission and charity donations." fields={[{name:"donor_name",label:"Donor name"},{name:"donation_type",label:"Donation type"},{name:"amount",label:"Amount",type:"number"},{name:"donated_at",label:"Donation date",type:"datetime-local"},{name:"payment_method",label:"Payment method"}]}/> :
           active === "assets" ? <DataModule churchId={churchId} table="church_assets" title="Assets & Inventory" description="Track church property, equipment, instruments and maintenance." fields={[{name:"asset_code",label:"Asset code"},{name:"name",label:"Asset name"},{name:"category",label:"Category"},{name:"purchase_cost",label:"Purchase cost",type:"number"},{name:"location",label:"Location"}]}/> :
           active === "reports" ? <Placeholder title="Reports & Audit" description="Operational summaries, exports and immutable audit history." icon={<Activity/>} items={["Membership reports","Certificate register","Attendance analytics","Financial reports","Audit trail"]}/> :
-          <SettingsPage/>}
+          <SettingsPage churchId={churchId}/>}
       </div>
     </main>
 
@@ -247,10 +247,70 @@ function Placeholder({ title, description, icon, items }: { title: string; descr
   return <><div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><button className="secondary-button"><Plus size={16}/> Add new</button></div><div className="feature-grid">{items.map((item, i) => <div className="feature-card" key={item}><span>{icon}</span><b>{item}</b><small>{i === 0 ? "Core workspace" : "Included in the full module"}</small></div>)}</div><div className="panel"><div className="empty-state"><ClipboardList/><b>{title} workspace</b><small>Module screen established. Database workflows and actions will be connected during implementation.</small></div></div></>;
 }
 
-function SettingsPage() {
-  return <><div className="page-intro"><div><h2>Church Settings</h2><p>Configure church identity, branding, languages, certificates and access policies.</p></div></div><div className="settings-grid">{[{title:"Church profile & branding",desc:"Church name, logo, address, header and footer"},{title:"Certificate templates",desc:"Layouts, signatures, seals, paper and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, currency, country and time zone"},{title:"Security & audit",desc:"Sessions, access history, retention and backups"}].map(x => <div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div></>;
+function SettingsPage({churchId}:{churchId:string|null}) {
+  const [form,setForm]=useState<Record<string,string>>({legal_name:"",display_name:"",country_code:"PK",currency_code:"PKR",timezone:"Asia/Karachi",address:"",phone:"",email:"",website:"",header_text:"",footer_text:"",logo_path:""});
+  const [message,setMessage]=useState("");
+  const [logo,setLogo]=useState<File|null>(null);
+  const [saving,setSaving]=useState(false);
+  useEffect(()=>{
+    let alive=true;
+    async function load(){
+      if(!supabase||!churchId)return;
+      const {data,error}=await supabase.from("churches").select("legal_name,display_name,country_code,currency_code,timezone,address,phone,email,website,header_text,footer_text,logo_path").eq("id",churchId).maybeSingle();
+      if(error){setMessage(error.message);return;}
+      if(alive&&data)setForm(old=>({...old,...Object.fromEntries(Object.entries(data).map(([k,v])=>[k,String(v??"")]))}));
+    }
+    void load();return()=>{alive=false;};
+  },[churchId]);
+  function change(key:string,value:string){setForm(old=>({...old,[key]:value}));}
+  async function save(){
+    if(!supabase||!churchId)return;
+    setSaving(true);setMessage("");
+    let logoPath=form.logo_path;
+    if(logo){
+      const path=churchId+"/logo-"+crypto.randomUUID()+"."+logo.name.split(".").pop();
+      const {error:uploadError}=await supabase.storage.from("church-branding").upload(path,logo,{contentType:logo.type,upsert:false});
+      if(uploadError){setSaving(false);setMessage(uploadError.message);return;}
+      logoPath=path;
+    }
+    const {error}=await supabase.from("churches").update({
+      legal_name:form.legal_name,display_name:form.display_name,country_code:form.country_code.toUpperCase(),
+      currency_code:form.currency_code.toUpperCase(),timezone:form.timezone,address:form.address,
+      phone:form.phone,email:form.email,website:form.website,header_text:form.header_text,
+      footer_text:form.footer_text,logo_path:logoPath,updated_at:new Date().toISOString()
+    }).eq("id",churchId);
+    setSaving(false);
+    if(error){setMessage(error.message);return;}
+    setForm(old=>({...old,logo_path:logoPath}));setLogo(null);setMessage("Church profile and certificate branding saved.");
+  }
+  const logoUrl=logo?URL.createObjectURL(logo):form.logo_path&&supabase?supabase.storage.from("church-branding").getPublicUrl(form.logo_path).data.publicUrl:"";
+  return <>
+    <div className="page-intro"><div><h2>Church Profile & Branding</h2><p>These details will be used on church records and certificate templates.</p></div><button className="primary-button" disabled={!churchId||saving} onClick={()=>void save()}>{saving?"Saving...":"Save settings"}</button></div>
+    {!churchId&&<div className="notice">Sign in and create a church workspace before configuring settings.</div>}
+    {message&&<div className="notice">{message}</div>}
+    <div className="settings-form-grid">
+      <div className="panel settings-panel"><h3>Church identity</h3><div className="form-grid">
+        <div><label>Legal / registered name</label><input className="field" value={form.legal_name} onChange={e=>change("legal_name",e.target.value)}/></div>
+        <div><label>Display name</label><input className="field" value={form.display_name} onChange={e=>change("display_name",e.target.value)}/></div>
+        <div><label>Country code</label><input className="field" maxLength={2} value={form.country_code} onChange={e=>change("country_code",e.target.value)}/></div>
+        <div><label>Currency code</label><input className="field" maxLength={3} value={form.currency_code} onChange={e=>change("currency_code",e.target.value)}/></div>
+        <div className="form-full"><label>Time zone</label><input className="field" value={form.timezone} onChange={e=>change("timezone",e.target.value)} placeholder="Asia/Karachi"/></div>
+        <div className="form-full"><label>Address</label><textarea className="field" rows={2} value={form.address} onChange={e=>change("address",e.target.value)}/></div>
+        <div><label>Phone</label><input className="field" value={form.phone} onChange={e=>change("phone",e.target.value)}/></div>
+        <div><label>Email</label><input className="field" type="email" value={form.email} onChange={e=>change("email",e.target.value)}/></div>
+        <div className="form-full"><label>Website</label><input className="field" value={form.website} onChange={e=>change("website",e.target.value)}/></div>
+      </div></div>
+      <div className="panel settings-panel"><h3>Certificate logo, header & footer</h3>
+        <label>Church logo (PNG, JPG or WebP)</label><input className="field" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setLogo(e.target.files?.[0]??null)}/>
+        {logoUrl&&<div className="logo-preview"><img src={logoUrl} alt="Church logo preview"/></div>}
+        <label>Certificate header text</label><textarea className="field" rows={3} value={form.header_text} onChange={e=>change("header_text",e.target.value)} placeholder="Church name, denomination, address..."/>
+        <label>Certificate footer text</label><textarea className="field" rows={3} value={form.footer_text} onChange={e=>change("footer_text",e.target.value)} placeholder="Contact details, website, registration note..."/>
+        <p className="helper">Logo is stored in the public branding bucket. Identity documents and personal attachments remain in private storage.</p>
+      </div>
+    </div>
+    <div className="settings-grid">{[{title:"Certificate templates",desc:"Template layouts, signatures, seals, paper size and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, country, currency and time zone"},{title:"Security & audit",desc:"Access history, data retention and backups"},{title:"Branches & campuses",desc:"Manage multiple church locations"}].map(x=><div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div>
+  </>;
 }
-
 function CertificateModal({ type, setType, churchId, onClose, onSave }: { type: CertificateType; setType: (v: CertificateType) => void; churchId: string | null; onClose: () => void; onSave: (payload: { fullName: string; secondName: string; date: string; notes: string; documents: Array<{code:string;file:File|null}> }) => Promise<void> }) {
   const [fullName,setFullName] = useState("");
   const [secondName,setSecondName] = useState("");
