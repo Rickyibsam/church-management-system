@@ -86,3 +86,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added a persistent notification inbox with per-user read/unread state and a mark-all-read action. Certificate status transitions and accepted church invitations now generate notifications, and the header bell opens the inbox.
 
 - Completed the default document-requirement catalogue for every certificate type (including membership, dedication, confirmation, ordination and transfer) and seeded both new and existing church workspaces. Approval checks now have configured requirements to validate against.
+
+- Added CSV, Excel (.xlsx) and PDF export actions to generic registers, including read-only report views and permission-filtered data.
