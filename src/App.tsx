@@ -496,7 +496,7 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
   const missing = docs.filter(item=>item.required&&!documents[item.code]);
   return <Modal title="New certificate registration" onClose={onClose}>
     <div className="form-grid">
-      <div className="form-full"><label>Certificate type</label><select className="field" value={type} onChange={e=>{setType(e.target.value as CertificateType);setDocuments({});}}>{certTypes.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
+      <div className="form-full"><label>Certificate type</label><select className="field" value={type} onChange={e=>{setType(e.target.value as CertificateType);setDocuments({});setDocumentError("");if(e.target.value!=="family")setFamilyId("");}}>{certTypes.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
       <div><label>Primary person / family name</label><input className="field" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full legal name"/></div>
       <div><label>{type==="marriage"?"Second party name":"Second person (if applicable)"}</label><input className="field" value={secondName} onChange={e=>setSecondName(e.target.value)} placeholder="Full name"/></div>
       <div><label>{type==="marriage"?"Marriage date":"Event / record date"}</label><input className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
