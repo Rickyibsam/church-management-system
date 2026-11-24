@@ -104,3 +104,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added a certificate-template asset uploader for pastor signatures, church seals and background images. Uploaded assets are stored in private church storage and applied to the print preview and archived PDF.
 
 - Replaced several free-text values with controlled dropdowns for chart-account types, cash/bank types, attendance status/method and certificate types; default attendance values are preselected.
+
+- Added fixed-asset straight-line depreciation schedules and disposal workflows. Monthly depreciation and asset disposal generate balanced journal entries using mapped asset, accumulated-depreciation, expense, gain/loss and cash/bank accounts; disposed assets are locked against direct changes.
