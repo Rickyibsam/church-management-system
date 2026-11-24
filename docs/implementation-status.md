@@ -60,3 +60,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added journal posting RPC with debit/credit balance validation, active same-church account validation, and immutable posted-entry/line triggers. Journal registers now expose a Post action.
 - Restricted pastoral follow-up records to church owners/admins, pastors, and the pastor assigned to the related case.
 - Added invitation-confirmation activation so newly invited users receive active church membership after email confirmation; the invite function was redeployed with existing-account handling.
+
+- Added live dashboard counts and monthly donation totals, and corrected member, certificate and document-review screens to follow the currently selected church workspace in multi-church accounts.
+- Added family relationship labels and primary household contact assignment from member profiles.
+- Connected certificate status actions to the database workflow, including submission, review, approval, rejection with a reason, cancellation and issuance.
+- Added PDF generation and private storage archival for issued certificates, with signed-link access to the archived file.
+- Certificate approval now evaluates required supporting documents for the church's configured country rather than mixing requirements from other countries.
