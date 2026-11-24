@@ -47,3 +47,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The migration is applied to the selected Supabase project and its SQL is committed to the repository.
 - These are development additions, not a claim of complete production workflows. Posting controls, balanced journal enforcement, sensitive pastoral authorization, file retention/export generation, invitation delivery, complete member/family editing and full reports remain to be implemented.
 - Per project-owner instruction, functional, security and end-to-end testing remain deferred until the online feature build is complete.
+
+- Added a dedicated attendance workspace with service scheduling and member/visitor check-in registers; the generic register component now supports table-specific sort columns.
