@@ -230,6 +230,17 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     if(loadError)setMessage("Status updated, but the register could not refresh: "+loadError.message);
     else setRecords((data??[]) as Array<Record<string,unknown>>);
   }
+  async function reissue(id:string){
+    if(!supabase)return;
+    const reason=window.prompt("Enter the correction or reissue reason:");
+    if(!reason?.trim())return;
+    const {data,error}=await supabase.rpc("reissue_certificate",{p_certificate_id:id,p_reason:reason.trim()});
+    if(error){setMessage("Unable to reissue certificate: "+error.message);return;}
+    setMessage("A replacement draft has been created. Complete its document review before issuing.");
+    const {data:updated,error:loadError}=await supabase.from("certificates").select("id,registration_number,certificate_type,primary_person_name,status,event_date,created_at").eq("church_id",churchId).order("created_at",{ascending:false});
+    if(loadError)setMessage("Replacement created, but register refresh failed: "+loadError.message);
+    else setRecords((updated??[]) as Array<Record<string,unknown>>);
+  }
   return <>
     <div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage applications, supporting documents, approvals and certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
