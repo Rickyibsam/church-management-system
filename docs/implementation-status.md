@@ -150,3 +150,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Deployed invitation function version 5. Existing unconfirmed accounts receive a renewed signup confirmation email, and new invitations can use the configured application redirect URL (`APP_REDIRECT_URL`).
 
 - Added restrictive branch-scope RLS policies across branch-owned records and their related documents, attendance, pastoral, ministry and accounting rows. Existing non-admin team memberships were assigned to the head-office branch; owners/admins retain church-wide access. Invitations without an explicit branch now default to head office.
+
+- Existing branch-owned records without a branch were assigned to head office. New member, family, certificate, service, event, ministry, donation, expense and asset records now default to the active user's branch (or head office for central users).
