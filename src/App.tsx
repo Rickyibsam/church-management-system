@@ -468,7 +468,7 @@ function CertificateModal({ type, setType, churchId, countryCode, onClose, onSav
     async function loadBranches(){
       if(!supabase||!churchId){setBranchOptions([]);return;}
       const {data}=await supabase.from("church_branches").select("id,name").eq("church_id",churchId).order("name");
-      if(alive){const items=(data??[]) as Array<{id:string;name:string}>;setBranchOptions(items);if(!branchId&&items.length)setBranchId(items[0].id);}
+      if(alive){const items=(data??[]) as Array<{id:string;name:string}>;setBranchOptions(items);if(!items.some(item=>item.id===branchId))setBranchId(items[0]?.id??"");}
     }
     void loadBranches();return()=>{alive=false;};
   },[churchId]);
