@@ -148,3 +148,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Updated the secure invitation Edge Function to accept a validated branch assignment; new and existing-account invitations can now be assigned to a specific church branch. JWT verification remains enabled and only owners can invite administrators.
 
 - Deployed invitation function version 5. Existing unconfirmed accounts receive a renewed signup confirmation email, and new invitations can use the configured application redirect URL (`APP_REDIRECT_URL`).
+
+- Added restrictive branch-scope RLS policies across branch-owned records and their related documents, attendance, pastoral, ministry and accounting rows. Existing non-admin team memberships were assigned to the head-office branch; owners/admins retain church-wide access. Invitations without an explicit branch now default to head office.
