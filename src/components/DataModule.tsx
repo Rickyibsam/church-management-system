@@ -76,6 +76,7 @@ export default function DataModule({ churchId, table, title, description, fields
       } else payload[field.name] = value.trim();
     }
     if (!editingId) payload.church_id = churchId;
+    if(table==="certificate_templates"&&payload.is_default===true){let clear=supabase.from("certificate_templates").update({is_default:false}).eq("church_id",churchId).eq("certificate_type",payload.certificate_type).eq("language_code",payload.language_code);if(editingId)clear=clear.neq("id",editingId);const {error:clearError}=await clear;if(clearError){setSaving(false);setMessage("Unable to set the default certificate template: "+clearError.message);return;}}
     const result = editingId
       ? await supabase.from(table).update(payload).eq("id", editingId).eq("church_id", churchId)
       : await supabase.from(table).insert(payload);
