@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
   CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
-  FolderLock, HeartHandshake, Home, Languages, LayoutDashboard, LogOut,
+  FolderLock, HeartHandshake, Home, LayoutDashboard, LogOut,
   Menu, Plus, Search, Settings, ShieldCheck, Users, Wallet, X
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
