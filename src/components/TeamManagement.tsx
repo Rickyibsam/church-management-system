@@ -11,7 +11,7 @@ const actions=["view","create","edit","delete"] as const;
 export default function TeamManagement({churchId}:{churchId:string|null}){
  const [rows,setRows]=useState<TeamRow[]>([]);
  const [permissions,setPermissions]=useState<Permission[]>([]);
- const [userId,setUserId]=useState("");
+ const [inviteEmail,setInviteEmail]=useState("");
  const [role,setRole]=useState("secretary");
  const [show,setShow]=useState(false);
  const [expanded,setExpanded]=useState<string|null>(null);
@@ -28,12 +28,13 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
  }
  useEffect(()=>{void load();},[churchId]);
  async function add(){
-  if(!supabase||!churchId||!userId.trim())return;
+  if(!supabase||!churchId||!inviteEmail.trim())return;
   setSaving(true);setMessage("");
-  const {error}=await supabase.from("church_members").insert({church_id:churchId,user_id:userId.trim(),role,status:"invited"});
+  const {data,error}=await supabase.functions.invoke("invite-church-member",{body:{churchId,email:inviteEmail.trim(),role}});
   setSaving(false);
-  if(error){setMessage("Unable to assign access: "+error.message);return;}
-  setUserId("");setShow(false);setMessage("Church access assigned. The user must sign in with this account.");await load();
+  if(error){setMessage("Unable to invite user: "+error.message);return;}
+  if(data?.error){setMessage(data.error);return;}
+  setInviteEmail("");setShow(false);setMessage(data?.message??"Invitation processed.");await load();
  }
  async function changeStatus(id:string,status:string){
   if(!supabase)return;
@@ -56,7 +57,7 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
  return <>
   <div className="page-intro"><div><h2>Users & Permissions</h2><p>Manage church team roles and individual module actions.</p></div><button className="primary-button" disabled={!churchId} onClick={()=>setShow(true)}><UserPlus size={16}/> Add existing user</button></div>
   {message&&<div className="notice">{message}</div>}
-  {show&&<div className="panel form-panel"><p className="muted">The person must already have a Church360 account. Enter their Supabase user ID; secure email invitations are planned as a separate server-side workflow.</p><div className="form-grid"><div className="form-full"><label>User ID</label><input className="field" value={userId} onChange={e=>setUserId(e.target.value)} placeholder="UUID from the registered user account"/></div><div><label>Church role</label><select className="field" value={role} onChange={e=>setRole(e.target.value)}>{roles.map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving||!userId.trim()} onClick={()=>void add()}>{saving?"Adding...":"Assign access"}</button></div></div>}
+  {show&&<div className="panel form-panel"><p className="muted">Send a secure church invitation to the person’s email address. New users will receive an account invitation; existing accounts will be assigned church access.</p><div className="form-grid"><div className="form-full"><label>Email address</label><input className="field" type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="person@example.com"/></div><div><label>Church role</label><select className="field" value={role} onChange={e=>setRole(e.target.value)}>{roles.map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving||!inviteEmail.trim()} onClick={()=>void add()}>{saving?"Sending...":"Send invitation"}</button></div></div>}
   <div className="panel">{rows.length?<div className="team-list">{rows.map(row=><div className="team-row-wrap" key={row.id}>
    <div className="team-row"><div className="team-avatar"><Users size={17}/></div><div className="team-main"><b>{row.profiles?.display_name||row.user_id}</b><small>{row.user_id}</small></div><span className="role-pill">{row.role.replaceAll("_"," ")}</span><select className="status-select" value={row.status} onChange={e=>void changeStatus(row.id,e.target.value)}><option value="invited">Invited</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="left">Left</option></select><button className="secondary-button" onClick={()=>setExpanded(expanded===row.id?null:row.id)}><Settings2 size={15}/> Permissions</button></div>
    {expanded===row.id&&<div className="permission-panel"><p className="muted">Enable specific actions for this user. A saved override replaces the role's default for that module/action. Owners and admins retain full access.</p><div className="permission-grid"><div className="permission-head"><b>Module</b>{actions.map(action=><b key={action}>{action}</b>)}</div>{modules.map(([key,label])=><div className="permission-row" key={key}><span>{label}</span>{actions.map(action=><label key={action} className="permission-check"><input type="checkbox" checked={isAllowed(row.id,key,action)} onChange={e=>void setPermission(row,key,action,e.target.checked)}/></label>)}</div>)}</div></div>}
