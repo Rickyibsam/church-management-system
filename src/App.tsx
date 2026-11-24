@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
   CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
@@ -50,6 +51,12 @@ function App() {
   const [notice, setNotice] = useState("");
   const [certOpen, setCertOpen] = useState(false);
   const [certType, setCertType] = useState<CertificateType>("marriage");
+  const [churchId, setChurchId] = useState<string | null>(null);
+  const [churchName, setChurchName] = useState("");
+  const [churchOpen, setChurchOpen] = useState(false);
+  const [legalName, setLegalName] = useState("");
+  const [countryCode, setCountryCode] = useState("PK");
+  const [currencyCode, setCurrencyCode] = useState("PKR");
 
   useEffect(() => {
     if (!supabase) return;
@@ -57,6 +64,20 @@ function App() {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user.email ?? null));
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadWorkspace() {
+      if (!supabase || !userEmail) { setChurchId(null); setChurchName(""); return; }
+      const { data: memberships } = await supabase.from("church_members").select("church_id, status").eq("status", "active").limit(1);
+      const id = memberships?.[0]?.church_id as string | undefined;
+      if (!alive || !id) { setChurchId(null); setChurchName(""); return; }
+      const { data: church } = await supabase.from("churches").select("id, display_name").eq("id", id).maybeSingle();
+      if (alive && church) { setChurchId(church.id); setChurchName(church.display_name); }
+    }
+    void loadWorkspace();
+    return () => { alive = false; };
+  }, [userEmail]);
 
   const activeItem = nav.find(item => item.key === active)!;
   const grouped = useMemo(() => nav.reduce<Record<string, typeof nav>>((acc, item) => {
@@ -75,6 +96,12 @@ function App() {
     const { error } = await supabase.auth.signUp({ email, password });
     setNotice(error?.message ?? "Account created. Check your email if confirmation is enabled.");
   }
+  async function createChurch() {
+    if (!supabase) return;
+    const { data, error } = await supabase.rpc("create_church", { p_legal_name: legalName, p_display_name: legalName, p_country_code: countryCode, p_currency_code: currencyCode, p_timezone: countryCode === "PK" ? "Asia/Karachi" : "UTC" });
+    if (error) { setNotice(error.message); return; }
+    setChurchId(data as string); setChurchName(legalName); setChurchOpen(false); setNotice("Church workspace created. You are its owner.");
+  }
   async function signOut() {
     await supabase?.auth.signOut(); setNotice("You have signed out.");
   }
@@ -83,7 +110,7 @@ function App() {
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={sidebarOpen ? "sidebar open" : "sidebar"}>
       <div className="brand"><div className="brand-mark"><Church size={22}/></div><div><b>Church360</b><small>Management System</small></div><button className="icon-button mobile-close" onClick={() => setSidebarOpen(false)}><X/></button></div>
-      <div className="church-switch"><span className="church-avatar">C</span><span><b>Select church</b><small>Workspace not configured</small></span><ChevronDown size={16}/></div>
+      <button className="church-switch" onClick={() => setChurchOpen(true)}><span className="church-avatar">C</span><span><b>{churchName || "Create church workspace"}</b><small>{churchName ? "Active church" : "Setup your first church"}</small></span><ChevronDown size={16}/></button>
       <div className="nav-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a module..." /></div>
       <nav>{(query ? { Search: filtered } : grouped) && Object.entries(query ? { Search: filtered } : grouped).map(([group, items]) =>
         <section className="nav-group" key={group}><label>{group}</label>{items.map(item => {
@@ -114,14 +141,15 @@ function App() {
       </div>
     </main>
 
+    {churchOpen && <Modal title="Create church workspace" onClose={() => setChurchOpen(false)}><p className="muted">Create your church profile. Your signed-in account will become the first church owner.</p><label>Church legal / registered name</label><input className="field" value={legalName} onChange={e => setLegalName(e.target.value)} placeholder="Church registered name"/><label>Country code</label><input className="field" value={countryCode} maxLength={2} onChange={e => setCountryCode(e.target.value.toUpperCase())}/><label>Default currency</label><input className="field" value={currencyCode} maxLength={3} onChange={e => setCurrencyCode(e.target.value.toUpperCase())}/><div className="modal-actions"><button className="secondary-button" onClick={() => setChurchOpen(false)}>Cancel</button><button className="primary-button" onClick={createChurch} disabled={!userEmail || !legalName.trim()}>Create workspace</button></div></Modal>}
     {authOpen && <Modal title="Sign in to Church360" onClose={() => setAuthOpen(false)}><p className="muted">Use your church account. New accounts require an administrator to assign a church and role.</p><label>Email address</label><input className="field" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"/><label>Password</label><input className="field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"/><div className="modal-actions"><button className="secondary-button" onClick={signUp}>Create account</button><button className="primary-button" onClick={signIn}>Sign in</button></div></Modal>}
-    {certOpen && <CertificateModal type={certType} setType={setCertType} onClose={() => setCertOpen(false)} onSave={() => { setCertOpen(false); setNotice("Registration form UI saved locally for this prototype. Database persistence is part of the implementation phase."); }}/>}
+    {certOpen && <CertificateModal type={certType} setType={setCertType} churchId={churchId} onClose={() => setCertOpen(false)} onSave={async (payload) => { if (!supabase || !churchId) { setNotice("Sign in and create/select a church workspace before saving registrations."); return; } const { data, error } = await supabase.rpc("create_certificate_application", { p_church_id: churchId, p_certificate_type: certType, p_primary_person_name: payload.fullName, p_secondary_person_name: payload.secondName || null, p_event_date: payload.date || null, p_form_data: {}, p_notes: payload.notes || null }); if (error) { setNotice(error.message); return; } setCertOpen(false); setNotice("Registration draft created. Record ID: " + data); }}/>}
   </div>;
 }
 
-function Dashboard({ onNavigate, onNew }: { onNavigate: (key: ModuleKey) => void; onNew: () => void }) {
+function Dashboard({ onNavigate, onNew, churchName }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string }) {
   const stats = [{ label: "Registered Members", value: "—", hint: "Connect your church workspace", icon: Users }, { label: "Families", value: "—", hint: "Family register", icon: HeartHandshake }, { label: "Certificates Issued", value: "—", hint: "Certificate register", icon: FileBadge }, { label: "Donations This Month", value: "—", hint: "Financial overview", icon: Banknote }];
-  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>Welcome to your church workspace</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
+  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
     <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>Your workspace setup is next</b><p>Connect Supabase, create your first church, then invite authorized staff. Live statistics will appear after database setup.</p></div><span className="status-pill">Setup pending</span></div>
     <div className="stat-grid">{stats.map(s => { const Icon = s.icon; return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>; })}</div>
     <div className="section-heading"><div><h3>Quick access</h3><p>Open a core area of your church administration.</p></div></div>
@@ -131,7 +159,7 @@ function Dashboard({ onNavigate, onNew }: { onNavigate: (key: ModuleKey) => void
   </>;
 }
 
-function Certificates({ onNew }: { onNew: () => void }) {
+function Certificates({ onNew, churchId }: { onNew: () => void; churchId: string | null }) {
   return <><div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage certificate applications, supporting evidence, approvals and branded certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
     <div className="panel"><div className="panel-heading"><div><h3>Registration workflow</h3><p>Every application keeps its document and approval history.</p></div></div><div className="workflow"><span>Draft</span><i/> <span>Documents pending</span><i/> <span>Under review</span><i/> <span>Approved</span><i/> <span>Issued</span></div><div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div></div>
@@ -143,7 +171,7 @@ function People({ kind }: { kind: "members" | "families" }) {
   return <><div className="page-intro"><div><h2>{family ? "Family Registration" : "Member Directory"}</h2><p>{family ? "Create family profiles and connect spouses, children and dependents." : "Manage member profiles, contact details, membership and church history."}</p></div><button className="primary-button"><Plus size={17}/> {family ? "New family" : "Add member"}</button></div><div className="panel"><div className="empty-state"><Users/><b>{family ? "Family register is ready for setup" : "Member directory is ready for setup"}</b><small>Database-backed registration and search will be enabled after Supabase schema setup.</small></div></div></>;
 }
 
-function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: React.ReactNode; items: string[] }) {
+function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: ReactNode; items: string[] }) {
   return <><div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><button className="secondary-button"><Plus size={16}/> Add new</button></div><div className="feature-grid">{items.map((item, i) => <div className="feature-card" key={item}><span>{icon}</span><b>{item}</b><small>{i === 0 ? "Core workspace" : "Included in the full module"}</small></div>)}</div><div className="panel"><div className="empty-state"><ClipboardList/><b>{title} workspace</b><small>Module screen established. Database workflows and actions will be connected during implementation.</small></div></div></>;
 }
 
@@ -151,13 +179,13 @@ function SettingsPage() {
   return <><div className="page-intro"><div><h2>Church Settings</h2><p>Configure church identity, branding, languages, certificates and access policies.</p></div></div><div className="settings-grid">{[{title:"Church profile & branding",desc:"Church name, logo, address, header and footer"},{title:"Certificate templates",desc:"Layouts, signatures, seals, paper and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, currency, country and time zone"},{title:"Security & audit",desc:"Sessions, access history, retention and backups"}].map(x => <div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div></>;
 }
 
-function CertificateModal({ type, setType, onClose, onSave }: { type: CertificateType; setType: (v: CertificateType) => void; onClose: () => void; onSave: () => void }) {
+function CertificateModal({ type, setType, churchId, onClose, onSave }: { type: CertificateType; setType: (v: CertificateType) => void; churchId: string | null; onClose: () => void; onSave: (payload: { fullName: string; secondName: string; date: string; notes: string }) => Promise<void> }) {
   const [fullName, setFullName] = useState("");
   const [secondName, setSecondName] = useState("");
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
-  const selected = certTypes.find(t => t.value === type)!;
+
   const requirements: Record<CertificateType, string[]> = {
     marriage: ["Bride CNIC copy (front/back)", "Groom CNIC copy (front/back)", "Witness 1 identity copy", "Witness 2 identity copy", "Marriage application / supporting record"],
     birth: ["Father identity document", "Mother identity document", "Hospital birth slip / available birth evidence"],
@@ -170,10 +198,10 @@ function CertificateModal({ type, setType, onClose, onSave }: { type: Certificat
     ordination: ["Candidate identity", "Training and church authorization records"],
     transfer: ["Member identity or church record", "Receiving church details"]
   };
-  return <Modal title="New certificate registration" onClose={onClose}><div className="form-grid"><div className="form-full"><label>Certificate type</label><select className="field" value={type} onChange={e => setType(e.target.value as CertificateType)}>{certTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div><div><label>Primary person / family name</label><input className="field" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full legal name"/></div><div><label>{type === "marriage" ? "Bride / Groom name" : "Second person (if applicable)"}</label><input className="field" value={secondName} onChange={e => setSecondName(e.target.value)} placeholder="Full name"/></div><div><label>{type === "marriage" ? "Marriage date" : "Event / record date"}</label><input className="field" type="date" value={date} onChange={e => setDate(e.target.value)}/></div><div><label>Registration reference</label><input className="field" value="Generated after database setup" disabled/></div><div className="form-full"><label>Required supporting documents (configurable)</label><div className="checklist">{requirements[type].map(item => <label key={item}><input type="checkbox" defaultChecked={false}/><span>{item}</span></label>)}</div></div><div className="form-full"><label>Upload attachments</label><input className="field" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={e => setFiles(e.target.files)}/><small className="helper">{files?.length ? files.length + " file(s) selected" : "PDF, JPG or PNG. Files will be stored in a private bucket after database setup."}</small></div><div className="form-full"><label>Notes</label><textarea className="field" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Additional details"/></div></div><div className="legal-note"><ShieldCheck size={16}/> Church-issued records are separate from government civil certificates. Requirements must be checked for the applicable country and jurisdiction.</div><div className="modal-actions"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={onSave} disabled={!fullName.trim() || !date}>Save draft</button></div></Modal>;
+  return <Modal title="New certificate registration" onClose={onClose}><div className="form-grid"><div className="form-full"><label>Certificate type</label><select className="field" value={type} onChange={e => setType(e.target.value as CertificateType)}>{certTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div><div><label>Primary person / family name</label><input className="field" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full legal name"/></div><div><label>{type === "marriage" ? "Bride / Groom name" : "Second person (if applicable)"}</label><input className="field" value={secondName} onChange={e => setSecondName(e.target.value)} placeholder="Full name"/></div><div><label>{type === "marriage" ? "Marriage date" : "Event / record date"}</label><input className="field" type="date" value={date} onChange={e => setDate(e.target.value)}/></div><div><label>Registration reference</label><input className="field" value="Generated after database setup" disabled/></div><div className="form-full"><label>Required supporting documents (configurable)</label><div className="checklist">{requirements[type].map(item => <label key={item}><input type="checkbox" defaultChecked={false}/><span>{item}</span></label>)}</div></div><div className="form-full"><label>Upload attachments</label><input className="field" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={e => setFiles(e.target.files)}/><small className="helper">{files?.length ? files.length + " file(s) selected" : "PDF, JPG or PNG. Files will be stored in a private bucket after database setup."}</small></div><div className="form-full"><label>Notes</label><textarea className="field" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Additional details"/></div></div><div className="legal-note"><ShieldCheck size={16}/> Church-issued records are separate from government civil certificates. Requirements must be checked for the applicable country and jurisdiction.</div><div className="modal-actions"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={() => void onSave({ fullName, secondName, date, notes })} disabled={!fullName.trim() || !churchId}>Save draft</button></div></Modal>;
 }
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><div className="modal"><div className="modal-header"><h3>{title}</h3><button className="icon-button" onClick={onClose}><X/></button></div><div className="modal-body">{children}</div></div></div>;
 }
 
