@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, Edit2, Plus, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { jsPDF } from "jspdf";
+import * as XLSX from "xlsx";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?: boolean; defaultValue?: string; lookup?: {table:string;labelField:string;valueField?:string;filterField?:string;filterValue?:string} };
 type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean; financialAction?: "donation" | "expense"; extraColumns?: string[]; extraDisplay?: Array<{name:string;label:string}>; displayAllFields?: boolean };
@@ -100,6 +102,36 @@ export default function DataModule({ churchId, table, title, description, fields
     await load();
   }
 
+  function exportRows(){
+    const displayFields=displayAllFields?fields:[...fields.slice(0,3),...extraDisplay];
+    const allFields=[...new Map([...fields,...extraDisplay].map(field=>[field.name,field])).values()];
+    return {displayFields,allFields,data:rows.map(row=>Object.fromEntries(allFields.map(field=>[field.label,row[field.name]??""])))};
+  }
+  function exportCsv(){
+    const {displayFields}=exportRows();
+    const allFields=[...new Map([...fields,...extraDisplay].map(field=>[field.name,field])).values()];
+    const headers=allFields.map(field=>field.label);
+    const lines=[headers,...rows.map(row=>allFields.map(field=>row[field.name]??""))];
+    const csv=lines.map(line=>line.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(",")).join("\\r\\n");
+    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download=table+"-"+new Date().toISOString().slice(0,10)+".csv";anchor.click();URL.revokeObjectURL(url);
+  }
+  function exportExcel(){
+    const {data}=exportRows();
+    const sheet=XLSX.utils.json_to_sheet(data);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,title.slice(0,31));XLSX.writeFile(book,table+"-"+new Date().toISOString().slice(0,10)+".xlsx");
+  }
+  function exportPdf(){
+    const {allFields}=exportRows();const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    doc.setFontSize(15);doc.text(title,12,14);doc.setFontSize(7);
+    const widths=allFields.length?260/allFields.length:260;let y=23;
+    doc.setFont("helvetica","bold");doc.text(allFields.map(field=>field.label).join(" | ").slice(0,180),12,y);y+=6;doc.setFont("helvetica","normal");
+    rows.forEach(row=>{
+      const line=allFields.map(field=>String(row[field.name]??"—").replaceAll("\\n"," ").slice(0,24)).join(" | ").slice(0,180);
+      if(y>190){doc.addPage();y=15;}doc.text(line,12,y);y+=5;
+    });
+    doc.save(table+"-"+new Date().toISOString().slice(0,10)+".pdf");
+  }
+
   async function remove(row: Record<string, unknown>) {
     if (!supabase || !churchId) return;
     if (!window.confirm("Delete this record? This action may be restricted by church policy.")) return;
@@ -109,7 +141,7 @@ export default function DataModule({ churchId, table, title, description, fields
   }
 
   return <>
-    <div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div>{!readOnly && <button className="primary-button" disabled={!churchId} onClick={openNew}><Plus size={17}/> Add record</button>}</div>
+    <div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><div className="record-toolbar"><button className="secondary-button" disabled={!rows.length} onClick={exportCsv}>CSV</button><button className="secondary-button" disabled={!rows.length} onClick={exportExcel}>Excel</button><button className="secondary-button" disabled={!rows.length} onClick={exportPdf}>PDF</button>{!readOnly && <button className="primary-button" disabled={!churchId} onClick={openNew}><Plus size={17}/> Add record</button>}</div></div>
     {message && <div className="notice"><span>{message}</span><button onClick={() => setMessage("")}><X size={15}/></button></div>}
     {show && <div className="panel form-panel"><div className="form-grid">{fields.map(field => <div key={field.name}><label>{field.label}{field.required ? " *" : ""}</label>{field.type === "boolean" ? <input type="checkbox" checked={values[field.name] === "true"} onChange={event => setValues(old => ({ ...old, [field.name]: String(event.target.checked) }))}/> : field.lookup ? <select className="field" required={field.required} value={values[field.name]??""} onChange={event=>setValues(old=>({...old,[field.name]:event.target.value}))}><option value="">Select {field.label.toLowerCase()}</option>{(lookupOptions[field.name]??[]).map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input className="field" type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={event => setValues(old => ({ ...old, [field.name]: event.target.value }))}/>}</div>)}</div><div className="modal-actions"><button className="secondary-button" onClick={closeForm}>Cancel</button><button className="primary-button" disabled={saving || !fields.some(field => (values[field.name] ?? "").trim())} onClick={() => void save()}>{saving ? "Saving..." : editingId ? "Update record" : "Save record"}</button></div></div>}
     <div className="panel">{loading ? <div className="empty-state">Loading records...</div> : rows.length ? <div className="records-table"><div className="record-row record-head"><span>{title} record</span>{(displayAllFields?fields:fields.slice(0,3)).map(field=><span key={field.name}>{field.label}</span>)}{extraDisplay.map(field=><span key={field.name}>{field.label}</span>)}{!readOnly && <span>Actions</span>}</div>{rows.map(row=><div className="record-row" key={String(row.id)}><b>{String(row[fields[0]?.name] ?? "Record")}</b>{(displayAllFields?fields.slice(1):fields.slice(1,3)).map(field=><span key={field.name}>{String(row[field.name] ?? "—")}</span>)}{extraDisplay.map(field=><span key={field.name}>{String(row[field.name]??"—")}</span>)}{!readOnly && <span className="record-actions">{postJournal && row.status === "draft" && <button className="secondary-button" onClick={()=>void postEntry(row)}>Post</button>}{financialAction==="donation"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post donation</button>}{financialAction==="expense"&&row.status==="draft"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Approve</button>}{financialAction==="expense"&&row.status==="approved"&&<button className="secondary-button" onClick={()=>void runFinancialAction(row)}>Post expense</button>}<button className="icon-button" title="Edit record" onClick={()=>openEdit(row)}><Edit2 size={15}/></button><button className="icon-button" title="Delete record" onClick={()=>void remove(row)}><Trash2 size={15}/></button></span>}</div>)}</div> : <div className="empty-state"><ClipboardList/><b>No records yet</b><small>{churchId ? "Add the first record to start this register." : "Sign in and create a church workspace first."}</small></div>}</div>
