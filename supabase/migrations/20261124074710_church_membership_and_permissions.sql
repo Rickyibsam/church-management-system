@@ -1,0 +1,10 @@
+create or replace function private.has_church_role(p_church_id uuid,p_roles text[]) returns boolean language sql stable security definer set search_path='' as $$ select exists(select 1 from public.church_members cm where cm.church_id=p_church_id and cm.user_id=auth.uid() and cm.status='active' and cm.role=any(p_roles)); $$;
+grant usage on schema private to authenticated;
+grant execute on function private.has_church_role(uuid,text[]) to authenticated;
+drop policy if exists church_members_select_self on public.church_members;
+create policy church_members_select_self_or_admin on public.church_members for select to authenticated using(user_id=(select auth.uid()) or private.has_church_role(church_id,array['owner','admin']));
+create policy church_members_admin_insert on public.church_members for insert to authenticated with check(private.has_church_role(church_id,array['owner','admin']) and (role<>'owner' or private.has_church_role(church_id,array['owner'])));
+create policy church_members_admin_update on public.church_members for update to authenticated using(private.has_church_role(church_id,array['owner','admin'])) with check(private.has_church_role(church_id,array['owner','admin']) and (role<>'owner' or private.has_church_role(church_id,array['owner'])));
+create table public.church_member_permissions(id uuid primary key default gen_random_uuid(),church_id uuid not null references public.churches(id) on delete cascade,church_member_id uuid not null references public.church_members(id) on delete cascade,module_key text not null,action_key text not null,allowed boolean not null default false,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),unique(church_member_id,module_key,action_key));
+alter table public.church_member_permissions enable row level security;
+create policy church_member_permissions_admin_all on public.church_member_permissions for all to authenticated using(private.has_church_role(church_id,array['owner','admin'])) with check(private.has_church_role(church_id,array['owner','admin']));
