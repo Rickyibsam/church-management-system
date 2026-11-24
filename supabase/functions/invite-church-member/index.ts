@@ -21,7 +21,7 @@ Deno.serve(async (req: Request) => {
  const {data:callerMembership,error:membershipError}=await admin.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
  if(membershipError||!callerMembership||callerMembership.status!=="active"||!["owner","admin"].includes(callerMembership.role)) return json({error:"Only an active church owner or administrator can invite users."},403);
  if(role==="admin"&&callerMembership.role!=="owner") return json({error:"Only the church owner can invite another administrator."},403);
- if(branchId){const {data:branch}=await admin.from("church_branches").select("id").eq("id",branchId).eq("church_id",churchId).maybeSingle();if(!branch)return json({error:"Selected branch does not belong to this church."},400);}
+ let effectiveBranchId=branchId;\n if(effectiveBranchId){const {data:branch}=await admin.from("church_branches").select("id").eq("id",effectiveBranchId).eq("church_id",churchId).maybeSingle();if(!branch)return json({error:"Selected branch does not belong to this church."},400);}else{const {data:headOffice}=await admin.from("church_branches").select("id").eq("church_id",churchId).eq("is_head_office",true).maybeSingle();effectiveBranchId=headOffice?.id??null;}
  let page=1; let existingUser: {id:string;email?:string;email_confirmed_at?:string|null}|null=null;
  while(page<=20){const {data,error}=await admin.auth.admin.listUsers({page,perPage:1000});if(error)return json({error:"Unable to look up account status: "+error.message},502);existingUser=data.users.find(user=>user.email?.toLowerCase()===email)??null;if(existingUser||data.users.length<1000)break;page++;}
  if(existingUser){
@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
   if(existingMembership)return json({error:"This user already belongs to the church."},409);
   const status=existingUser.email_confirmed_at?"active":"invited";
   if(status==="invited"){const redirectTo=Deno.env.get("APP_REDIRECT_URL");const {error:resendError}=await admin.auth.resend({type:"signup",email,options:redirectTo?{emailRedirectTo:redirectTo}:undefined});if(resendError)return json({error:"Unable to resend account confirmation: "+resendError.message},400);}
-  const {error:addError}=await admin.from("church_members").insert({church_id:churchId,user_id:existingUser.id,role,status,branch_id:branchId});
+  const {error:addError}=await admin.from("church_members").insert({church_id:churchId,user_id:existingUser.id,role,status,branch_id:effectiveBranchId});
   if(addError)return json({error:"Unable to assign the existing account: "+addError.message},400);
   return json({message:status==="active"?"Existing account added and activated for this church.":"Existing unconfirmed account added; access activates after email confirmation.",invited:false});
  }
