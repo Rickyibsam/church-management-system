@@ -3,9 +3,9 @@ import { ClipboardList, Plus } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" };
-type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[] };
+type Props = { churchId: string | null; table: string; title: string; description: string; fields: Field[]; orderBy?: string };
 
-export default function DataModule({ churchId, table, title, description, fields }: Props) {
+export default function DataModule({ churchId, table, title, description, fields, orderBy = "created_at" }: Props) {
   const [rows, setRows] = useState<Array<Record<string, unknown>>>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [show, setShow] = useState(false);
@@ -15,7 +15,7 @@ export default function DataModule({ churchId, table, title, description, fields
   async function load() {
     if (!supabase || !churchId) { setRows([]); return; }
     const columns = ["id", ...fields.map(field => field.name), "created_at"].join(",");
-    const { data, error } = await supabase.from(table).select(columns).eq("church_id", churchId).order("created_at", { ascending: false }).limit(100);
+    const { data, error } = await supabase.from(table).select(columns).eq("church_id", churchId).order(orderBy, { ascending: false }).limit(100);
     if (error) setMessage(error.message);
     else setRows((data ?? []) as Array<Record<string, unknown>>);
   }
