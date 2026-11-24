@@ -110,3 +110,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added account-activity and budget-versus-actual reports based on posted double-entry journal lines, with church-scoped read-only views in the Finance workspace.
 
 - Added budget-line entry and approval workflow. Budgets must contain at least one line before approval; approved/closed budgets and their lines are protected from direct edits, and budget-vs-actual reporting is available.
+
+- Added a family-relationship register with household/member selectors, relationship types and primary-contact designation, linked from the Family Directory.
