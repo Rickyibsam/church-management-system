@@ -1,4 +1,5 @@
-create or replace view public.donation_pledge_balance_report
+drop view if exists public.donation_pledge_balance_report;
+create view public.donation_pledge_balance_report
 with (security_invoker = true) as
 select
  p.id as id,
@@ -19,4 +20,5 @@ left join (
  from public.donation_pledge_allocations
  group by pledge_id,church_id
 ) a on a.pledge_id=p.id and a.church_id=p.church_id;
+revoke all on public.donation_pledge_balance_report from anon;
 grant select on public.donation_pledge_balance_report to authenticated;
