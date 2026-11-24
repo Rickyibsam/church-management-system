@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BookOpen, CalendarClock, ClipboardList, FileBarChart, HeartHandshake, Landmark, Package, ShieldCheck } from "lucide-react";
 import DataModule from "./DataModule";
+import NotificationsInbox from "./NotificationsInbox";
 
 type Kind = "finance" | "pastoral" | "reports" | "assets" | "attendance";
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local"; lookup?: {table:string;labelField:string;valueField?:string;filterField?:string;filterValue?:string} };
@@ -50,6 +51,6 @@ export default function OperationsHub({ churchId, kind }: { churchId: string | n
  return <section>
   <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":kind==="attendance"?"Attendance Management":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
   <div className="quick-grid">{list.map(item=><button key={item.key} className={selected===item.key?"quick-card active":"quick-card"} onClick={()=>setSelected(item.key)}><span>{kind==="pastoral"?<HeartHandshake/>:kind==="reports"?<ShieldCheck/>:kind==="assets"?<Package/>:kind==="attendance"?<CalendarClock/>:<BookOpen/>}</span><b>{item.label}</b><small>{item.description}</small></button>)}</div>
-  <DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields} orderBy={active.orderBy} readOnly={active.readOnly} postJournal={active.postJournal} financialAction={active.financialAction} extraColumns={active.extraColumns} extraDisplay={active.extraDisplay} displayAllFields={active.displayAllFields}/>
+  {kind==="reports"&&active.key==="notifications"?<NotificationsInbox churchId={churchId}/>:<DataModule key={kind+"-"+active.key} churchId={churchId} table={active.table} title={active.label} description={active.description} fields={active.fields} orderBy={active.orderBy} readOnly={active.readOnly} postJournal={active.postJournal} financialAction={active.financialAction} extraColumns={active.extraColumns} extraDisplay={active.extraDisplay} displayAllFields={active.displayAllFields}/>}
  </section>;
 }
