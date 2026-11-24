@@ -1,0 +1,180 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
+  CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
+  FolderLock, HeartHandshake, Home, Languages, LayoutDashboard, LogOut,
+  Menu, Plus, Search, Settings, ShieldCheck, Users, Wallet, X
+} from "lucide-react";
+import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import type { CertificateType, ModuleKey } from "./types";
+
+const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
+  { key: "churches", label: "Churches & Branches", icon: Church, group: "Administration" },
+  { key: "members", label: "Members", icon: Users, group: "People" },
+  { key: "families", label: "Family Register", icon: HeartHandshake, group: "People" },
+  { key: "certificates", label: "Certificates & Registers", icon: FileBadge, group: "Records" },
+  { key: "documents", label: "Document Verification", icon: FolderLock, group: "Records" },
+  { key: "attendance", label: "Attendance", icon: ClipboardList, group: "Ministry" },
+  { key: "ministries", label: "Ministries", icon: BookOpen, group: "Ministry" },
+  { key: "events", label: "Events & Calendar", icon: CalendarDays, group: "Ministry" },
+  { key: "pastoral", label: "Pastoral Care", icon: HeartHandshake, group: "Ministry" },
+  { key: "finance", label: "Accounts & Expenses", icon: Wallet, group: "Finance" },
+  { key: "donations", label: "Tithes & Donations", icon: Banknote, group: "Finance" },
+  { key: "assets", label: "Assets & Inventory", icon: Building2, group: "Management" },
+  { key: "reports", label: "Reports & Audit", icon: Activity, group: "Management" },
+  { key: "settings", label: "Settings", icon: Settings, group: "Management" }
+];
+
+const certTypes: { value: CertificateType; label: string; prefix: string }[] = [
+  { value: "marriage", label: "Marriage", prefix: "MAR" },
+  { value: "birth", label: "Birth / Child Record", prefix: "BIR" },
+  { value: "death", label: "Death Record", prefix: "DEA" },
+  { value: "baptism", label: "Baptism", prefix: "BAP" },
+  { value: "family", label: "Family Registration", prefix: "FAM" },
+  { value: "membership", label: "Membership", prefix: "MEM" },
+  { value: "dedication", label: "Child Dedication", prefix: "DED" },
+  { value: "confirmation", label: "Confirmation", prefix: "CON" },
+  { value: "ordination", label: "Ordination", prefix: "ORD" },
+  { value: "transfer", label: "Church Transfer", prefix: "TRF" }
+];
+
+function App() {
+  const [active, setActive] = useState<ModuleKey>("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [notice, setNotice] = useState("");
+  const [certOpen, setCertOpen] = useState(false);
+  const [certType, setCertType] = useState<CertificateType>("marriage");
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.email ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user.email ?? null));
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const activeItem = nav.find(item => item.key === active)!;
+  const grouped = useMemo(() => nav.reduce<Record<string, typeof nav>>((acc, item) => {
+    (acc[item.group] ??= []).push(item); return acc;
+  }, {}), []);
+  const filtered = nav.filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
+
+  async function signIn() {
+    if (!supabase) { setNotice("Add Supabase URL and publishable key to your local environment first."); return; }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setNotice(error?.message ?? "Signed in successfully.");
+    if (!error) setAuthOpen(false);
+  }
+  async function signUp() {
+    if (!supabase) { setNotice("Add Supabase URL and publishable key to your local environment first."); return; }
+    const { error } = await supabase.auth.signUp({ email, password });
+    setNotice(error?.message ?? "Account created. Check your email if confirmation is enabled.");
+  }
+  async function signOut() {
+    await supabase?.auth.signOut(); setNotice("You have signed out.");
+  }
+
+  return <div className="app-shell">
+    {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
+    <aside className={sidebarOpen ? "sidebar open" : "sidebar"}>
+      <div className="brand"><div className="brand-mark"><Church size={22}/></div><div><b>Church360</b><small>Management System</small></div><button className="icon-button mobile-close" onClick={() => setSidebarOpen(false)}><X/></button></div>
+      <div className="church-switch"><span className="church-avatar">C</span><span><b>Select church</b><small>Workspace not configured</small></span><ChevronDown size={16}/></div>
+      <div className="nav-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a module..." /></div>
+      <nav>{(query ? { Search: filtered } : grouped) && Object.entries(query ? { Search: filtered } : grouped).map(([group, items]) =>
+        <section className="nav-group" key={group}><label>{group}</label>{items.map(item => {
+          const Icon = item.icon; return <button key={item.key} className={active === item.key ? "nav-item active" : "nav-item"} onClick={() => { setActive(item.key); setSidebarOpen(false); }}><Icon size={18}/><span>{item.label}</span></button>;
+        })}</section>
+      )}</nav>
+      <div className="sidebar-bottom"><div className="secure-note"><ShieldCheck size={17}/><span>Church data protection<br/><small>Tenant isolation planned</small></span></div><small>Church360 · Initial build</small></div>
+    </aside>
+
+    <main className="main-area">
+      <header className="topbar"><div className="top-left"><button className="icon-button menu-toggle" onClick={() => setSidebarOpen(true)}><Menu/></button><div><div className="breadcrumbs">Workspace <span>/</span> {activeItem.label}</div><h1>{activeItem.label}</h1></div></div><div className="top-actions"><span className={isSupabaseConfigured ? "connection online" : "connection"}><i/> {isSupabaseConfigured ? "Supabase configured" : "Setup required"}</span><button className="icon-button" title="Notifications"><Bell/></button>{userEmail ? <button className="user-chip" onClick={signOut}><span className="user-avatar">{userEmail[0]?.toUpperCase()}</span><span>{userEmail}</span><LogOut size={15}/></button> : <button className="primary-button small" onClick={() => setAuthOpen(true)}>Sign in</button>}</div></header>
+
+      <div className="content">
+        {notice && <div className="notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={15}/></button></div>}
+        {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)}/> :
+          active === "certificates" ? <Certificates onNew={() => setCertOpen(true)}/> :
+          active === "members" || active === "families" ? <People kind={active}/> :
+          active === "churches" ? <Placeholder title="Churches & Branches" description="Set up church profiles, campuses, branches, denominations, country, currency and time zone." icon={<Church/>} items={["Church profile","Branches and campuses","Church branding","Pastors and staff","Church-specific settings"]}/> :
+          active === "documents" ? <Placeholder title="Document Verification" description="Review private supporting documents submitted with registrations." icon={<FolderLock/>} items={["Pending verification","Verified documents","Rejected documents","Private attachment storage","Reviewer activity log"]}/> :
+          active === "attendance" ? <Placeholder title="Attendance Management" description="Manage services, attendance registers, QR check-in and attendance summaries." icon={<ClipboardList/>} items={["Sunday services","Prayer meetings","Bible study","QR attendance","Attendance reports"]}/> :
+          active === "ministries" ? <Placeholder title="Ministries" description="Organize ministry teams, leaders, members and activities." icon={<BookOpen/>} items={["Youth ministry","Children's ministry","Women's ministry","Men's ministry","Missions and outreach"]}/> :
+          active === "events" ? <Placeholder title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." icon={<CalendarDays/>} items={["Church calendar","Event registration","Volunteer assignments","Reminders","Event reports"]}/> :
+          active === "pastoral" ? <Placeholder title="Pastoral Care" description="Restricted pastoral appointments, prayer requests and care follow-ups." icon={<HeartHandshake/>} items={["Prayer requests","Counseling appointments","Hospital visits","Home visits","Confidential case notes"]}/> :
+          active === "finance" || active === "donations" ? <Placeholder title={active === "finance" ? "Accounts & Expenses" : "Tithes & Donations"} description="Church financial records with role-restricted access and auditable entries." icon={<Wallet/>} items={["Cash and bank accounts","Tithes and offerings","Donations and pledges","Income and expenses","Budgets and financial reports"]}/> :
+          active === "assets" ? <Placeholder title="Assets & Inventory" description="Track church property, equipment, instruments and maintenance." icon={<Building2/>} items={["Asset register","Equipment allocation","Maintenance schedule","Inventory movement","Disposal history"]}/> :
+          active === "reports" ? <Placeholder title="Reports & Audit" description="Operational summaries, exports and immutable audit history." icon={<Activity/>} items={["Membership reports","Certificate register","Attendance analytics","Financial reports","Audit trail"]}/> :
+          <SettingsPage/>}
+      </div>
+    </main>
+
+    {authOpen && <Modal title="Sign in to Church360" onClose={() => setAuthOpen(false)}><p className="muted">Use your church account. New accounts require an administrator to assign a church and role.</p><label>Email address</label><input className="field" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"/><label>Password</label><input className="field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"/><div className="modal-actions"><button className="secondary-button" onClick={signUp}>Create account</button><button className="primary-button" onClick={signIn}>Sign in</button></div></Modal>}
+    {certOpen && <CertificateModal type={certType} setType={setCertType} onClose={() => setCertOpen(false)} onSave={() => { setCertOpen(false); setNotice("Registration form UI saved locally for this prototype. Database persistence is part of the implementation phase."); }}/>}
+  </div>;
+}
+
+function Dashboard({ onNavigate, onNew }: { onNavigate: (key: ModuleKey) => void; onNew: () => void }) {
+  const stats = [{ label: "Registered Members", value: "—", hint: "Connect your church workspace", icon: Users }, { label: "Families", value: "—", hint: "Family register", icon: HeartHandshake }, { label: "Certificates Issued", value: "—", hint: "Certificate register", icon: FileBadge }, { label: "Donations This Month", value: "—", hint: "Financial overview", icon: Banknote }];
+  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>Welcome to your church workspace</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
+    <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>Your workspace setup is next</b><p>Connect Supabase, create your first church, then invite authorized staff. Live statistics will appear after database setup.</p></div><span className="status-pill">Setup pending</span></div>
+    <div className="stat-grid">{stats.map(s => { const Icon = s.icon; return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>; })}</div>
+    <div className="section-heading"><div><h3>Quick access</h3><p>Open a core area of your church administration.</p></div></div>
+    <div className="quick-grid">{[{label:"Register a member",icon:Users,key:"members" as ModuleKey,desc:"Member profiles and household links"},{label:"Family register",icon:HeartHandshake,key:"families" as ModuleKey,desc:"Households and family relationships"},{label:"Certificates",icon:FileBadge,key:"certificates" as ModuleKey,desc:"Marriage, birth, death and baptism"},{label:"Church settings",icon:Settings,key:"settings" as ModuleKey,desc:"Branding, language and permissions"}].map(x => { const Icon=x.icon; return <button className="quick-card" key={x.label} onClick={() => onNavigate(x.key)}><span><Icon/></span><b>{x.label}</b><small>{x.desc}</small></button>; })}</div>
+    <div className="section-heading"><div><h3>Development roadmap</h3><p>Build the full online system before beginning the testing phase.</p></div></div>
+    <div className="roadmap"><div className="roadmap-step done"><CheckCircle2/><span><b>Project foundation</b><small>Repository and product scope</small></span><em>Created</em></div><div className="roadmap-step current"><Activity/><span><b>Core application and database</b><small>Modules, workflows and security policies</small></span><em>In progress</em></div><div className="roadmap-step"><ShieldCheck/><span><b>Complete feature implementation</b><small>All administration and church operations</small></span><em>Next</em></div><div className="roadmap-step"><CheckCircle2/><span><b>Full testing and bug fixing</b><small>Functional, security and end-to-end testing</small></span><em>After build</em></div><div className="roadmap-step"><Baby/><span><b>Offline-capable edition</b><small>Installable PWA, local encrypted queue and sync</small></span><em>After testing</em></div></div>
+  </>;
+}
+
+function Certificates({ onNew }: { onNew: () => void }) {
+  return <><div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage certificate applications, supporting evidence, approvals and branded certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
+    <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
+    <div className="panel"><div className="panel-heading"><div><h3>Registration workflow</h3><p>Every application keeps its document and approval history.</p></div></div><div className="workflow"><span>Draft</span><i/> <span>Documents pending</span><i/> <span>Under review</span><i/> <span>Approved</span><i/> <span>Issued</span></div><div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div></div>
+  </>;
+}
+
+function People({ kind }: { kind: "members" | "families" }) {
+  const family = kind === "families";
+  return <><div className="page-intro"><div><h2>{family ? "Family Registration" : "Member Directory"}</h2><p>{family ? "Create family profiles and connect spouses, children and dependents." : "Manage member profiles, contact details, membership and church history."}</p></div><button className="primary-button"><Plus size={17}/> {family ? "New family" : "Add member"}</button></div><div className="panel"><div className="empty-state"><Users/><b>{family ? "Family register is ready for setup" : "Member directory is ready for setup"}</b><small>Database-backed registration and search will be enabled after Supabase schema setup.</small></div></div></>;
+}
+
+function Placeholder({ title, description, icon, items }: { title: string; description: string; icon: React.ReactNode; items: string[] }) {
+  return <><div className="page-intro"><div><h2>{title}</h2><p>{description}</p></div><button className="secondary-button"><Plus size={16}/> Add new</button></div><div className="feature-grid">{items.map((item, i) => <div className="feature-card" key={item}><span>{icon}</span><b>{item}</b><small>{i === 0 ? "Core workspace" : "Included in the full module"}</small></div>)}</div><div className="panel"><div className="empty-state"><ClipboardList/><b>{title} workspace</b><small>Module screen established. Database workflows and actions will be connected during implementation.</small></div></div></>;
+}
+
+function SettingsPage() {
+  return <><div className="page-intro"><div><h2>Church Settings</h2><p>Configure church identity, branding, languages, certificates and access policies.</p></div></div><div className="settings-grid">{[{title:"Church profile & branding",desc:"Church name, logo, address, header and footer"},{title:"Certificate templates",desc:"Layouts, signatures, seals, paper and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, currency, country and time zone"},{title:"Security & audit",desc:"Sessions, access history, retention and backups"}].map(x => <div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div></>;
+}
+
+function CertificateModal({ type, setType, onClose, onSave }: { type: CertificateType; setType: (v: CertificateType) => void; onClose: () => void; onSave: () => void }) {
+  const [fullName, setFullName] = useState("");
+  const [secondName, setSecondName] = useState("");
+  const [date, setDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [files, setFiles] = useState<FileList | null>(null);
+  const selected = certTypes.find(t => t.value === type)!;
+  const requirements: Record<CertificateType, string[]> = {
+    marriage: ["Bride CNIC copy (front/back)", "Groom CNIC copy (front/back)", "Witness 1 identity copy", "Witness 2 identity copy", "Marriage application / supporting record"],
+    birth: ["Father identity document", "Mother identity document", "Hospital birth slip / available birth evidence"],
+    death: ["Deceased identity document (if available)", "Applicant identity document", "Hospital / death / burial evidence (if available)"],
+    baptism: ["Member identity or church member record", "Parent / guardian consent where applicable"],
+    family: ["Family head identity document", "Spouse identity document", "Children's B-Forms / identity evidence where applicable"],
+    membership: ["Identity document (if available)", "Membership application"],
+    dedication: ["Child birth evidence (if available)", "Parent / guardian identity and consent"],
+    confirmation: ["Member record", "Confirmation class / pastoral record"],
+    ordination: ["Candidate identity", "Training and church authorization records"],
+    transfer: ["Member identity or church record", "Receiving church details"]
+  };
+  return <Modal title="New certificate registration" onClose={onClose}><div className="form-grid"><div className="form-full"><label>Certificate type</label><select className="field" value={type} onChange={e => setType(e.target.value as CertificateType)}>{certTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div><div><label>Primary person / family name</label><input className="field" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full legal name"/></div><div><label>{type === "marriage" ? "Bride / Groom name" : "Second person (if applicable)"}</label><input className="field" value={secondName} onChange={e => setSecondName(e.target.value)} placeholder="Full name"/></div><div><label>{type === "marriage" ? "Marriage date" : "Event / record date"}</label><input className="field" type="date" value={date} onChange={e => setDate(e.target.value)}/></div><div><label>Registration reference</label><input className="field" value="Generated after database setup" disabled/></div><div className="form-full"><label>Required supporting documents (configurable)</label><div className="checklist">{requirements[type].map(item => <label key={item}><input type="checkbox" defaultChecked={false}/><span>{item}</span></label>)}</div></div><div className="form-full"><label>Upload attachments</label><input className="field" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={e => setFiles(e.target.files)}/><small className="helper">{files?.length ? files.length + " file(s) selected" : "PDF, JPG or PNG. Files will be stored in a private bucket after database setup."}</small></div><div className="form-full"><label>Notes</label><textarea className="field" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Additional details"/></div></div><div className="legal-note"><ShieldCheck size={16}/> Church-issued records are separate from government civil certificates. Requirements must be checked for the applicable country and jurisdiction.</div><div className="modal-actions"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={onSave} disabled={!fullName.trim() || !date}>Save draft</button></div></Modal>;
+}
+
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><div className="modal"><div className="modal-header"><h3>{title}</h3><button className="icon-button" onClick={onClose}><X/></button></div><div className="modal-body">{children}</div></div></div>;
+}
+
+export default App;
