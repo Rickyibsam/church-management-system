@@ -13,6 +13,7 @@ import DocumentReview from "./components/DocumentReview";
 import TeamManagement from "./components/TeamManagement";
 import CertificatePrint from "./components/CertificatePrint";
 import CertificateVerify from "./components/CertificateVerify";
+import OperationsHub from "./components/OperationsHub";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -113,7 +114,10 @@ function App() {
     await supabase?.auth.signOut(); setNotice("You have signed out.");
   }
 
-  const verificationToken = new URLSearchParams(window.location.search).get("verify");\n  if (verificationToken) return <CertificateVerify token={verificationToken}/>;\n\n  return <div className="app-shell">
+  const verificationToken = new URLSearchParams(window.location.search).get("verify");
+  if (verificationToken) return <CertificateVerify token={verificationToken}/>;
+
+  return <div className="app-shell">
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={sidebarOpen ? "sidebar open" : "sidebar"}>
       <div className="brand"><div className="brand-mark"><Church size={22}/></div><div><b>Church360</b><small>Management System</small></div><button className="icon-button mobile-close" onClick={() => setSidebarOpen(false)}><X/></button></div>
@@ -132,18 +136,19 @@ function App() {
 
       <div className="content">
         {notice && <div className="notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={15}/></button></div>}
-        {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)}/> :
+        {active === "dashboard" ? <Dashboard onNavigate={setActive} onNew={() => setCertOpen(true)} churchName={churchName}/> :
           active === "certificates" ? <Certificates onNew={() => setCertOpen(true)} refresh={certificateRefresh}/> :
           active === "members" || active === "families" ? <People kind={active}/> :
-          active === "team" ? <TeamManagement churchId={churchId}/> :\n          active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
+          active === "team" ? <TeamManagement churchId={churchId}/> :
+          active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
           active === "documents" ? <DocumentReview/> :
           active === "attendance" ? <DataModule churchId={churchId} table="church_services" title="Services & Attendance" description="Create worship services and maintain the service register." fields={[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]}/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
           active === "events" ? <DataModule churchId={churchId} table="church_events" title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." fields={[{name:"title",label:"Event title"},{name:"event_type",label:"Event type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"},{name:"description",label:"Description"}]}/> :
-          active === "pastoral" ? <Placeholder title="Pastoral Care" description="Restricted pastoral appointments, prayer requests and care follow-ups." icon={<HeartHandshake/>} items={["Prayer requests","Counseling appointments","Hospital visits","Home visits","Confidential case notes"]}/> :
-          active === "finance" ? <DataModule churchId={churchId} table="expenses" title="Accounts & Expenses" description="Record church expenses with finance-role restrictions." fields={[{name:"expense_category",label:"Expense category"},{name:"description",label:"Description"},{name:"amount",label:"Amount",type:"number"},{name:"spent_at",label:"Expense date",type:"datetime-local"}]}/> : active === "donations" ? <DataModule churchId={churchId} table="donations" title="Tithes & Donations" description="Record tithes, offerings, mission and charity donations." fields={[{name:"donor_name",label:"Donor name"},{name:"donation_type",label:"Donation type"},{name:"amount",label:"Amount",type:"number"},{name:"donated_at",label:"Donation date",type:"datetime-local"},{name:"payment_method",label:"Payment method"}]}/> :
-          active === "assets" ? <DataModule churchId={churchId} table="church_assets" title="Assets & Inventory" description="Track church property, equipment, instruments and maintenance." fields={[{name:"asset_code",label:"Asset code"},{name:"name",label:"Asset name"},{name:"category",label:"Category"},{name:"purchase_cost",label:"Purchase cost",type:"number"},{name:"location",label:"Location"}]}/> :
-          active === "reports" ? <Placeholder title="Reports & Audit" description="Operational summaries, exports and immutable audit history." icon={<Activity/>} items={["Membership reports","Certificate register","Attendance analytics","Financial reports","Audit trail"]}/> :
+          active === "pastoral" ? <OperationsHub churchId={churchId} kind="pastoral"/> :
+          active === "finance" ? <OperationsHub churchId={churchId} kind="finance"/> : active === "donations" ? <DataModule churchId={churchId} table="donations" title="Tithes & Donations" description="Record tithes, offerings, mission and charity donations." fields={[{name:"donor_name",label:"Donor name"},{name:"donation_type",label:"Donation type"},{name:"amount",label:"Amount",type:"number"},{name:"donated_at",label:"Donation date",type:"datetime-local"},{name:"payment_method",label:"Payment method"}]}/> :
+          active === "assets" ? <OperationsHub churchId={churchId} kind="assets"/> :
+          active === "reports" ? <OperationsHub churchId={churchId} kind="reports"/> :
           <SettingsPage churchId={churchId}/>}
       </div>
     </main>
@@ -166,7 +171,8 @@ function Dashboard({ onNavigate, onNew, churchName }: { onNavigate: (key: Module
   </>;
 }
 
-function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }) {\n  const [printId,setPrintId] = useState<string|null>(null);
+function Certificates({ onNew, refresh }: { onNew: () => void; refresh: number }) {
+  const [printId,setPrintId] = useState<string|null>(null);
   const [records,setRecords] = useState<Array<Record<string,unknown>>>([]);
   const [message,setMessage] = useState("");
   useEffect(() => {
