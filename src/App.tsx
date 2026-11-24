@@ -142,7 +142,7 @@ function App() {
           active === "team" ? <TeamManagement churchId={churchId}/> :
           active === "churches" ? <DataModule churchId={churchId} table="church_branches" title="Church Branches & Campuses" description="Manage campuses, branch contact details and locations for this church." fields={[{name:"name",label:"Branch name"},{name:"branch_code",label:"Branch code"},{name:"address",label:"Address"},{name:"phone",label:"Phone"}]}/> :
           active === "documents" ? <DocumentReview/> :
-          active === "attendance" ? <DataModule churchId={churchId} table="church_services" title="Services & Attendance" description="Create worship services and maintain the service register." fields={[{name:"title",label:"Service title"},{name:"service_type",label:"Service type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"}]}/> :
+          active === "attendance" ? <OperationsHub churchId={churchId} kind="attendance"/> :
           active === "ministries" ? <DataModule churchId={churchId} table="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name"},{name:"description",label:"Description"}]}/> :
           active === "events" ? <DataModule churchId={churchId} table="church_events" title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." fields={[{name:"title",label:"Event title"},{name:"event_type",label:"Event type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"},{name:"description",label:"Description"}]}/> :
           active === "pastoral" ? <OperationsHub churchId={churchId} kind="pastoral"/> :
