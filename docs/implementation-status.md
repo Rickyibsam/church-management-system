@@ -156,3 +156,10 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Private Storage access now follows the same branch and action-level permissions as the database: member documents, certificate attachments and template assets are checked against their parent records before read/upload/update/delete.
 
 - New church workspaces now receive a starter chart of accounts and a mapped Cash on Hand account automatically; existing church workspaces were backfilled so donation, expense and asset workflows have usable account defaults.
+
+
+## Additional online development pass
+- Expanded the Donation Pledges register with linked member selection, pledge date, due date, currency, notes and explicit open/partially-paid/fulfilled/cancelled status fields.
+- Removed a duplicate Journal Lines register definition so the finance navigation has a single unambiguous entry.
+- Hardened CSV export against spreadsheet formula injection by prefixing dangerous formula-leading cell values before quoting and exporting.
+- These are implementation changes only; the requested full functional/security/end-to-end test phase remains deferred until online feature development is complete.
