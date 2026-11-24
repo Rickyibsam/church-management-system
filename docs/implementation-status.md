@@ -118,3 +118,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added database-level same-church reference checks across member/family, certificate, attendance, pastoral, accounting, budget, asset, permission and document records to prevent cross-tenant foreign-key references.
 
 - Extended tenant integrity checks to branch assignments, pastoral case assignees and notification recipients so referenced users must belong to the same church workspace.
+
+- Deployed invitation function version 3 with JWT verification still enabled. Only active church owners/admins may invite; only the church owner may grant the administrator role. The team UI now labels the action as an invitation.
