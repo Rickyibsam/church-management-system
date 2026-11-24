@@ -21,7 +21,8 @@ Deno.serve(async (req: Request) => {
  const {data:callerMembership,error:membershipError}=await admin.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
  if(membershipError||!callerMembership||callerMembership.status!=="active"||!["owner","admin"].includes(callerMembership.role)) return json({error:"Only an active church owner or administrator can invite users."},403);
  if(role==="admin"&&callerMembership.role!=="owner") return json({error:"Only the church owner can invite another administrator."},403);
- let effectiveBranchId=branchId;\n if(effectiveBranchId){const {data:branch}=await admin.from("church_branches").select("id").eq("id",effectiveBranchId).eq("church_id",churchId).maybeSingle();if(!branch)return json({error:"Selected branch does not belong to this church."},400);}else{const {data:headOffice}=await admin.from("church_branches").select("id").eq("church_id",churchId).eq("is_head_office",true).maybeSingle();effectiveBranchId=headOffice?.id??null;}
+ let effectiveBranchId=branchId;
+ if(effectiveBranchId){const {data:branch}=await admin.from("church_branches").select("id").eq("id",effectiveBranchId).eq("church_id",churchId).maybeSingle();if(!branch)return json({error:"Selected branch does not belong to this church."},400);}else{const {data:headOffice}=await admin.from("church_branches").select("id").eq("church_id",churchId).eq("is_head_office",true).maybeSingle();effectiveBranchId=headOffice?.id??null;}
  let page=1; let existingUser: {id:string;email?:string;email_confirmed_at?:string|null}|null=null;
  while(page<=20){const {data,error}=await admin.auth.admin.listUsers({page,perPage:1000});if(error)return json({error:"Unable to look up account status: "+error.message},502);existingUser=data.users.find(user=>user.email?.toLowerCase()===email)??null;if(existingUser||data.users.length<1000)break;page++;}
  if(existingUser){
