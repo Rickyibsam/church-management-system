@@ -269,3 +269,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Donation receipts now notify active owner/admin/accountant/finance users when a receipt transitions to posted; the posting user is excluded.
 - Expenses now notify active owner/admin/accountant/finance users when an approved expense transitions to posted; the posting user is excluded.
 - Notification bodies are generic and do not disclose donor details, amounts, private notes or pastoral case information. The existing realtime inbox delivers the records to each recipient.
+
+
+## Action-specific permission defaults
+- The server-side `private.has_church_permission` helper now applies separate defaults for view, create, edit, delete, approve and issue instead of granting every action merely because a role can access a module.
+- The team permission editor uses the same action-specific defaults. Owners and administrators retain full access; explicit per-user permission overrides continue to take precedence for other roles.
+- Existing RLS policies and protected RPCs call the shared helper, so the tightened defaults apply at the database boundary as well as in the UI.
