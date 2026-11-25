@@ -31,6 +31,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
   async function exportBackup() {
     const client=supabase;
     if (!client || !churchId || busy) return;
+    const storageClient=client as NonNullable<typeof client>;
     setBusy(true); setMessage("");
     try {
       const {data:userData,error:userError}=await client.auth.getUser();
@@ -61,14 +62,14 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       async function collectFolder(bucket:string,path:string,depth=0):Promise<void>{
         if(depth>12)throw new Error("Storage folder nesting exceeded the backup safety limit.");
         for(let offset=0;;offset+=100){
-          const {data,error}=await client.storage.from(bucket).list(path,{limit:100,offset});
+          const {data,error}=await storageClient.storage.from(bucket).list(path,{limit:100,offset});
           if(error)throw new Error("Unable to list "+bucket+" storage: "+error.message);
           const page=data??[];
           for(const entry of page){
             const fullPath=path+"/"+entry.name;
             if(!entry.id&&!entry.metadata){await collectFolder(bucket,fullPath,depth+1);continue;}
             if(storageFiles.length>=2000)throw new Error("The backup contains more than 2,000 files; split the archive before exporting.");
-            const {data:fileBlob,error:downloadError}=await client.storage.from(bucket).download(fullPath);
+            const {data:fileBlob,error:downloadError}=await storageClient.storage.from(bucket).download(fullPath);
             if(downloadError||!fileBlob)throw new Error("Unable to download backup file "+entry.name+": "+(downloadError?.message??"Unknown storage error"));
             const buffer=await fileBlob.arrayBuffer();
             storageBytes+=buffer.byteLength;
@@ -153,8 +154,8 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
         uploaded[file.bucket].push(targetPath);
       }
-      const databaseSnapshot={...parsed,storage_manifest:files.map(file=>({bucket:file.bucket,path:churchId+file.path.slice(sourceChurchId.length),size:file.size}))};
-      delete databaseSnapshot.storage_files;
+      const databaseSnapshot:Record<string,unknown>={...parsed,storage_manifest:files.map(file=>({bucket:file.bucket,path:churchId+file.path.slice(sourceChurchId.length),size:file.size}))};
+      delete databaseSnapshot["storage_files"];
       const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
       if(restoreError)throw new Error("Database restore was rolled back: "+restoreError.message);
       const restored=result as {records_restored?:number;tables_restored?:number};
