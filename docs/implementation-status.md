@@ -21,20 +21,14 @@ Delivery order requested by the project owner:
 - Church team membership and custom permission storage foundation.
 - Audit trigger foundation and Cloudflare Workers Static Assets hosting configuration.
 
-## Still to build before testing
-- Full CRUD/edit/delete/restore policies and action-level permission enforcement across every module.
-- Member profile completeness, family tree and relationship management.
-- Invitation-by-email and complete staff onboarding.
-- Full certificate template designer, signatures/seals, PDF archival, correction/reissue/cancellation and country-specific requirements.
-- Complete service attendance check-in, visitor flows and reports.
-- Pastoral appointments, prayer requests and restricted case workflow.
-- Chart of accounts, cash/bank reconciliation, receipts, budgets, donor statements and financial reports.
-- Asset lifecycle, inventory and maintenance.
-- Notifications, exports, backups/restore, dashboards, localization and accessibility.
-- Deployment environment setup and operational documentation.
+## Remaining before acceptance testing
+- Configure the deployed Cloudflare application origin and redirect URL in Supabase Edge Function secrets, then configure a verified SMTP sender in Supabase Auth. See `docs/email-invitations.md`; credentials must be entered in Supabase Dashboard and never committed to Git.
+- Create the first owner account and church workspace, then prepare a controlled source backup and a separate empty target workspace to test real restore behavior.
+- Verify the latest Cloudflare Worker deployment after the latest GitHub changes; GitHub build success alone does not prove the Worker deployment completed.
+- Complete any final integration gaps discovered during the planned acceptance pass.
 
 ## Testing and offline
-No functional, security or end-to-end test phase has been started, per the requested order. Offline caching, local queues and synchronization are deferred until online feature completion and testing.
+GitHub TypeScript/Vite production builds and selected SQL safety checks have been run during development. The full functional, security/RLS, storage, workflow and end-to-end acceptance phase has not started, per the requested delivery order. The selected Supabase project currently contains no Auth users or church workspaces, so real authenticated workflows and backup restore cannot be exercised yet. Offline caching, local queues and synchronization remain deferred until online feature completion and acceptance testing.
 
 
 ## Online build additions (current development pass)
