@@ -15,6 +15,7 @@ The application supports email-free church registration and username/password ac
 
 ## Branch users
 - Church owners/admins can create users with username, temporary password, role, and optional branch assignment.
+- Church owners/admins can reset passwords for active non-owner accounts from Users & Permissions. Only an owner can reset an administrator account. Password resets are performed server-side and never expose the Supabase service-role key.
 - Usernames are unique within a church, so different churches may use the same username.
 - Only the church owner may create another church administrator.
 - Each user receives a separate Supabase Auth account.
