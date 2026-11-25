@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Download, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, ShieldCheck, Upload } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const BACKUP_TABLES = [
@@ -16,6 +16,18 @@ const BACKUP_TABLES = [
 export default function ChurchDataBackup({ churchId }: { churchId: string | null }) {
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
+  const [restoreFile,setRestoreFile]=useState<File|null>(null);
+  const [canRestore,setCanRestore]=useState(false);
+  useEffect(()=>{
+    let alive=true;const client=supabase;
+    if(!client||!churchId){setCanRestore(false);return ()=>{alive=false;};}
+    void client.auth.getUser().then(async ({data,error})=>{
+      if(error||!data.user){if(alive)setCanRestore(false);return;}
+      const {data:membership}=await client.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",data.user.id).maybeSingle();
+      if(alive)setCanRestore(membership?.role==="owner"&&membership.status==="active");
+    });
+    return ()=>{alive=false;};
+  },[churchId]);
   async function exportBackup() {
     const client=supabase;
     if (!client || !churchId || busy) return;
@@ -100,10 +112,69 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       setMessage(error instanceof Error?error.message:"Backup export failed. No complete backup file was created.");
     } finally { setBusy(false); }
   }
+  async function restoreBackup(){
+    const client=supabase;
+    if(!client||!churchId||!restoreFile||busy)return;
+    if(!window.confirm("Restore this backup into the selected NEW empty church workspace? Existing operational data is never overwritten."))return;
+    setBusy(true);setMessage("");
+    const uploaded:Record<string,string[]>={"church-private-documents":[],"church-branding":[]};
+    try{
+      if(restoreFile.size>80*1024*1024)throw new Error("The backup file exceeds the 80 MB restore limit.");
+      const parsed=JSON.parse(await restoreFile.text()) as Record<string,unknown>;
+      if(parsed.format!=="church-management-system-backup"||parsed.version!==4)throw new Error("Select a valid version 4 church backup.");
+      const workspace=parsed.workspace as {id?:string}|undefined;
+      const sourceChurchId=workspace?.id??"";
+      if(!sourceChurchId||sourceChurchId===churchId)throw new Error("Select a backup from a different church workspace.");
+      const files=Array.isArray(parsed.storage_files)?parsed.storage_files as Array<{bucket:string;path:string;content_type:string;size:number;content_base64:string}>:[];
+      if(files.length>2000)throw new Error("The backup contains more than 2,000 files.");
+      const totalBytes=files.reduce((sum,file)=>sum+Number(file.size||0),0);
+      if(totalBytes>50*1024*1024)throw new Error("The backup storage files exceed the 50 MB restore limit.");
+      if(Number(parsed.storage_file_count??files.length)!==files.length)throw new Error("Backup storage file count validation failed.");
+      const {data:userData,error:userError}=await client.auth.getUser();
+      if(userError||!userData.user)throw new Error("Sign in before restoring a backup.");
+      const {data:membership,error:membershipError}=await client.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
+      if(membershipError||membership?.role!=="owner"||membership.status!=="active")throw new Error("Only the active owner of the target church can restore a backup.");
+      const seen=new Set<string>();
+      for(const file of files){
+        if(!["church-private-documents","church-branding"].includes(file.bucket))throw new Error("The backup contains an unsupported storage bucket.");
+        if(!file.path.startsWith(sourceChurchId+"/"))throw new Error("A storage file path does not belong to the source church.");
+        const targetPath=churchId+file.path.slice(sourceChurchId.length);
+        const key=file.bucket+"|"+targetPath;
+        if(seen.has(key))throw new Error("The backup contains a duplicate storage file path.");
+        seen.add(key);
+        const bytes=Uint8Array.from(atob(file.content_base64),char=>char.charCodeAt(0));
+        if(bytes.byteLength!==Number(file.size))throw new Error("A storage file failed its size validation: "+file.path);
+        const perFileLimit=file.bucket==="church-branding"?5*1024*1024:10*1024*1024;
+        if(bytes.byteLength>perFileLimit)throw new Error("A storage file exceeds its bucket size limit: "+file.path);
+        const {error:uploadError}=await client.storage.from(file.bucket).upload(targetPath,bytes,{contentType:file.content_type||"application/octet-stream",upsert:false});
+        if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
+        uploaded[file.bucket].push(targetPath);
+      }
+      const {storage_files:ignoredFiles,...databaseSnapshot}=parsed;
+      const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
+      if(restoreError)throw new Error("Database restore was rolled back: "+restoreError.message);
+      const restored=result as {records_restored?:number;tables_restored?:number};
+      setMessage("Restore completed successfully: "+Number(restored.records_restored??0).toLocaleString()+" records across "+Number(restored.tables_restored??BACKUP_TABLES.length)+" tables and "+files.length+" storage files.");
+      setRestoreFile(null);
+    }catch(error){
+      let cleanupFailed=false;
+      for(const [bucket,paths] of Object.entries(uploaded)){
+        for(let offset=0;offset<paths.length;offset+=100){
+          const {error:cleanupError}=await client.storage.from(bucket).remove(paths.slice(offset,offset+100));
+          if(cleanupError)cleanupFailed=true;
+        }
+      }
+      setMessage((error instanceof Error?error.message:"Backup restore failed.")+(cleanupFailed?" Some uploaded files could not be removed automatically; contact the church owner before retrying.":" Any files uploaded for this failed restore were rolled back."));
+    }finally{setBusy(false);}
+  }
   return <section className="panel settings-panel">
     <div className="page-intro"><div><h3>Church data backup</h3><p>Export church-scoped database records as a JSON snapshot. Only owners and administrators can create an export.</p></div><ShieldCheck size={24}/></div>
-    <ul><li>Exports records from the selected church workspace only.</li><li>Private church documents and branding files are included (up to 50 MB total); authentication credentials are excluded.</li><li>Restore is not enabled yet; keep this file securely and do not manually import it into production.</li></ul>
+    <ul><li>Exports records and private files from the selected church workspace only.</li><li>Storage files are limited to 50 MB and 2,000 files; authentication credentials are excluded.</li><li>Restore runs as a database transaction and is allowed only into a newly created, empty target workspace owned by the same account.</li></ul>
     <button className="primary-button" disabled={!churchId||busy} onClick={()=>void exportBackup()}><Download size={16}/>{busy?"Preparing backup...":"Export church data backup"}</button>
+    <div className="divider"/>
+    <h4>Restore church backup</h4>
+    <p>Only the target church owner can restore. All referenced user accounts must still exist in this Supabase project.</p>
+    {canRestore?<><label>Version 4 backup JSON</label><input className="field" type="file" accept=".json,application/json" onChange={event=>setRestoreFile(event.target.files?.[0]??null)}/><button className="secondary-button" disabled={!churchId||!restoreFile||busy} onClick={()=>void restoreBackup()}><Upload size={16}/>{busy?"Restoring backup...":"Restore into this empty workspace"}</button></>:<p className="helper">Restore is available to the active church owner only.</p>}
     {message&&<p className="helper" role="status">{message}</p>}
   </section>;
 }
