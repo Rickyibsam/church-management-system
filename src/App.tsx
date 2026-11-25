@@ -222,7 +222,7 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
         supabase.from("donations").select("amount").eq("church_id",churchId).eq("status","posted").gte("donated_at",monthStart).lt("donated_at",nextMonth),
         supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"inventory",p_action_key:"view"}),
         supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"pastoral",p_action_key:"view"}),
-        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"finance",p_action_key:"view"}),
+        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"expenses",p_action_key:"view"}),
         supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"events",p_action_key:"view"})
       ]);
       if(!alive)return;
