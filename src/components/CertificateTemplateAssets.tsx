@@ -10,6 +10,13 @@ export default function CertificateTemplateAssets({churchId}:{churchId:string|nu
  const [file,setFile]=useState<File|null>(null);
  const [message,setMessage]=useState("");
  const [saving,setSaving]=useState(false);
+ const [canEdit,setCanEdit]=useState(false);
+ useEffect(()=>{
+  let alive=true;const client=supabase;
+  if(!client||!churchId){setCanEdit(false);return ()=>{alive=false;};}
+  void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"certificates",p_action_key:"edit"}).then(({data,error})=>{if(alive)setCanEdit(!error&&data===true);});
+  return ()=>{alive=false;};
+ },[churchId]);
  async function load(){
   if(!supabase||!churchId){setTemplates([]);return;}
   const {data,error}=await supabase.from("certificate_templates").select("id,name,certificate_type,pastor_signature_path,seal_path,background_path").eq("church_id",churchId).eq("is_active",true).order("name");
@@ -18,7 +25,7 @@ export default function CertificateTemplateAssets({churchId}:{churchId:string|nu
  }
  useEffect(()=>{void load();},[churchId]);
  async function upload(){
-  if(!supabase||!churchId||!selectedId||!file)return;
+  if(!supabase||!churchId||!selectedId||!file||!canEdit)return;
   if(file.size>5*1024*1024){setMessage("Template image must not exceed 5 MB.");return;}
   if(!["image/png","image/jpeg"].includes(file.type)){setMessage("Only PNG and JPG images are accepted.");return;}
   setSaving(true);setMessage("");
@@ -33,8 +40,8 @@ export default function CertificateTemplateAssets({churchId}:{churchId:string|nu
  }
  const current=templates.find(item=>item.id===selectedId);
  return <div className="panel"><div className="panel-heading"><div><h3>Template signature, seal & background</h3><p>Upload private PNG/JPG assets for the selected certificate template.</p></div><ImagePlus size={20}/></div>
-  <div className="form-grid"><div><label>Certificate template</label><select className="field" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">Select template</option>{templates.map(item=><option key={item.id} value={item.id}>{item.name} · {item.certificate_type}</option>)}</select></div><div><label>Asset type</label><select className="field" value={assetType} onChange={e=>setAssetType(e.target.value as AssetKey)}><option value="pastor_signature_path">Pastor signature</option><option value="seal_path">Church seal</option><option value="background_path">Certificate background</option></select></div><div className="form-full"><label>Choose image (PNG/JPG, max 5 MB)</label><input className="field" type="file" accept=".png,.jpg,.jpeg" onChange={e=>setFile(e.target.files?.[0]??null)}/></div></div>
-  <div className="modal-actions"><button className="primary-button" disabled={!file||!selectedId||saving} onClick={()=>void upload()}>{saving?"Uploading...":"Upload asset"}</button></div>
+  {canEdit&&<><div className="form-grid"><div><label>Certificate template</label><select className="field" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">Select template</option>{templates.map(item=><option key={item.id} value={item.id}>{item.name} · {item.certificate_type}</option>)}</select></div><div><label>Asset type</label><select className="field" value={assetType} onChange={e=>setAssetType(e.target.value as AssetKey)}><option value="pastor_signature_path">Pastor signature</option><option value="seal_path">Church seal</option><option value="background_path">Certificate background</option></select></div><div className="form-full"><label>Choose image (PNG/JPG, max 5 MB)</label><input className="field" type="file" accept=".png,.jpg,.jpeg" onChange={e=>setFile(e.target.files?.[0]??null)}/></div></div>
+  <div className="modal-actions"><button className="primary-button" disabled={!file||!selectedId||saving} onClick={()=>void upload()}>{saving?"Uploading...":"Upload asset"}</button></div></>}
   {current&&<div className="template-asset-status"><span><PenLine size={14}/> Signature: {current.pastor_signature_path?"Uploaded":"Not uploaded"}</span><span><Stamp size={14}/> Seal: {current.seal_path?"Uploaded":"Not uploaded"}</span><span><ImagePlus size={14}/> Background: {current.background_path?"Uploaded":"Not uploaded"}</span></div>}
   {message&&<div className="notice">{message}</div>}
   {!templates.length&&<div className="empty-state"><b>No active templates</b><small>Create a certificate template above, then upload its signature and seal.</small></div>}
