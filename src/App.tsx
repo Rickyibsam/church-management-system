@@ -460,11 +460,11 @@ function FamilyMembersPanel({churchId,familyId,familyName,familyCode,canCreateMe
     <div className="panel-heading"><div><h3>{familyName} — Family Members</h3><p>Family Code: <b>{familyCode}</b> · Parents, children and other household relationships.</p></div><div className="record-toolbar"><span className="soft-pill">{members.length} linked members</span><button className="primary-button" disabled={!canCreateMember} onClick={onAddChild}><Plus size={15}/> Add child / member</button></div></div>
     {message&&<div className="notice">{message}</div>}
     {loading?<div className="empty-state">Loading family members...</div>:members.length?<div className="records-table">
-      <div className="record-row record-head"><span>Member</span><span>Member Code</span><span>Relationship</span><span>Gender</span><span>Date of Birth</span><span>Membership Status</span><span>Primary Contact</span></div>
+      <div className="record-row family-record-row record-head"><span>Member</span><span>Member Code</span><span>Relationship</span><span>Gender</span><span>Date of Birth</span><span>Membership Status</span><span>Primary Contact</span></div>
       {members.map(item=>{
         const person=(item.member??{}) as Record<string,unknown>;
         const fullName=[person.first_name,person.middle_name,person.last_name].filter(Boolean).join(" ");
-        return <div className="record-row" key={String(item.id)}>
+        return <div className="record-row family-record-row" key={String(item.id)}>
           <b>{fullName||"Unnamed member"}</b><span>{String(person.member_number??"—")}</span>
           <span>{String(item.relationship??"member").replaceAll("_"," ")}</span>
           <span>{String(person.gender??"—")}</span>
