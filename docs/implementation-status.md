@@ -190,3 +190,10 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added the Bank Reconciliation workspace under Finance & Accounting.
 - Supabase migration `20261125072855_bank_statement_reconciliation` is applied and the new table is visible in the selected project.
 - This is a first reconciliation workflow increment. Statement-file import, reconciliation summary/totals, and full verification remain outstanding; the full testing phase is still deferred until online feature completion.
+
+## Operational notifications expansion (online development)
+- Added database-triggered notifications when a journal entry is posted, a financial budget is approved, or a church asset is marked disposed.
+- Notifications are delivered individually to active church owners, administrators, pastors and secretaries, excluding the acting user where available.
+- Notification text is intentionally generic and does not disclose donor, transaction, or confidential pastoral details.
+- Applied Supabase migration `operational_event_notifications` and verified that all three database triggers are installed.
+- This increment has not yet undergone functional/security end-to-end testing; production frontend deployment is not confirmed.
