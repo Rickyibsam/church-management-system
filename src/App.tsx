@@ -293,11 +293,11 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   const [message,setMessage] = useState("");
   const [saving,setSaving] = useState(false);
   const [loading,setLoading] = useState(true);
-  const [peopleActions,setPeopleActions]=useState({view:false,create:false,edit:false,delete:false,documents:false});
+  const [peopleActions,setPeopleActions]=useState({view:false,create:false,edit:false,delete:false,documents:false,createMember:false});
   useEffect(()=>{
     let alive=true;
     const client=supabase;
-    if(!client||!churchId){setPeopleActions({view:false,create:false,edit:false,delete:false,documents:false});return ()=>{alive=false;};}
+    if(!client||!churchId){setPeopleActions({view:false,create:false,edit:false,delete:false,documents:false,createMember:false});return ()=>{alive=false;};}
     const moduleKey=family?"families":"members";
     const actions=["view","create","edit","delete"] as const;
     void Promise.all([
@@ -305,14 +305,18 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
         const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:moduleKey,p_action_key:action});
         return [action,!error&&data===true] as const;
       }),
-      ...(!family?[client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"member_documents",p_action_key:"view"}).then(({data,error})=>["documents",!error&&data===true] as const)]:[])
+      ...(family?[client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"members",p_action_key:"create"}).then(({data,error})=>["createMember",!error&&data===true] as const)]:[
+        client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"member_documents",p_action_key:"view"}).then(({data,error})=>["documents",!error&&data===true] as const),
+        client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"members",p_action_key:"create"}).then(({data,error})=>["createMember",!error&&data===true] as const)
+      ])
     ]).then(results=>{
       if(!alive)return;
-      setPeopleActions(Object.fromEntries(results) as {view:boolean;create:boolean;edit:boolean;delete:boolean;documents:boolean});
+      setPeopleActions(Object.fromEntries(results) as {view:boolean;create:boolean;edit:boolean;delete:boolean;documents:boolean;createMember:boolean});
     });
     return ()=>{alive=false;};
   },[churchId,family]);
   const canCreate=peopleActions.create;
+  const canCreateMember=peopleActions.createMember;
   const canEdit=peopleActions.edit;
   const canViewFamily=peopleActions.view;
   const canViewDocuments=peopleActions.documents;
@@ -426,7 +430,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
     <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>{family?"Family Code":"Registration no."}</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions">{canEdit&&<button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>}{family&&canViewFamily&&<button className="secondary-button" onClick={()=>setSelectedFamilyId(selectedFamilyId===String(row.id)?null:String(row.id))}>View family</button>}{!family&&<>{canViewDocuments&&<button className="secondary-button" onClick={()=>setSelectedMemberId(selectedMemberId===String(row.id)?null:String(row.id))}>Documents</button>}{canEdit&&<button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button>}</>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
     {!family&&canViewDocuments&&selectedMemberId&&churchId&&<MemberDocuments churchId={churchId} memberId={selectedMemberId}/>}
-    {family&&selectedFamilyId&&churchId&&<FamilyMembersPanel churchId={churchId} familyId={selectedFamilyId} familyName={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_name??"Family")} familyCode={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_number??"—")} canCreateMember={canCreate} onAddChild={()=>openNewForFamily(selectedFamilyId)}/>}
+    {family&&selectedFamilyId&&churchId&&<FamilyMembersPanel churchId={churchId} familyId={selectedFamilyId} familyName={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_name??"Family")} familyCode={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_number??"—")} canCreateMember={canCreateMember} onAddChild={()=>openNewForFamily(selectedFamilyId)}/>}
     {family&&churchId&&<DataModule churchId={churchId} table="family_relationships" permissionModule="families" title="Family relationships" description="Connect members to households and define family roles and primary contacts." fields={[{name:"family_id",label:"Family",required:true,lookup:{table:"families",labelField:"family_name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"relationship",label:"Relationship",required:true,options:["head","spouse","child","son","daughter","parent","grandparent","sibling","guardian","dependent","member","other"].map(value=>({value,label:value.charAt(0).toUpperCase()+value.slice(1)}))},{name:"is_primary_contact",label:"Primary contact",type:"boolean",defaultValue:"false"}]}/>}
   
   </>;
