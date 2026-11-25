@@ -22,11 +22,26 @@ export default function DataModule({ churchId, table, title, description, fields
     if (!db || !churchId) { setRows([]); setLoading(false); return; }
     setLoading(true);
     const columns = [...new Set(["id", ...fields.map(field => field.name), ...extraColumns, ...extraDisplay.map(field=>field.name)])].join(",");
-    let request = db.from(table).select(columns).eq("church_id", churchId).limit(100);
-    if (orderBy && (orderBy === "created_at" || fields.some(field => field.name === orderBy))) request = request.order(orderBy, { ascending: false });
-    const { data, error } = await request;
-    if (error) setMessage("Unable to load records: " + error.message);
-    else setRows((data ?? []) as unknown as Array<Record<string, unknown>>);
+    const pageSize=500;
+    const maxRows=10000;
+    const allRows:Array<Record<string,unknown>>=[];
+    let loadError:string|null=null;
+    let truncated=false;
+    for(let offset=0;offset<maxRows;offset+=pageSize){
+      let request=db.from(table).select(columns).eq("church_id",churchId).range(offset,offset+pageSize-1);
+      if(orderBy&&(orderBy==="created_at"||fields.some(field=>field.name===orderBy)))request=request.order(orderBy,{ascending:false});
+      const {data,error}=await request;
+      if(error){loadError=error.message;break;}
+      const page=(data??[]) as unknown as Array<Record<string,unknown>>;
+      allRows.push(...page);
+      if(page.length<pageSize)break;
+      if(offset+pageSize>=maxRows)truncated=true;
+    }
+    if(loadError)setMessage("Unable to load records: "+loadError);
+    else{
+      setRows(allRows);
+      if(truncated)setMessage("Showing the first 10,000 records. Refine the register or export smaller date ranges for larger datasets.");
+    }
     const lookups:Record<string,Array<{value:string;label:string}>>={};
     await Promise.all(fields.filter(field=>field.lookup).map(async field=>{
       const lookup=field.lookup!;
