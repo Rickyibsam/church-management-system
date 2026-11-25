@@ -44,7 +44,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       }
       const backup={
         format:"church-management-system-backup",
-        version:1,
+        version:2,
         created_at:new Date().toISOString(),
         workspace,
         row_counts:Object.fromEntries(Object.entries(tables).map(([name,rows])=>[name,rows.length])),
