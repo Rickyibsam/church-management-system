@@ -204,7 +204,7 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
         {label:"Certificates Issued",value:String(certificates.count??0),hint:"Certificate register",icon:FileBadge},
         {label:"Pending Certificates",value:String(pendingCertificates.count??0),hint:"Awaiting review",icon:FileText},
         {label:"Attendance This Month",value:String(attendance.count??0),hint:"Recorded check-ins",icon:ClipboardList},
-        {label:"Donations This Month",value:new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(total),hint:"Posted receipts only",icon:Banknote},
+        {label:"Donations This Month",value:new Intl.NumberFormat("en-GB",{maximumFractionDigits:2}).format(total),hint:"Posted receipts only",icon:Banknote},
         {label:"Low Stock Items",value:inventoryAllowed===true?String(lowStock?.count??0):"Restricted",hint:"Inventory reorder alerts",icon:Package}
       ]);
       setLoading(false);
