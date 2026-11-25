@@ -171,7 +171,7 @@ function App() {
 }
 
 function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string; churchId: string | null }) {
-  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Donations This Month",value:"—",hint:"Financial overview",icon:Banknote}]);
+  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote}]);
   const [loading,setLoading]=useState(false);
   useEffect(()=>{
     let alive=true;
@@ -179,11 +179,13 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
       if(!supabase||!churchId){setStats(old=>old.map(item=>({...item,value:"—"})));return;}
       setLoading(true);
       const now=new Date();const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString();const nextMonth=new Date(now.getFullYear(),now.getMonth()+1,1).toISOString();
-      const [members,families,certificates,donations]=await Promise.all([
+      const [members,families,certificates,pendingCertificates,attendance,donations]=await Promise.all([
         supabase.from("members").select("id",{count:"exact",head:true}).eq("church_id",churchId),
         supabase.from("families").select("id",{count:"exact",head:true}).eq("church_id",churchId),
         supabase.from("certificates").select("id",{count:"exact",head:true}).eq("church_id",churchId).eq("status","issued"),
-        supabase.from("donations").select("amount").eq("church_id",churchId).gte("donated_at",monthStart).lt("donated_at",nextMonth)
+        supabase.from("certificates").select("id",{count:"exact",head:true}).eq("church_id",churchId).in("status",["submitted","under_review"]),
+        supabase.from("attendance_records").select("id",{count:"exact",head:true}).eq("church_id",churchId).gte("check_in_at",monthStart).lt("check_in_at",nextMonth),
+        supabase.from("donations").select("amount").eq("church_id",churchId).eq("status","posted").gte("donated_at",monthStart).lt("donated_at",nextMonth)
       ]);
       if(!alive)return;
       const total=(donations.data??[]).reduce((sum,row)=>sum+Number(row.amount??0),0);
@@ -191,7 +193,9 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
         {label:"Registered Members",value:String(members.count??0),hint:"Member directory",icon:Users},
         {label:"Families",value:String(families.count??0),hint:"Family register",icon:HeartHandshake},
         {label:"Certificates Issued",value:String(certificates.count??0),hint:"Certificate register",icon:FileBadge},
-        {label:"Donations This Month",value:new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(total),hint:"Current church currency",icon:Banknote}
+        {label:"Pending Certificates",value:String(pendingCertificates.count??0),hint:"Awaiting review",icon:FileText},
+        {label:"Attendance This Month",value:String(attendance.count??0),hint:"Recorded check-ins",icon:ClipboardList},
+        {label:"Donations This Month",value:new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(total),hint:"Posted receipts only",icon:Banknote}
       ]);
       setLoading(false);
     }
