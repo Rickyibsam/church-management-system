@@ -171,7 +171,8 @@ function App() {
 }
 
 function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string; churchId: string | null }) {
-  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote},{label:"Low Stock Items",value:"—",hint:"Inventory reorder alerts",icon:Package}]);
+  const [canCreateMember,setCanCreateMember]=useState(false);
+  const [stats,setStats=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote},{label:"Low Stock Items",value:"—",hint:"Inventory reorder alerts",icon:Package}]);
   const [loading,setLoading]=useState(false);
   useEffect(()=>{
     let alive=true;
@@ -204,7 +205,7 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
     }
     void load();return()=>{alive=false;};
   },[churchId]);
-  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div><button className="primary-button" onClick={onNew} disabled={!churchId}><Plus size={17}/> New registration</button></div>
+  return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div>{canCreateMember&&<button className="primary-button" onClick={onNew} disabled={!churchId}><Plus size={17}/> New registration</button>}</div>
     <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>{churchId?"Church workspace connected":"Your workspace setup is next"}</b><p>{churchId?"Live summary data is being loaded from this church workspace.":"Sign in and create your first church workspace to manage records and invite authorized staff."}</p></div><span className="status-pill">{churchId?(loading?"Loading":"Connected"):"Setup pending"}</span></div>
     <div className="stat-grid">{stats.map(s=>{const Icon=s.icon;return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>;})}</div>
     <div className="section-heading"><div><h3>Quick access</h3><p>Open a core area of your church administration.</p></div></div>
@@ -227,6 +228,12 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
       const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"certificates",p_action_key:action});
       return [action,!error&&data===true] as const;
     })).then(results=>{if(alive)setCertificateActions(Object.fromEntries(results) as typeof certificateActions);});
+    return ()=>{alive=false;};
+  },[churchId]);
+  useEffect(()=>{
+    let alive=true;const client=supabase;
+    if(!client||!churchId){setCanCreateMember(false);return ()=>{alive=false;};}
+    void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"members",p_action_key:"create"}).then(({data,error})=>{if(alive)setCanCreateMember(!error&&data===true);});
     return ()=>{alive=false;};
   },[churchId]);
   useEffect(() => {
