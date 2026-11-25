@@ -13,7 +13,7 @@ Deno.serve(async(req)=>{
  const churchCode=body.churchCode?.trim().toUpperCase(),username=body.username?.trim(),password=body.password??"";
  if(!churchCode||!/^CH-[0-9]{6,}$/.test(churchCode)||!username||!password)return reply({error:"Enter your Church ID, username and password."},400);
  const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
- const {data:church}=await admin.from("churches").select("id").eq("church_code",churchCode).maybeSingle();
+ const {data:church}=await admin.from("churches").select("id,church_code").eq("church_code",churchCode).maybeSingle();
  if(!church)return reply({error:"Invalid Church ID, username or password."},401);
  const {data:account}=await admin.from("church_login_accounts").select("auth_email,user_id,is_active").eq("church_id",church.id).eq("username_normalized",username.toLowerCase()).maybeSingle();
  if(!account||!account.is_active)return reply({error:"Invalid Church ID, username or password."},401);
@@ -22,5 +22,5 @@ Deno.serve(async(req)=>{
  const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data,error}=await client.auth.signInWithPassword({email:account.auth_email,password});
  if(error||!data.session)return reply({error:"Invalid Church ID, username or password."},401);
- return reply({session:data.session,churchId:church.id,username,message:"Signed in successfully."});
+ return reply({session:data.session,churchId:church.id,churchCode:church.church_code,username,message:"Signed in successfully."});
 });
