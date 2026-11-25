@@ -394,3 +394,4 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Standardized date, time and number formatting to the explicit English `en-GB` locale instead of inheriting the browser language. Certificate PDF generation selects English templates so the generated document language matches the current PDF renderer; Urdu-script PDF output is not advertised until proper font shaping is implemented.
 
 - Added source/target tenant remapping and strict storage-path validation to backup restore. Both the browser and transactional database function reject dot-segment paths; a SQL check confirmed normal target paths are accepted and traversal paths are rejected.
+- Restore now rejects database storage references that are not inside the source church folder, in addition to validating every uploaded manifest path and rejecting `.` / `..` path segments. A SQL check confirmed valid tenant-scoped paths are remapped to the target workspace.
