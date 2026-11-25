@@ -3,7 +3,7 @@ import { Download, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const BACKUP_TABLES = [
-  "church_branches","church_members","church_member_permissions",
+  "church_branches","church_members","church_member_permissions","certificate_sequences","audit_exports","notifications",
   "families","members","family_relationships","member_documents",
   "certificate_templates","certificate_document_requirements","certificates","certificate_attachments","certificate_history",
   "church_services","attendance_records","ministries","ministry_members","church_events",
