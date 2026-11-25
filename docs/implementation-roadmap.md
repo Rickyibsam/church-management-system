@@ -4,7 +4,7 @@ The requested delivery order is:
 
 ## Phase A — Build the complete online system
 - Complete database model and migrations
-- Authentication, church tenancy, roles and action permissions
+- Authentication, church tenancy, Church Owner/Administrator and branch-scoped Branch Administrator roles, a separately bootstrapped cross-church Platform Super Admin, and action permissions
 - All navigation modules and CRUD workflows
 - Family/member relationships
 - Certificate registration, configurable document checklist, private uploads, review/approval, branded templates, PDF issuance and QR verification
