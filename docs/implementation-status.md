@@ -281,3 +281,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Family codes now use a private per-church sequence table instead of calculating the next number from the highest visible family record.
 - Deleting a family cannot cause its code to be reused. The sequence table is not exposed through the public API; only the server-side trigger can advance it.
 - The selected database currently has no family records, so no existing family data was changed by this update.
+
+
+## Family-to-child relationship consistency
+- Member profiles now use the same `child` relationship value as the Family Relationships register; older `son`/`daughter` values remain visible and counted for compatibility.
+- The member-to-family selector displays both family name and the generated Family Code, reducing the chance of linking a child to the wrong household.
