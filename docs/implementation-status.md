@@ -217,3 +217,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 
 - GitHub Actions production TypeScript/Vite build passed for the bank CSV import and church backup settings integration (run 45570122849, commit `e3f3491`). This is a compile/build check only, not end-to-end or security acceptance testing.
+
+
+## Realtime notification inbox (online development)
+- Enabled the notifications table in the Supabase Realtime publication.
+- The inbox subscribes to new inserts for the selected church and displays only rows addressed to the signed-in user; existing per-user RLS remains in force.
+- Realtime publication membership was verified in the selected Supabase project. Functional multi-user delivery and reconnect behavior remain for the deferred acceptance test phase.
