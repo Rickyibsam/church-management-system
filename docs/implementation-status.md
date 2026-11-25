@@ -390,3 +390,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Build checks have passed for the family report migration and UI commits. Full transactional restore testing still requires a controlled source backup and a newly created empty target workspace; it is not being simulated against live church data.
 
 - Added a confidential, security-invoker pastoral due/overdue follow-up register. It exposes only the case subject, due time, assigned user and overdue flag; access continues to follow the source pastoral tables' RLS policies.
+
+- Standardized date, time and number formatting to the explicit English `en-GB` locale instead of inheriting the browser language. Certificate PDF generation selects English templates so the generated document language matches the current PDF renderer; Urdu-script PDF output is not advertised until proper font shaping is implemented.
