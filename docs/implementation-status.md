@@ -39,7 +39,7 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Added a unified online operations workspace for pastoral care, finance/accounting registers, assets/maintenance, notifications and audit records.
 - Repaired literal escaped newline sequences in the main application source and connected the operations workspace to navigation.
 - The migration is applied to the selected Supabase project and its SQL is committed to the repository.
-- These are development additions, not a claim of complete production workflows. Posting controls, balanced journal enforcement, sensitive pastoral authorization, file retention/export generation, invitation delivery, complete member/family editing and full reports remain to be implemented.
+- This entry describes the initial expansion stage. Subsequent sections record the later posting controls, journal validation, pastoral authorization, file handling, invitations, member/family editing and reporting integrations. Full workflows remain subject to the planned acceptance tests.
 - Per project-owner instruction, functional, security and end-to-end testing remain deferred until the online feature build is complete.
 
 - Added a dedicated attendance workspace with service scheduling and member/visitor check-in registers; the generic register component now supports table-specific sort columns.
@@ -337,7 +337,7 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Version 5 JSON exports now include the binary contents of files under the church's private-document and branding storage folders, with MIME type, path and size metadata.
 - Export safety limits are 2,000 files and 50 MB total. If listing or downloading any file fails, the export is aborted rather than silently creating a partial archive.
 - Added owner/admin-only read access for listing branding assets. Private documents continue to use the existing church document view policy.
-- Authentication identities and passwords remain excluded. The transactional restore procedure is still pending; file-complete export does not mean restore is ready.
+- Authentication identities and passwords remain excluded. Transactional database restore and storage-file recovery are now implemented with owner-only preflight and tenant/path validation; see the restore-integrity sections below. The workflow is not yet functionally tested.
 
 
 ## Transactional backup restore implementation
