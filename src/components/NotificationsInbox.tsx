@@ -20,14 +20,15 @@ export default function NotificationsInbox({churchId}:{churchId:string|null}){
  useEffect(()=>{void load();},[churchId]);
  useEffect(()=>{
   if(!supabase||!churchId||!userId)return;
-  const channel=supabase.channel("church-notifications-"+churchId+"-"+userId)
+  const client=supabase;
+  const channel=client.channel("church-notifications-"+churchId+"-"+userId)
    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:"church_id=eq."+churchId},payload=>{
     const incoming=payload.new as Notice;
     if(incoming.user_id===userId){
      setRows(old=>old.some(item=>item.id===incoming.id)?old:[incoming,...old].slice(0,100));
     }
    }).subscribe();
-  return()=>{void supabase.removeChannel(channel);};
+  return()=>{void client.removeChannel(channel);};
  },[churchId,userId]);
  async function markRead(id:string){
   if(!supabase||!userId)return;
