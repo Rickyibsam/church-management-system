@@ -172,7 +172,13 @@ function App() {
 
 function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string; churchId: string | null }) {
   const [canCreateMember,setCanCreateMember]=useState(false);
-  const [stats,setStats=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote},{label:"Low Stock Items",value:"—",hint:"Inventory reorder alerts",icon:Package}]);
+  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote},{label:"Low Stock Items",value:"—",hint:"Inventory reorder alerts",icon:Package}]);
+  useEffect(()=>{
+    let alive=true;const client=supabase;
+    if(!client||!churchId){setCanCreateMember(false);return ()=>{alive=false;};}
+    void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"members",p_action_key:"create"}).then(({data,error})=>{if(alive)setCanCreateMember(!error&&data===true);});
+    return ()=>{alive=false;};
+  },[churchId]);
   const [loading,setLoading]=useState(false);
   useEffect(()=>{
     let alive=true;
@@ -228,12 +234,6 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
       const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"certificates",p_action_key:action});
       return [action,!error&&data===true] as const;
     })).then(results=>{if(alive)setCertificateActions(Object.fromEntries(results) as typeof certificateActions);});
-    return ()=>{alive=false;};
-  },[churchId]);
-  useEffect(()=>{
-    let alive=true;const client=supabase;
-    if(!client||!churchId){setCanCreateMember(false);return ()=>{alive=false;};}
-    void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"members",p_action_key:"create"}).then(({data,error})=>{if(alive)setCanCreateMember(!error&&data===true);});
     return ()=>{alive=false;};
   },[churchId]);
   useEffect(() => {
