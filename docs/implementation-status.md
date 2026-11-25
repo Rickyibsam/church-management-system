@@ -332,3 +332,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 ## Dashboard inventory alert KPI
 - Added a low-stock item count to the dashboard. The count is shown only when the current user has inventory view permission; otherwise the KPI displays `Restricted` rather than leaking branch inventory information.
+
+
+## Certificate workflow notifications
+- Certificate status transitions (submitted, under review, approved, issued, rejected or cancelled) now send generic notifications to active church reviewers and the applicant, where applicable.
+- Notifications are branch-scoped for reviewers, exclude the acting user, avoid duplicate applicant delivery and do not disclose personal details or private reviewer notes.
