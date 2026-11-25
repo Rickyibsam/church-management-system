@@ -285,6 +285,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   const [familyOptions,setFamilyOptions] = useState<Array<{id:string;family_name:string;family_number:string}>>([]);
   const [branchOptions,setBranchOptions]=useState<Array<{id:string;name:string}>>([]);
   const [show,setShow] = useState(false);
+  const [formMode,setFormMode] = useState<"family"|"member">(kind==="families"?"family":"member");
   const [editingId,setEditingId] = useState<string|null>(null);
   const [search,setSearch] = useState("");
   const [selectedMemberId,setSelectedMemberId] = useState<string|null>(null);
@@ -352,7 +353,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     const initial:Record<string,string>={};
     (family?familyFields:memberFields).forEach(([key])=>initial[key]="");
     if(!family){initial.membership_status="active";initial.joined_on=new Date().toISOString().slice(0,10);initial.relationship="member";initial.is_primary_contact="false";}
-    setForm(initial);setEditingId(null);setShow(true);
+    setFormMode(family?"family":"member");setForm(initial);setEditingId(null);setShow(true);
   }
   function openNewForFamily(familyId:string){
     const initial:Record<string,string>={};
@@ -362,10 +363,11 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     initial.family_id=familyId;
     initial.relationship="child";
     initial.is_primary_contact="false";
-    setForm(initial);setEditingId(null);setShow(true);
+    setFormMode("member");setForm(initial);setEditingId(null);setShow(true);
   }
   async function openEdit(row:Record<string,unknown>){
     const initial:Record<string,string>={};
+    setFormMode(family?"family":"member");
     (family?familyFields:memberFields).forEach(([key])=>initial[key]=row[key]==null?"":String(row[key]).slice(0,key==="date_of_birth"||key==="joined_on"?10:undefined));
     if(!family){
       initial.family_id=String(row.family_id??"");initial.relationship="member";initial.is_primary_contact="false";
@@ -379,10 +381,11 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   function change(key:string,value:string){setForm(old=>({...old,[key]:value}));}
   async function save(){
     if(!supabase||!churchId)return;
-    const required=family?["family_name"]:["first_name","last_name"];
+    const savingFamily=formMode==="family";
+    const required=savingFamily?["family_name"]:["first_name","last_name"];
     if(required.some(key=>!(form[key]??"").trim())){setMessage("Please complete all required fields.");return;}
     setSaving(true);setMessage("");
-    const keys=family?[...familyFields.map(([key])=>key),"branch_id"]:[...memberFields.map(([key])=>key),"family_id","branch_id"];
+    const keys=savingFamily?[...familyFields.map(([key])=>key),"branch_id"]:[...memberFields.map(([key])=>key),"family_id","branch_id"];
     const payload:Record<string,unknown>={church_id:churchId};
     keys.forEach(key=>{
       const value=form[key]??"";
@@ -390,11 +393,11 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
       else if(["family_id","branch_id","middle_name","date_of_birth","email","address","identity_type","identity_last4","notes"].includes(key))payload[key]=null;
     });
     const result=editingId
-      ? await supabase.from(family?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId).select("id").maybeSingle()
-      : await supabase.from(family?"families":"members").insert(payload).select("id").single();
+      ? await supabase.from(savingFamily?"families":"members").update(payload).eq("id",editingId).eq("church_id",churchId).select("id").maybeSingle()
+      : await supabase.from(savingFamily?"families":"members").insert(payload).select("id").single();
     if(result.error){setSaving(false);setMessage("Unable to save record: "+result.error.message);return;}
     const savedId=editingId??String(result.data?.id??"");
-    if(!family&&savedId){
+    if(!savingFamily&&savedId){
       const familyId=form.family_id??"";
       if(familyId){
         const {error:clearError}=await supabase.from("family_relationships").delete().eq("church_id",churchId).eq("member_id",savedId).neq("family_id",familyId);
@@ -409,7 +412,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
         if(relationshipError){setSaving(false);setMessage("Member saved, but old family link could not be removed: "+relationshipError.message);await load();return;}
       }
     }
-    setSaving(false);setShow(false);setEditingId(null);setMessage(family?"Family record saved.":"Member profile and family relationship saved.");await load();
+    setSaving(false);setShow(false);setEditingId(null);setMessage(savingFamily?"Family record saved.":"Member profile and family relationship saved.");await load();
   }
   async function archiveMember(row:Record<string,unknown>){
     if(!supabase||!churchId)return;
@@ -423,10 +426,10 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     <div className="page-intro"><div><h2>{family?"Family Registration":"Member Directory"}</h2><p>{family?"Maintain household profiles and contact details.":"Manage member identity, contact, membership and family information."}</p></div>{canCreate&&<button className="primary-button" onClick={openNew} disabled={!churchId}><Plus size={17}/>{family?"New family":"Add member"}</button>}</div>
     <div className="panel"><div className="form-grid"><div className="form-full"><label>Search register</label><input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder={family?"Search family name, number or phone":"Search name, member number, phone or email"}/></div></div></div>
     {message&&<div className="notice">{message}</div>}
-    {show&&<div className="panel form-panel"><h3>{editingId?"Edit":"New"} {family?"family":"member profile"}</h3><div className="form-grid">
+    {show&&<div className="panel form-panel"><h3>{editingId?"Edit":"New"} {formMode==="family"?"family":"member profile"}</h3><div className="form-grid">
       <div className="form-full"><label>Church branch</label><select className="field" value={form.branch_id??""} onChange={e=>change("branch_id",e.target.value)}><option value="">Main / default branch</option>{branchOptions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-      {(family?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="unspecified">Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
-      {!family&&<><div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name} ({item.family_number})</option>)}</select></div>{!!form.family_id&&<><div><label>Family relationship</label><select className="field" value={form.relationship??"member"} onChange={e=>change("relationship",e.target.value)}>{["head","spouse","child","parent","grandparent","sibling","guardian","dependent","member","other"].map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div className="form-full"><label><input type="checkbox" checked={form.is_primary_contact==="true"} onChange={e=>change("is_primary_contact",String(e.target.checked))}/> Primary family contact</label></div></>}</>}
+      {(formMode==="family"?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="unspecified">Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
+      {formMode==="member"&&<><div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name} ({item.family_number})</option>)}</select></div>{!!form.family_id&&<><div><label>Family relationship</label><select className="field" value={form.relationship??"member"} onChange={e=>change("relationship",e.target.value)}>{["head","spouse","child","parent","grandparent","sibling","guardian","dependent","member","other"].map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div className="form-full"><label><input type="checkbox" checked={form.is_primary_contact==="true"} onChange={e=>change("is_primary_contact",String(e.target.checked))}/> Primary family contact</label></div></>}</>}
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
     <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>{family?"Family Code":"Registration no."}</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions">{canEdit&&<button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>}{family&&canViewFamily&&<button className="secondary-button" onClick={()=>setSelectedFamilyId(selectedFamilyId===String(row.id)?null:String(row.id))}>View family</button>}{!family&&<>{canViewDocuments&&<button className="secondary-button" onClick={()=>setSelectedMemberId(selectedMemberId===String(row.id)?null:String(row.id))}>Documents</button>}{canEdit&&<button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button>}</>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
     {!family&&canViewDocuments&&selectedMemberId&&churchId&&<MemberDocuments churchId={churchId} memberId={selectedMemberId}/>}
