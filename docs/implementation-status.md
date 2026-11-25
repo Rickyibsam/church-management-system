@@ -221,10 +221,12 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Realtime publication membership was verified in the selected Supabase project. Functional multi-user delivery and reconnect behavior remain for the deferred acceptance test phase.
 
 
-## Dashboard KPI expansion (online development)
-- Expanded the live dashboard from four to six church-scoped KPIs: registered members, families, issued certificates, pending certificate reviews, monthly attendance check-ins and monthly posted donation totals.
-- Donation totals now include posted receipts only, excluding drafts/unposted records.
-- This remains a summary dashboard; full operational alert thresholds and report drill-downs are still to be completed and verified.
+## Dashboard operational alerts and KPI drill-downs (online development)
+- Expanded the live dashboard with permission-aware counts for pending certificate reviews, due pastoral follow-ups, draft/approved expenses, low-stock inventory and upcoming services/events within the next seven days.
+- Sensitive pastoral counts are queried only when the signed-in user has pastoral view permission; finance, inventory and event counts are likewise gated by their module view permissions.
+- KPI cards now navigate directly to their relevant registers, and each operational alert opens its corresponding module.
+- Alerts show only counts and generic descriptions; they do not expose pastoral notes, donor details or private case information.
+- GitHub build verification passed for the dashboard alert logic (run 210, commit 3f90b27). CSS polish is included in the following commit and its build verification is pending.
 
 
 - GitHub Actions build passed after fixing the nullable Supabase client guard in the realtime notification subscription (run 45570409248, commit `39b5ffd`). This build includes the dashboard KPI and realtime inbox changes.
