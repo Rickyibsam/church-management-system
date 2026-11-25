@@ -25,6 +25,20 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return reply({ error: "Invalid request body." }, 400); }
 
   const action = body.action;
+  if (action === "overview") {
+    const token = req.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+    if (!token) return reply({ error: "Authentication required." }, 401);
+    const client = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: auth, error: authError } = await client.auth.getUser(token);
+    if (authError || !auth.user || auth.user.app_metadata?.platform_role !== "support_owner")
+      return reply({ error: "Support Owner access required." }, 403);
+    const { data: account } = await admin.from("platform_support_accounts").select("user_id,username").eq("singleton", true).maybeSingle();
+    if (!account || account.user_id !== auth.user.id) return reply({ error: "Support Owner access required." }, 403);
+    const { data: churches, error: churchesError } = await admin.from("churches")
+      .select("id,display_name,church_code,email,created_at").order("created_at", { ascending: false }).limit(100);
+    if (churchesError) return reply({ error: "Unable to load church directory." }, 500);
+    return reply({ mode: "support_owner", username: account.username, churches: churches ?? [], totalChurches: churches?.length ?? 0 });
+  }
   const username = body.username?.trim();
   const password = body.password ?? "";
   if (!username || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,29}$/.test(username) || password.length < 12 || password.length > 128) {
