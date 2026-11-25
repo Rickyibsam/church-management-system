@@ -16,6 +16,7 @@ import CertificateVerify from "./components/CertificateVerify";
 import OperationsHub from "./components/OperationsHub";
 import MemberDocuments from "./components/MemberDocuments";
 import CertificateTemplateAssets from "./components/CertificateTemplateAssets";
+import ChurchDataBackup from "./components/ChurchDataBackup";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -440,6 +441,7 @@ function SettingsPage({churchId}:{churchId:string|null}) {
       ]}/>
     </div>
     <CertificateTemplateAssets churchId={churchId}/>
+    <ChurchDataBackup churchId={churchId}/>
     <div className="settings-grid">{[{title:"Certificate templates",desc:"Template layouts, signatures, seals, paper size and QR verification"},{title:"Document requirements",desc:"Required documents by certificate and jurisdiction"},{title:"Users & permissions",desc:"Roles, module access and action-level permissions"},{title:"Language & localization",desc:"English, Urdu, country, currency and time zone"},{title:"Security & audit",desc:"Access history, data retention and backups"},{title:"Branches & campuses",desc:"Manage multiple church locations"}].map(x=><div className="setting-card" key={x.title}><Settings size={18}/><b>{x.title}</b><small>{x.desc}</small></div>)}</div>
   </>;
 }
