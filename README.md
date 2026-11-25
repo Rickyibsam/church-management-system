@@ -11,9 +11,10 @@ A multi-church management platform for churches in Pakistan and international co
 - Service schedules, visitor/member attendance and attendance reports
 - Ministries, events and pastoral-care requests with assigned-case confidentiality
 - Cash/bank accounts, chart of accounts, donation receipts, expense approval, double-entry journal posting, budgets and financial reporting
-- Asset register and maintenance records
+- Asset register, maintenance records and branch-aware inventory stock management with low-stock alerts
 - Individual user/module/action permissions, email invitations, audit history and persistent notifications
 - CSV, Excel and PDF exports from operational registers
+- Version 5 church backup exports with private storage files and owner-only transactional database restore into a new empty workspace
 - English-only application interface (no Roman Urdu in screens, controls, reports or system messages); certificate templates may contain Urdu-script document content where configured
 - Responsive web application; offline PWA work is deliberately deferred
 
@@ -62,7 +63,7 @@ The `invite-church-member` Edge Function is deployed with JWT verification enabl
 
 ## Current implementation status
 
-The online build is in progress. The database schema and a growing set of online workflows are implemented, including member/family registers, certificates, private documents, permissions, invitations, attendance, pastoral care, accounting, reports and notifications. Some modules and advanced workflows are still incomplete.
+The online build is in progress. The database schema and a growing set of online workflows are implemented, including member/family registers, certificates, private documents, permissions, invitations, attendance, pastoral care, accounting, reports and notifications. Inventory, branch-scoped low-stock alerts, UI/RLS action permissions and transactional backup restore foundations are implemented. Full restore/failure-injection testing, remaining integrations and other advanced workflows are still in progress.
 
 **The application is not production-ready. Cloudflare hosting configuration is now in the repository; a successful production deployment has not yet been verified.** Per project-owner instruction, functional, security and end-to-end testing are deferred until online feature development is complete. The offline edition will begin only after the online build is complete and its testing/bug-fixing phase has passed.
 
