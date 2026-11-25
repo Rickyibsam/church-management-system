@@ -240,3 +240,20 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The Family Register displays the code and provides a family detail view showing linked household members, relationship, member code, date of birth and primary-contact status. Children are identified by the son/daughter relationship and remain linked to their own member profiles.
 - The application interface remains English; Roman Urdu is not used in software labels, forms, reports or system messages.
 - Basic implementation/build verification is separate from the deferred full functional, security and end-to-end testing phase.
+
+
+## Family register and English interface update
+- Family registration numbers are generated server-side in the format `FAM-000001`, scoped to each church, protected from manual edits, and unique by the existing `(church_id, family_number)` constraint.
+- The family detail view now displays the family code and all linked members. The child count uses the configured `child` relationship value and child rows include member code, gender, date of birth and membership status.
+- The application interface is English-only. Roman Urdu is not used in labels, navigation, reports, notifications or errors. Urdu-script text may still be configured as certificate/document content, while the surrounding application controls remain English.
+- Family UI changes and the system-generated code migration have passed GitHub build verification.
+
+## Invitation delivery hardening
+- The invitation Edge Function now requires the exact `APP_ALLOWED_ORIGIN` secret and rejects requests when the origin is missing or mismatched; wildcard CORS is no longer used.
+- Newly invited users are assigned to the resolved branch, including the head-office default. If account creation succeeds but church membership insertion fails, the temporary invited Auth user is deleted to avoid an orphan account.
+- The function is deployed with JWT verification enabled. Actual email delivery still requires a verified custom SMTP sender in Supabase Auth, an allowed Site URL/redirect URL, and the `APP_ALLOWED_ORIGIN` and `APP_REDIRECT_URL` Edge Function secrets. Those provider credentials and the final app origin must be configured by the project owner in the dashboard; they are not stored in source control.
+
+## Database RPC security hardening
+- Revoked anonymous/public execution from expense approval, budget approval, asset disposal, depreciation posting, donation posting, expense posting, journal posting and certificate reissue RPCs; authenticated execution remains granted and each function retains its in-function church/action permission checks.
+- The public certificate QR verification RPC remains intentionally available to anonymous users and returns only its limited verification projection.
+- Supabase Security Advisor now reports no anonymous-executable SECURITY DEFINER RPCs other than the intentionally public certificate verification function. Authenticated SECURITY DEFINER functions remain subject to their own authorization checks and are reviewed during the deferred full security test phase.
