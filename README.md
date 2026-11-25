@@ -74,3 +74,8 @@ See `docs/implementation-status.md` for the current implementation and remaining
 - Implementation status: `docs/implementation-status.md`
 - Online acceptance test plan: `docs/acceptance-test-plan.md`
 - Email invitation setup: `docs/email-invitations.md`
+
+
+## Authentication setup
+
+- [Church ID and email-free username login](docs/church-id-username-login.md)
