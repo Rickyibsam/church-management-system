@@ -17,22 +17,23 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   async function exportBackup() {
-    if (!supabase || !churchId || busy) return;
+    const client=supabase;
+    if (!client || !churchId || busy) return;
     setBusy(true); setMessage("");
     try {
-      const {data:userData,error:userError}=await supabase.auth.getUser();
+      const {data:userData,error:userError}=await client.auth.getUser();
       if(userError||!userData.user) throw new Error("Sign in before creating a backup.");
-      const {data:membership,error:membershipError}=await supabase.from("church_members").select("role").eq("church_id",churchId).eq("user_id",userData.user.id).eq("status","active").maybeSingle();
+      const {data:membership,error:membershipError}=await client.from("church_members").select("role").eq("church_id",churchId).eq("user_id",userData.user.id).eq("status","active").maybeSingle();
       if(membershipError) throw membershipError;
       if(!membership||!["owner","admin"].includes(membership.role)) throw new Error("Only church owners and administrators can export a church backup.");
-      const {data:workspace,error:workspaceError}=await supabase.from("churches").select("id,legal_name,display_name,country_code,currency_code,timezone,preferred_language,logo_path,header_text,footer_text,address,email,phone,website,created_at,updated_at").eq("id",churchId).single();
+      const {data:workspace,error:workspaceError}=await client.from("churches").select("id,legal_name,display_name,country_code,currency_code,timezone,preferred_language,logo_path,header_text,footer_text,address,email,phone,website,created_at,updated_at").eq("id",churchId).single();
       if(workspaceError) throw workspaceError;
       const tables:Record<string,unknown[]>={};
       let totalRows=0;
       for(const table of BACKUP_TABLES) {
         const records:unknown[]=[];
         for(let offset=0;;offset+=500) {
-          const {data,error}=await supabase.from(table).select("*").eq("church_id",churchId).range(offset,offset+499);
+          const {data,error}=await client.from(table).select("*").eq("church_id",churchId).range(offset,offset+499);
           if(error) throw new Error("Backup stopped at "+table+": "+error.message);
           const page=data??[];
           records.push(...page);
@@ -47,14 +48,14 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       async function collectFolder(bucket:string,path:string,depth=0):Promise<void>{
         if(depth>12)throw new Error("Storage folder nesting exceeded the backup safety limit.");
         for(let offset=0;;offset+=100){
-          const {data,error}=await supabase.storage.from(bucket).list(path,{limit:100,offset});
+          const {data,error}=await client.storage.from(bucket).list(path,{limit:100,offset});
           if(error)throw new Error("Unable to list "+bucket+" storage: "+error.message);
           const page=data??[];
           for(const entry of page){
             const fullPath=path+"/"+entry.name;
             if(!entry.id&&!entry.metadata){await collectFolder(bucket,fullPath,depth+1);continue;}
             if(storageFiles.length>=2000)throw new Error("The backup contains more than 2,000 files; split the archive before exporting.");
-            const {data:fileBlob,error:downloadError}=await supabase.storage.from(bucket).download(fullPath);
+            const {data:fileBlob,error:downloadError}=await client.storage.from(bucket).download(fullPath);
             if(downloadError||!fileBlob)throw new Error("Unable to download backup file "+entry.name+": "+(downloadError?.message??"Unknown storage error"));
             const buffer=await fileBlob.arrayBuffer();
             storageBytes+=buffer.byteLength;
