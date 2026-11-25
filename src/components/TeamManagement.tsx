@@ -22,6 +22,9 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
  const [callerRole,setCallerRole]=useState("member");
  const [branchOptions,setBranchOptions]=useState<Array<{id:string;name:string}>>([]);
  const [inviteBranchId,setInviteBranchId]=useState("");
+ const [resettingUserId,setResettingUserId]=useState<string|null>(null);
+ const [newPassword,setNewPassword]=useState("");
+ const [confirmNewPassword,setConfirmNewPassword]=useState("");
  const canManage=["owner","admin"].includes(callerRole);
  async function load(){
   if(!supabase||!churchId){setRows([]);setPermissions([]);return;}
@@ -44,6 +47,16 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   if(error){setMessage("Unable to invite user: "+error.message);return;}
   if(data?.error){setMessage(data.error);return;}
   setInviteUsername("");setInvitePassword("");setInviteDisplayName("");setInviteBranchId("");setShow(false);setMessage(data?.message??"Invitation processed.");await load();
+ }
+ async function resetUserPassword(targetUserId:string){
+  if(!supabase||!churchId||newPassword.length<12||newPassword!==confirmNewPassword)return;
+  setSaving(true);setMessage("");
+  const {data,error}=await supabase.functions.invoke("reset-church-user-password",{body:{churchId,targetUserId,newPassword}});
+  setSaving(false);
+  if(error){setMessage("Unable to reset password: "+error.message);return;}
+  if(data?.error){setMessage(data.error);return;}
+  setMessage("Password reset successfully. Share the new password with the user through a secure channel.");
+  setResettingUserId(null);setNewPassword("");setConfirmNewPassword("");
  }
  async function changeStatus(id:string,status:string){
   if(!supabase)return;
@@ -83,7 +96,9 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   {message&&<div className="notice">{message}</div>}
   {show&&<div className="panel form-panel"><p className="muted">Create a username and password for a user in this church. Email is not required. Share the temporary password securely.</p><div className="form-grid"><div><label>Username</label><input className="field" autoComplete="off" value={inviteUsername} onChange={e=>setInviteUsername(e.target.value)} placeholder="Unique username"/></div><div><label>Display name</label><input className="field" value={inviteDisplayName} onChange={e=>setInviteDisplayName(e.target.value)} placeholder="Full name"/></div><div className="form-full"><label>Temporary password (minimum 12 characters)</label><input className="field" type="password" autoComplete="new-password" value={invitePassword} onChange={e=>setInvitePassword(e.target.value)} placeholder="Create a strong password"/></div><div><label>Church role</label><select className="field" value={role} onChange={e=>setRole(e.target.value)}>{roles.filter(item=>item!=="admin"||callerRole==="owner").map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div><label>Church branch</label><select className="field" value={inviteBranchId} onChange={e=>setInviteBranchId(e.target.value)}><option value="">Main / default branch</option>{branchOptions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving||!inviteUsername.trim()||invitePassword.length<12} onClick={()=>void add()}>{saving?"Creating...":"Create user account"}</button></div></div>}
   <div className="panel">{rows.length?<div className="team-list">{rows.map(row=><div className="team-row-wrap" key={row.id}>
-   <div className="team-row"><div className="team-avatar"><Users size={17}/></div><div className="team-main"><b>{row.profiles?.display_name||row.user_id}</b><small>{row.profiles?.username||row.user_id}{row.branch_id?" · "+(branchOptions.find(item=>item.id===row.branch_id)?.name??"Branch"):" · Main / default branch"}</small></div><span className="role-pill">{row.role.replaceAll("_"," ")}</span><select className="status-select" disabled={!canManage} value={row.status} onChange={e=>void changeStatus(row.id,e.target.value)}><option value="invited">Invited</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="left">Left</option></select><button className="secondary-button" disabled={!canManage} onClick={()=>setExpanded(expanded===row.id?null:row.id)}><Settings2 size={15}/> Permissions</button></div>
+   <div className="team-row"><div className="team-avatar"><Users size={17}/></div><div className="team-main"><b>{row.profiles?.display_name||row.user_id}</b><small>{row.profiles?.username||row.user_id}{row.branch_id?" · "+(branchOptions.find(item=>item.id===row.branch_id)?.name??"Branch"):" · Main / default branch"}</small></div><span className="role-pill">{row.role.replaceAll("_"," ")}</span><select className="status-select" disabled={!canManage} value={row.status} onChange={e=>void changeStatus(row.id,e.target.value)}><option value="invited">Invited</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="left">Left</option></select><button className="secondary-button" disabled={!canManage} onClick={()=>setResettingUserId(resettingUserId===row.user_id?null:row.user_id)}><ShieldCheck size={15}/> Reset password</button><button className="secondary-button" disabled={!canManage} onClick={()=>setExpanded(expanded===row.id?null:row.id)}><Settings2 size={15}/> Permissions</button></div>
+   {resettingUserId===row.user_id&&<div className="permission-panel"><p className="muted">Set a new password for this account. Use at least 12 characters and share it securely.</p><div className="form-grid"><div><label>New password</label><input className="field" type="password" autoComplete="new-password" value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></div><div><label>Confirm new password</label><input className="field" type="password" autoComplete="new-password" value={confirmNewPassword} onChange={e=>setConfirmNewPassword(e.target.value)}/></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>{setResettingUserId(null);setNewPassword("");setConfirmNewPassword("");}}>Cancel</button><button className="primary-button" disabled={saving||newPassword.length<12||newPassword!==confirmNewPassword} onClick={()=>void resetUserPassword(row.user_id)}>{saving?"Saving...":"Reset password"}</button></div></div>}
+  </div>
    {expanded===row.id&&<div className="permission-panel"><p className="muted">Enable specific actions for this user. A saved override replaces the role's default for that module/action. Owners and admins retain full access.</p><div className="permission-grid"><div className="permission-head"><b>Module</b>{actions.map(action=><b key={action}>{action}</b>)}</div>{modules.map(([key,label])=><div className="permission-row" key={key}><span>{label}</span>{actions.map(action=><label key={action} className="permission-check"><input type="checkbox" checked={isAllowed(row,key,action)} disabled={row.role==="owner"||row.role==="admin"} onChange={e=>void setPermission(row,key,action,e.target.checked)}/></label>)}</div>)}</div></div>}
   </div>)}</div>:<div className="empty-state"><ShieldCheck/><b>No additional users</b><small>Create accounts first, then assign them to this church.</small></div>}</div>
  </>;
