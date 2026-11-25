@@ -77,9 +77,16 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
         if (!Number.isFinite(number) || number === 0) throw new Error("Row " + (position + 2) + " has an invalid or zero amount.");
         const descriptionText = (row[description] ?? "").trim();
         if (!descriptionText) throw new Error("Row " + (position + 2) + " has no description.");
+        const statementDate = dateValue(row[date] ?? "");
+        const referenceNumber = reference >= 0 ? ((row[reference] ?? "").trim() || null) : null;
+        if (referenceNumber) {
+          const key = referenceNumber + "|" + statementDate;
+          if (seenReferences.has(key)) throw new Error("Duplicate reference/date in CSV at row " + (position + 2) + ".");
+          seenReferences.add(key);
+        }
         return {
-          statement_date: dateValue(row[date] ?? ""),
-          reference_number: reference >= 0 ? ((row[reference] ?? "").trim() || null) : null,
+          statement_date: statementDate,
+          reference_number: referenceNumber,
           description: descriptionText.slice(0, 1000),
           statement_amount: number,
           currency_code: currency.trim().toUpperCase()
