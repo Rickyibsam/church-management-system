@@ -413,7 +413,7 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 ## Branch Administrator role
 - Added a dedicated `branch_admin` church membership role. The database requires every Branch Administrator to have a branch assignment.
 - Branch Administrators can manage branch-scoped people, families, member documents, certificates, attendance, services, events, ministries, assets and inventory. They cannot manage church-wide finance, pastoral case records, branches or church settings by default.
-- Branch Administrators can create non-administrator user accounts and reset passwords only for other active users in their own branch. Only the Church Owner can assign another Branch Administrator or Church Administrator.
-- Membership update policies prevent Branch Administrators from changing their own membership or promoting users into privileged roles. Branch-level RLS denies access to unassigned/global rows for Branch Administrators.
+- Branch Administrators can create only secretary, ministry leader, staff, volunteer and member accounts, and can reset passwords only for non-privileged active users in their own branch. They cannot promote users to pastor, accountant, branch administrator or church administrator. Only the Church Owner can assign another Branch Administrator or Church Administrator.
+- Membership update policies prevent Branch Administrators from changing their own membership or promoting users into privileged roles. Branch-scoped access excludes unassigned/global rows and does not grant finance or pastoral permissions. Branch-level RLS denies access to unassigned/global rows for Branch Administrators.
 - Updated the team management screen and deployed both user-creation and password-reset Edge Functions (version 2).
 - Full branch-isolation and role-escalation tests remain in the deferred acceptance phase.
