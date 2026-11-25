@@ -150,6 +150,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         setMessage("Uploading backup file "+(fileIndex+1)+" of "+files.length+"...");
         if(!["church-private-documents","church-branding"].includes(file.bucket))throw new Error("The backup contains an unsupported storage bucket.");
         if(!file.path.startsWith(sourceChurchId+"/"))throw new Error("A storage file path does not belong to the source church.");
+        if(file.path.split("/").some(segment=>segment==="."||segment===".."))throw new Error("The backup contains an unsafe storage file path.");
         const targetPath=churchId+file.path.slice(sourceChurchId.length);
         const key=file.bucket+"|"+targetPath;
         if(seen.has(key))throw new Error("The backup contains a duplicate storage file path.");
