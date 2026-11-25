@@ -48,19 +48,23 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   const {error}=await supabase.from("church_members").update({status}).eq("id",id);
   if(error)setMessage("Unable to update team access: "+error.message);else{setMessage("Team access updated.");await load();}
  }
- function defaultAllowed(role:string,moduleKey:string){
+ function defaultAllowed(role:string,moduleKey:string,actionKey:string){
   if(role==="owner"||role==="admin")return true;
-  if(["members","families"].includes(moduleKey))return ["pastor","secretary","staff"].includes(role);
-  if(["certificates","certificate_documents"].includes(moduleKey))return ["pastor","secretary"].includes(role);
-  if(["attendance","services","events","ministries"].includes(moduleKey))return ["pastor","secretary","ministry_leader","staff","volunteer"].includes(role);
-  if(["accounts","expenses","donations","budgets"].includes(moduleKey))return role==="accountant";
-  if(moduleKey==="assets")return ["staff","accountant"].includes(role);
-  if(moduleKey==="pastoral")return role==="pastor";
+  const basic=["view","create","edit"].includes(actionKey);
+  const deleteAction=actionKey==="delete";
+  const approveAction=actionKey==="approve";
+  const issueAction=actionKey==="issue";
+  if(["members","families"].includes(moduleKey))return (["pastor","secretary","staff"].includes(role)&&basic)||(role==="pastor"&&deleteAction);
+  if(["certificates","certificate_documents"].includes(moduleKey))return (["pastor","secretary"].includes(role)&&basic)||(role==="pastor"&&(approveAction||issueAction||deleteAction));
+  if(["attendance","services","events","ministries"].includes(moduleKey))return (["pastor","secretary","ministry_leader","staff","volunteer"].includes(role)&&basic)||(["pastor","secretary"].includes(role)&&(deleteAction||approveAction));
+  if(["accounts","finance","expenses","donations","budgets"].includes(moduleKey))return (["accountant","finance"].includes(role)&&basic)||(["accountant","finance"].includes(role)&&approveAction);
+  if(moduleKey==="assets")return (["staff","accountant","finance"].includes(role)&&basic)||(["accountant","finance"].includes(role)&&(deleteAction||approveAction));
+  if(moduleKey==="pastoral")return role==="pastor"&&basic;
   return false;
  }
  function isAllowed(member:TeamRow,moduleKey:string,actionKey:string){
   const explicit=permissions.find(p=>p.church_member_id===member.id&&p.module_key===moduleKey&&p.action_key===actionKey);
-  return explicit?explicit.allowed:defaultAllowed(member.role,moduleKey);
+  return explicit?explicit.allowed:defaultAllowed(member.role,moduleKey,actionKey);
  }
  async function setPermission(member:TeamRow,moduleKey:string,actionKey:string,allowed:boolean){
   if(!supabase||!churchId)return;
