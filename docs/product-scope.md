@@ -35,3 +35,10 @@ Draft -> Documents Pending -> Submitted -> Under Review -> Approved -> Issued
 Alternative terminal states: Rejected, Withdrawn, Cancelled, Superseded.
 
 Each workflow stores who performed the action and when. Corrections and reissues retain the original record and a full history rather than silently overwriting issued certificates.
+
+## Access roles
+- Platform Super Admin: cross-church administration and platform-level oversight.
+- Church Owner / Church Administrator: manage their church and its branches.
+- Branch Administrator: manage only the assigned branch and its permitted operational modules.
+- Staff roles: pastor, accountant, secretary, ministry leader, staff, volunteer and member, with individual action-level permissions.
+- Cross-church access is denied by default. Platform Super Admin access must use a separate, explicitly bootstrapped platform-admin identity and must not be granted by ordinary church registration.
