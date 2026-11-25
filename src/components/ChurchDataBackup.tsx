@@ -10,7 +10,7 @@ const BACKUP_TABLES = [
   "pastoral_requests","pastoral_followups",
   "chart_of_accounts","financial_accounts","donations","expenses","journal_entries","journal_lines",
   "financial_budgets","financial_budget_lines","donation_pledges","donation_pledge_allocations","bank_reconciliation_items",
-  "church_assets","asset_maintenance","asset_depreciation_entries","audit_logs"
+  "church_assets","asset_maintenance","asset_depreciation_entries","inventory_items","inventory_transactions","audit_logs"
 ] as const;
 
 export default function ChurchDataBackup({ churchId }: { churchId: string | null }) {
