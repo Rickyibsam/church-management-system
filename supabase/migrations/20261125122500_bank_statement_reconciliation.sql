@@ -18,9 +18,13 @@ create table if not exists public.bank_reconciliation_items (
 );
 create index if not exists bank_reconciliation_church_account_date_idx on public.bank_reconciliation_items(church_id,financial_account_id,statement_date desc);
 alter table public.bank_reconciliation_items enable row level security;
+drop policy if exists bank_reconciliation_select on public.bank_reconciliation_items;
 create policy bank_reconciliation_select on public.bank_reconciliation_items for select to authenticated using (private.has_church_permission(church_id,'accounts','view'));
-create policy bank_reconciliation_insert on public.bank_reconciliation_items for insert to authenticated with check (private.has_church_permission(church_id,'accounts','create') and exists(select 1 from public.financial_accounts fa where fa.id=financial_account_id and fa.church_id=church_id));
+drop policy if exists bank_reconciliation_insert on public.bank_reconciliation_items;
+create policy bank_reconciliation_insert on public.bank_reconciliation_items for insert to authenticated with check (private.has_church_permission(church_id,'accounts','create') and exists(select 1 from public.financial_accounts fa where fa.id=financial_account_id and fa.church_id=bank_reconciliation_items.church_id));
+drop policy if exists bank_reconciliation_update on public.bank_reconciliation_items;
 create policy bank_reconciliation_update on public.bank_reconciliation_items for update to authenticated using (private.has_church_permission(church_id,'accounts','edit')) with check (private.has_church_permission(church_id,'accounts','edit') and exists(select 1 from public.financial_accounts fa where fa.id=financial_account_id and fa.church_id=church_id));
+drop policy if exists bank_reconciliation_delete on public.bank_reconciliation_items;
 create policy bank_reconciliation_delete on public.bank_reconciliation_items for delete to authenticated using (private.has_church_permission(church_id,'accounts','delete'));
 create or replace function private.validate_bank_reconciliation_item() returns trigger language plpgsql set search_path='' as $$
 declare v_chart_account uuid; v_line_account uuid; v_line_church uuid; v_entry_status text;
@@ -39,4 +43,5 @@ begin
  end if;
  return new;
 end; $$;
+drop trigger if exists validate_bank_reconciliation_item on public.bank_reconciliation_items;
 create trigger validate_bank_reconciliation_item before insert or update on public.bank_reconciliation_items for each row execute function private.validate_bank_reconciliation_item();
