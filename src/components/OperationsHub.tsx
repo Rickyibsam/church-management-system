@@ -6,7 +6,7 @@ import PledgePaymentAllocation from "./PledgePaymentAllocation";
 import BankStatementImport from "./BankStatementImport";
 
 type Kind = "finance" | "pastoral" | "reports" | "assets" | "attendance";
-type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local"; required?:boolean; defaultValue?:string; lookup?: {table:string;labelField:string;valueField?:string;filterField?:string;filterValue?:string}; options?:Array<{value:string;label:string}> };
+type Field = { name: string; label: string; type?: "text" | "number" | "date" | "datetime-local" | "boolean"; required?:boolean; defaultValue?:string; lookup?: {table:string;labelField:string;valueField?:string;filterField?:string;filterValue?:string}; options?:Array<{value:string;label:string}> };
 type Register = { key: string; label: string; table: string; description: string; fields: Field[]; orderBy?: string; readOnly?: boolean; postJournal?: boolean; financialAction?: "donation" | "expense"; extraColumns?: string[]; extraDisplay?: Array<{name:string;label:string}>; displayAllFields?: boolean; assetAction?: boolean; budgetAction?: boolean };
 
 const registers: Record<Kind, Register[]> = {
