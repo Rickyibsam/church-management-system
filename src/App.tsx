@@ -86,11 +86,11 @@ function App() {
     supabase.auth.getSession().then(({ data }) => {
       const session = data.session;
       setSupportOwner(session?.user.app_metadata?.platform_role === "support_owner");
-      setSupportOwner(session?.user.app_metadata?.platform_role === "support_owner");
       setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null);
       setAuthOpen(!session);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSupportOwner(session?.user.app_metadata?.platform_role === "support_owner");
       setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null);
       setAuthOpen(!session);
     });
