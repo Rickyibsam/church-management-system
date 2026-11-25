@@ -61,3 +61,42 @@
 
 .record-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.record-toolbar .secondary-button{font-size:9px;padding:8px 10px}
 @media(max-width:760px){.record-toolbar{width:100%}.record-toolbar button{flex:1}}
+
+
+/* Royal Blue + Golden church identity */
+:root{--royal:#123f8c;--royal-deep:#09275d;--royal-mid:#174b9f;--gold:#d7ad48;--gold-light:#f2d98d;--gold-deep:#9a7425;--navy:#061a3b}
+body{background:#f3f6fc;color:#172a49}
+.sidebar{background:linear-gradient(180deg,#123f8c 0%,#09275d 100%);color:#f5f7ff;border-right:1px solid #d1a743}
+.brand-mark{background:linear-gradient(145deg,#f4dc94,#c99b32);color:#08275d;box-shadow:0 4px 14px #020f2c55}
+.church-switch{background:#174b9f;border-color:#b9903d}
+.church-avatar,.user-avatar{background:#f1d88f;color:#09275d}
+.nav-item{color:#d8e4fa}.nav-item:hover,.nav-item.active{background:#1c55a8;color:#fff}
+.nav-item.active{box-shadow:inset 3px 0 #f0cf72}
+.sidebar .nav-group>label{color:#e2c779}.sidebar-bottom{border-color:#4568a1;color:#d2def3}
+.secure-note{color:#fff}.secure-note svg{color:#f0cf72}
+.primary-button{background:linear-gradient(135deg,#f0d27c,#c4952e);color:#09275d;border-color:#b88c2e;box-shadow:0 4px 12px #a47b2d30}
+.primary-button:hover{background:linear-gradient(135deg,#f7df9b,#d0a13a);color:#071d43}
+.eyebrow,.stat-top svg,.feature-card>span,.setting-card>svg{color:#a47c2b}
+.status-pill,.soft-pill{background:#fff5d9;color:#80601c;border:1px solid #ead49a}
+.field:focus{border-color:#c39a3d;box-shadow:0 0 0 3px #f5e8c4}
+.modal:has(.auth-shell){width:min(520px,100%);background:#071a3a;color:#f6f1e4;border:1px solid #bd963f;border-radius:20px;box-shadow:0 25px 80px #06142c88}
+.modal:has(.auth-shell) .modal-header{display:none}
+.modal:has(.auth-shell) .modal-body{padding:0}
+.auth-shell{padding:28px 30px 26px;background:radial-gradient(ellipse at 50% 0%,#16478e 0%,#0b2b63 42%,#061a3b 100%);border-radius:20px}
+.auth-brandline{display:flex;align-items:center;gap:11px;padding-bottom:22px;border-bottom:1px solid #d4ad5260}
+.auth-brand-mark{width:39px;height:39px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#f5df9c,#c3942d);color:#09275d;font-size:24px}
+.auth-brandline b{display:block;font:800 16px Manrope;color:#fff}.auth-brandline small{display:block;font-size:10px;color:#d7c58f;margin-top:3px}
+.auth-tabs{display:flex;gap:8px;margin:20px 0 22px;padding:4px;background:#04132d;border:1px solid #bd963f55;border-radius:10px}
+.auth-tab{flex:1;padding:10px;border:0;border-radius:7px;background:transparent;color:#d8dff0;font-size:11px;font-weight:700}
+.auth-tab.active{background:linear-gradient(135deg,#f1d88f,#c99a34);color:#08275d}
+.auth-shell .muted{color:#d3dced;line-height:1.6}
+.auth-shell label{display:block;margin:12px 0 6px;color:#f0d994;font-size:10px;font-weight:700}
+.auth-shell .field{background:#102d5c;border:1px solid #5472a3;color:#fff;border-radius:9px;padding:12px}
+.auth-shell .field::placeholder{color:#a8bad8}
+.auth-shell .field:focus{border-color:#e2bf63;box-shadow:0 0 0 3px #d9b55330}
+.auth-shell .modal-actions{margin-top:20px}
+.auth-shell .primary-button{width:100%;padding:12px;border-radius:9px}
+.auth-form{padding-bottom:3px}
+.topbar{border-bottom-color:#e5d8b7}
+.connection.online{background:#f7f0db;border-color:#e7d39c;color:#765b20}
+@media(max-width:760px){.auth-shell{padding:22px 18px}.modal:has(.auth-shell){width:min(480px,100%)}}
