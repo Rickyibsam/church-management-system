@@ -365,3 +365,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Removed redundant duplicate indexes and combined overlapping branch/profile SELECT policies without weakening their access conditions.
 - Optimized pastoral RLS policies to evaluate the current authenticated user once per statement.
 - The Supabase performance advisor now reports no unindexed foreign keys, duplicate indexes or multiple-permissive-policy warnings. It still lists unused indexes because this project currently has no real church workload; retain the FK indexes until workload-based measurements justify any removal.
+
+- Additional custom UI gates now cover certificate submit/review/approve/issue/reissue/print actions, dashboard member registration and bank-statement CSV import.
