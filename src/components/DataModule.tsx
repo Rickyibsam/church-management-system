@@ -19,14 +19,15 @@ export default function DataModule({ churchId, table, title, description, fields
   const [permissions,setPermissions]=useState({create:false,edit:false,delete:false,approve:false});
   useEffect(()=>{
     let alive=true;
-    if(!permissionModule||!churchId||readOnly||!supabase){
+    const client=supabase;
+    if(!permissionModule||!churchId||readOnly||!client){
       setPermissions({create:true,edit:true,delete:true,approve:true});
       return ()=>{alive=false;};
     }
     setPermissions({create:false,edit:false,delete:false,approve:false});
     const actions=["create","edit","delete","approve"] as const;
     void Promise.all(actions.map(async action=>{
-      const {data,error}=await supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:permissionModule,p_action_key:action});
+      const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:permissionModule,p_action_key:action});
       return [action,!error&&data===true] as const;
     })).then(results=>{
       if(!alive)return;
