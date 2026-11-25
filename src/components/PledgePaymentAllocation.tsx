@@ -72,6 +72,6 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
   </>}
   {!canAllocate&&<p className="notice">You do not have permission to allocate donation payments.</p>}
   <h4 style={{marginTop:24}}>Recent allocations</h4>
-  {loading?<p>Loading payment allocations…</p>:allocations.length===0?<p>No pledge payments have been allocated yet.</p>:<div className="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Donor</th><th>Amount</th></tr></thead><tbody>{allocations.map(a=><tr key={a.id}><td>{new Date(a.allocated_at).toLocaleDateString()}</td><td>{a.donations?.receipt_number??a.donation_id.slice(0,8)}</td><td>{a.donations?.donor_name??"—"}</td><td>{Number(a.amount).toFixed(2)}</td></tr>)}</tbody></table></div>}
+  {loading?<p>Loading payment allocations…</p>:allocations.length===0?<p>No pledge payments have been allocated yet.</p>:<div className="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Donor</th><th>Amount</th></tr></thead><tbody>{allocations.map(a=><tr key={a.id}><td>{new Date(a.allocated_at).toLocaleDateString("en-GB")}</td><td>{a.donations?.receipt_number??a.donation_id.slice(0,8)}</td><td>{a.donations?.donor_name??"—"}</td><td>{Number(a.amount).toFixed(2)}</td></tr>)}</tbody></table></div>}
  </section>;
 }
