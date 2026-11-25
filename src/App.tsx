@@ -218,6 +218,17 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
   const [printId,setPrintId] = useState<string|null>(null);
   const [records,setRecords] = useState<Array<Record<string,unknown>>>([]);
   const [message,setMessage] = useState("");
+  const [certificateActions,setCertificateActions]=useState({view:false,create:false,edit:false,approve:false,issue:false});
+  useEffect(()=>{
+    let alive=true;const client=supabase;
+    if(!client||!churchId){setCertificateActions({view:false,create:false,edit:false,approve:false,issue:false});return ()=>{alive=false;};}
+    const actions=["view","create","edit","approve","issue"] as const;
+    void Promise.all(actions.map(async action=>{
+      const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"certificates",p_action_key:action});
+      return [action,!error&&data===true] as const;
+    })).then(results=>{if(alive)setCertificateActions(Object.fromEntries(results) as typeof certificateActions);});
+    return ()=>{alive=false;};
+  },[churchId]);
   useEffect(() => {
     let alive = true;
     async function load() {
@@ -230,7 +241,8 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     return () => { alive = false; };
   },[churchId,refresh]);
   async function advance(id:string,status:string,reason?:string){
-    if(!supabase)return;
+    const requiredAction=status==="issued"?"issue":status==="approved"||status==="rejected"?"approve":"edit";
+    if(!supabase||!certificateActions[requiredAction])return;
     setMessage("");
     const {error}=await supabase.rpc("transition_certificate",{p_certificate_id:id,p_target_status:status,p_reason:reason??null});
     if(error){setMessage("Unable to update certificate status: "+error.message);return;}
@@ -240,7 +252,7 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     else setRecords((data??[]) as Array<Record<string,unknown>>);
   }
   async function reissue(id:string){
-    if(!supabase)return;
+    if(!supabase||!certificateActions.create)return;
     const reason=window.prompt("Enter the correction or reissue reason:");
     if(!reason?.trim())return;
     const {error}=await supabase.rpc("reissue_certificate",{p_certificate_id:id,p_reason:reason.trim()});
@@ -251,11 +263,11 @@ function Certificates({ churchId, onNew, refresh }: { churchId: string | null; o
     else setRecords((updated??[]) as Array<Record<string,unknown>>);
   }
   return <>
-    <div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage applications, supporting documents, approvals and certificate issuance.</p></div><button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button></div>
+    <div className="page-intro"><div><h2>Certificates & Church Registers</h2><p>Manage applications, supporting documents, approvals and certificate issuance.</p></div>{certificateActions.create&&<button className="primary-button" onClick={onNew}><Plus size={17}/> New registration</button>}</div>
     <div className="cert-grid">{certTypes.map(t => <div className="cert-card" key={t.value}><div className="cert-icon"><FileBadge/></div><div><b>{t.label}</b><small>{t.prefix}-YYYY-000001 numbering format</small></div><span className="soft-pill">Register</span></div>)}</div>
     <div className="panel"><div className="panel-heading"><div><h3>Registration register</h3><p>Draft, submitted, approved and issued church records.</p></div></div>
       {message && <div className="notice">{message}</div>}
-      {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span><span className="row-actions">{String(r.status)==="draft"&&<><button onClick={()=>void advance(String(r.id),"submitted")}>Submit</button><button onClick={()=>void advance(String(r.id),"cancelled","Cancelled by church administrator")}>Cancel</button></>}{String(r.status)==="submitted"&&<button onClick={()=>void advance(String(r.id),"under_review")}>Start review</button>}{String(r.status)==="under_review"&&<><button onClick={()=>void advance(String(r.id),"approved")}>Approve</button><button onClick={()=>{const reason=window.prompt("Enter the reason for rejecting this certificate:");if(reason?.trim())void advance(String(r.id),"rejected",reason.trim());}}>Reject</button></>}{String(r.status)==="approved"&&<button onClick={()=>void advance(String(r.id),"issued")}>Issue</button>}{String(r.status)==="issued"&&<><button onClick={()=>setPrintId(String(r.id))}>Print</button><button onClick={()=>void reissue(String(r.id))}>Correct / Reissue</button></>}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
+      {records.length ? <div className="records-table"><div className="record-row record-head"><span>Registration no.</span><span>Type</span><span>Person / Family</span><span>Status</span><span>Date</span></div>{records.map(r=><div className="record-row" key={String(r.id)}><b>{String(r.registration_number)}</b><span>{String(r.certificate_type)}</span><span>{String(r.primary_person_name)}</span><span className="soft-pill">{String(r.status)}</span><span>{String(r.event_date ?? "—")}</span><span className="row-actions">{String(r.status)==="draft"&&certificateActions.edit&&<><button onClick={()=>void advance(String(r.id),"submitted")}>Submit</button><button onClick={()=>void advance(String(r.id),"cancelled","Cancelled by church administrator")}>Cancel</button></>}{String(r.status)==="submitted"&&certificateActions.edit&&<button onClick={()=>void advance(String(r.id),"under_review")}>Start review</button>}{String(r.status)==="under_review"&&certificateActions.approve&&<><button onClick={()=>void advance(String(r.id),"approved")}>Approve</button><button onClick={()=>{const reason=window.prompt("Enter the reason for rejecting this certificate:");if(reason?.trim())void advance(String(r.id),"rejected",reason.trim());}}>Reject</button></>}{String(r.status)==="approved"&&certificateActions.issue&&<button onClick={()=>void advance(String(r.id),"issued")}>Issue</button>}{String(r.status)==="issued"&&<>{certificateActions.view&&<button onClick={()=>setPrintId(String(r.id))}>Print</button>}{certificateActions.create&&<button onClick={()=>void reissue(String(r.id))}>Correct / Reissue</button>}</>}</span></div>)}</div> : <div className="empty-state"><FileText/><b>No registrations yet</b><small>Start a registration to build the church's official register.</small></div>}
     </div>
     {printId&&<CertificatePrint certificateId={printId} onClose={()=>setPrintId(null)}/>}
   </>;
