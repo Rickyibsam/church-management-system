@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 type TeamRow={id:string;user_id:string;role:string;status:string;branch_id:string|null;profiles?:{display_name:string|null}|null};
 type Permission={id?:string;church_id:string;church_member_id:string;module_key:string;action_key:string;allowed:boolean};
 const roles=["admin","pastor","accountant","secretary","ministry_leader","staff","volunteer","member"];
-const modules=[["members","Members"],["families","Families"],["branches","Branches"],["certificates","Certificates"],["certificate_documents","Certificate documents"],["attendance","Attendance"],["services","Services"],["events","Events"],["ministries","Ministries"],["pastoral","Pastoral care"],["accounts","Accounting"],["expenses","Expenses"],["donations","Donations"],["budgets","Budgets"],["assets","Assets"],["inventory","Inventory"]] as const;
+const modules=[["members","Members"],["families","Families"],["branches","Branches"],["certificates","Certificates"],["certificate_documents","Certificate documents"],["member_documents","Member documents"],["attendance","Attendance"],["services","Services"],["events","Events"],["ministries","Ministries"],["pastoral","Pastoral care"],["accounts","Accounting"],["expenses","Expenses"],["donations","Donations"],["budgets","Budgets"],["assets","Assets"],["inventory","Inventory"]] as const;
 const actions=["view","create","edit","delete","approve","issue"] as const;
 
 export default function TeamManagement({churchId}:{churchId:string|null}){
