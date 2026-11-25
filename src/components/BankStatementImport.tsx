@@ -57,6 +57,8 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
     setMessage("");
     setPreview([]);
     if (!file || !accountId) { setMessage("Select a cash/bank account and CSV file."); return; }
+    if (file.size > 10 * 1024 * 1024) { setMessage("CSV files must be 10 MB or smaller."); return; }
+    if (!/^[A-Z]{3}$/.test(currency.trim().toUpperCase())) { setMessage("Enter a valid three-letter currency code."); return; }
     try {
       const rows = parseCsv(await file.text());
       if (rows.length < 2) throw new Error("The CSV must contain a header and at least one statement row.");
@@ -67,6 +69,8 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
       const amount = index(["amount","transactionamount","signedamount"]);
       const reference = index(["reference","referencenumber","ref","transactionid"]);
       if ([date, description, amount].some(value => value < 0)) throw new Error("CSV headers must include Date, Description and Amount. Reference is optional.");
+      if (rows.length - 1 > 5000) throw new Error("A single import is limited to 5,000 statement rows.");
+      const seenReferences = new Set<string>();
       const parsed = rows.slice(1).map((row, position) => {
         const rawAmount = (row[amount] ?? "").trim().replace(/,/g, "");
         const number = Number(rawAmount);
