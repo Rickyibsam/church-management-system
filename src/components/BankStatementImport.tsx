@@ -40,9 +40,16 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
   const [currency, setCurrency] = useState("PKR");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [canImport,setCanImport]=useState(false);
   const [preview, setPreview] = useState<Array<{statement_date:string;reference_number:string|null;description:string;statement_amount:number;currency_code:string}>>([]);
 
   useEffect(() => { void loadAccounts(); }, [churchId]);
+  useEffect(()=>{
+    let alive=true;const client=supabase;
+    if(!client||!churchId){setCanImport(false);return ()=>{alive=false;};}
+    void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"accounts",p_action_key:"create"}).then(({data,error})=>{if(alive)setCanImport(!error&&data===true);});
+    return ()=>{alive=false;};
+  },[churchId]);
 
   async function loadAccounts() {
     if (!supabase || !churchId) return;
@@ -100,7 +107,7 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
   }
 
   async function importRows() {
-    if (!supabase || !churchId || !accountId || !preview.length) return;
+    if (!supabase || !churchId || !accountId || !preview.length || !canImport) return;
     setBusy(true); setMessage("");
     const references = preview.filter(row => row.reference_number).map(row => row.reference_number!);
     if (references.length) {
@@ -124,12 +131,12 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
 
   return <section className="panel settings-panel">
     <div className="page-intro"><div><h3>Import bank statement (CSV)</h3><p>Upload a CSV containing Date, Description and Amount columns. Reference is optional. Positive amounts are credits and negative amounts are debits.</p></div></div>
-    <div className="form-grid">
+    {canImport?<><div className="form-grid">
       <div><label>Cash / bank account</label><select className="field" value={accountId} onChange={event => {setAccountId(event.target.value); const found=accounts.find(item=>item.id===event.target.value); if(found?.currency_code)setCurrency(found.currency_code);}}><option value="">Select account</option>{accounts.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
       <div><label>Currency code</label><input className="field" value={currency} maxLength={3} onChange={event=>setCurrency(event.target.value.toUpperCase())}/></div>
       <div className="form-full"><label>Statement CSV file</label><input className="field" type="file" accept=".csv,text/csv" onChange={event=>{setFile(event.target.files?.[0]??null);setPreview([]);}}/></div>
     </div>
-    <div className="modal-actions"><button className="secondary-button" disabled={!file||!accountId} onClick={()=>void prepare()}>Validate CSV</button><button className="primary-button" disabled={!preview.length||busy} onClick={()=>void importRows()}>{busy?"Importing...":"Import validated rows"}</button></div>
+    <div className="modal-actions"><button className="secondary-button" disabled={!file||!accountId} onClick={()=>void prepare()}>Validate CSV</button><button className="primary-button" disabled={!preview.length||busy} onClick={()=>void importRows()}>{busy?"Importing...":"Import validated rows"}</button></div></>:<p className="notice">You do not have permission to import bank statements.</p>}
     {message&&<p className="helper" role="status">{message}</p>}
     {preview.length>0&&<div className="table-wrap"><table><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Amount</th><th>Currency</th></tr></thead><tbody>{preview.slice(0,20).map((row,index)=><tr key={index}><td>{row.statement_date}</td><td>{row.reference_number??"—"}</td><td>{row.description}</td><td>{row.statement_amount.toLocaleString()}</td><td>{row.currency_code}</td></tr>)}</tbody></table>{preview.length>20&&<p className="helper">Showing first 20 of {preview.length} validated rows.</p>}</div>}
   </section>;
