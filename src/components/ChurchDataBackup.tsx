@@ -142,7 +142,9 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       const {data:membership,error:membershipError}=await client.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
       if(membershipError||membership?.role!=="owner"||membership.status!=="active")throw new Error("Only the active owner of the target church can restore a backup.");
       const seen=new Set<string>();
-      for(const file of files){
+      for(let fileIndex=0;fileIndex<files.length;fileIndex++){
+        const file=files[fileIndex];
+        setMessage("Uploading backup file "+(fileIndex+1)+" of "+files.length+"...");
         if(!["church-private-documents","church-branding"].includes(file.bucket))throw new Error("The backup contains an unsupported storage bucket.");
         if(!file.path.startsWith(sourceChurchId+"/"))throw new Error("A storage file path does not belong to the source church.");
         const targetPath=churchId+file.path.slice(sourceChurchId.length);
@@ -157,6 +159,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
         uploaded[file.bucket].push(targetPath);
       }
+      setMessage("Restoring database records transactionally...");
       const databaseSnapshot:Record<string,unknown>={...parsed,storage_manifest:files.map(file=>({bucket:file.bucket,path:churchId+file.path.slice(sourceChurchId.length),size:file.size}))};
       delete databaseSnapshot["storage_files"];
       const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
