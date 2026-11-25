@@ -337,3 +337,10 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Certificate workflow notifications
 - Certificate status transitions (submitted, under review, approved, issued, rejected or cancelled) now send generic notifications to active church reviewers and the applicant, where applicable.
 - Notifications are branch-scoped for reviewers, exclude the acting user, avoid duplicate applicant delivery and do not disclose personal details or private reviewer notes.
+
+
+## Backup storage coverage
+- Version 4 JSON exports now include the binary contents of files under the church's private-document and branding storage folders, with MIME type, path and size metadata.
+- Export safety limits are 2,000 files and 50 MB total. If listing or downloading any file fails, the export is aborted rather than silently creating a partial archive.
+- Added owner/admin-only read access for listing branding assets. Private documents continue to use the existing church document view policy.
+- Authentication identities and passwords remain excluded. The transactional restore procedure is still pending; file-complete export does not mean restore is ready.
