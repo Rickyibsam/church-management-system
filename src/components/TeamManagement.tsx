@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 type TeamRow={id:string;user_id:string;role:string;status:string;branch_id:string|null;profiles?:{display_name:string|null}|null};
 type Permission={id?:string;church_id:string;church_member_id:string;module_key:string;action_key:string;allowed:boolean};
 const roles=["admin","pastor","accountant","secretary","ministry_leader","staff","volunteer","member"];
-const modules=[["members","Members"],["families","Families"],["branches","Branches"],["certificates","Certificates"],["certificate_documents","Certificate documents"],["attendance","Attendance"],["services","Services"],["events","Events"],["ministries","Ministries"],["pastoral","Pastoral care"],["accounts","Accounting"],["expenses","Expenses"],["donations","Donations"],["budgets","Budgets"],["assets","Assets"]] as const;
+const modules=[["members","Members"],["families","Families"],["branches","Branches"],["certificates","Certificates"],["certificate_documents","Certificate documents"],["attendance","Attendance"],["services","Services"],["events","Events"],["ministries","Ministries"],["pastoral","Pastoral care"],["accounts","Accounting"],["expenses","Expenses"],["donations","Donations"],["budgets","Budgets"],["assets","Assets"],["inventory","Inventory"]] as const;
 const actions=["view","create","edit","delete","approve","issue"] as const;
 
 export default function TeamManagement({churchId}:{churchId:string|null}){
@@ -58,7 +58,7 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   if(["certificates","certificate_documents"].includes(moduleKey))return (["pastor","secretary"].includes(role)&&basic)||(role==="pastor"&&(approveAction||issueAction||deleteAction));
   if(["attendance","services","events","ministries"].includes(moduleKey))return (["pastor","secretary","ministry_leader","staff","volunteer"].includes(role)&&basic)||(["pastor","secretary"].includes(role)&&(deleteAction||approveAction));
   if(["accounts","finance","expenses","donations","budgets"].includes(moduleKey))return (["accountant","finance"].includes(role)&&basic)||(["accountant","finance"].includes(role)&&approveAction);
-  if(moduleKey==="assets")return (["staff","accountant","finance"].includes(role)&&basic)||(["accountant","finance"].includes(role)&&(deleteAction||approveAction));
+  if(["assets","inventory"].includes(moduleKey))return (["staff","accountant","finance","secretary"].includes(role)&&basic)||(["accountant","finance","pastor"].includes(role)&&(deleteAction||approveAction));
   if(moduleKey==="pastoral")return role==="pastor"&&basic;
   return false;
  }
