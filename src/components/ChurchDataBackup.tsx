@@ -87,13 +87,14 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       }
       const backup={
         format:"church-management-system-backup",
-        version:4,
+        version:5,
         created_at:new Date().toISOString(),
         workspace,
         row_counts:Object.fromEntries(Object.entries(tables).map(([name,rows])=>[name,rows.length])),
         storage_file_count:storageFiles.length,
         storage_total_bytes:storageBytes,
         tables,
+        storage_manifest:storageFiles.map(({bucket,path,size})=>({bucket,path,size})),
         storage_files:storageFiles,
         limitations:[
           "Authentication accounts and passwords are never exported; referenced user accounts must already exist in the same Supabase project before restore.",
@@ -122,7 +123,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
     try{
       if(restoreFile.size>80*1024*1024)throw new Error("The backup file exceeds the 80 MB restore limit.");
       const parsed=JSON.parse(await restoreFile.text()) as Record<string,unknown>;
-      if(parsed.format!=="church-management-system-backup"||parsed.version!==4)throw new Error("Select a valid version 4 church backup.");
+      if(parsed.format!=="church-management-system-backup"||parsed.version!==5)throw new Error("Select a valid version 5 church backup.");
       const workspace=parsed.workspace as {id?:string}|undefined;
       const sourceChurchId=workspace?.id??"";
       if(!sourceChurchId||sourceChurchId===churchId)throw new Error("Select a backup from a different church workspace.");
@@ -152,7 +153,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
         uploaded[file.bucket].push(targetPath);
       }
-      const databaseSnapshot={...parsed};
+      const databaseSnapshot={...parsed,storage_manifest:files.map(file=>({bucket:file.bucket,path:churchId+file.path.slice(sourceChurchId.length),size:file.size}))};
       delete databaseSnapshot.storage_files;
       const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
       if(restoreError)throw new Error("Database restore was rolled back: "+restoreError.message);
@@ -177,7 +178,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
     <div className="divider"/>
     <h4>Restore church backup</h4>
     <p>Only the target church owner can restore. All referenced user accounts must still exist in this Supabase project.</p>
-    {canRestore?<><label>Version 4 backup JSON</label><input className="field" type="file" accept=".json,application/json" onChange={event=>setRestoreFile(event.target.files?.[0]??null)}/><button className="secondary-button" disabled={!churchId||!restoreFile||busy} onClick={()=>void restoreBackup()}><Upload size={16}/>{busy?"Restoring backup...":"Restore into this empty workspace"}</button></>:<p className="helper">Restore is available to the active church owner only.</p>}
+    {canRestore?<><label>Version 5 backup JSON</label><input className="field" type="file" accept=".json,application/json" onChange={event=>setRestoreFile(event.target.files?.[0]??null)}/><button className="secondary-button" disabled={!churchId||!restoreFile||busy} onClick={()=>void restoreBackup()}><Upload size={16}/>{busy?"Restoring backup...":"Restore into this empty workspace"}</button></>:<p className="helper">Restore is available to the active church owner only.</p>}
     {message&&<p className="helper" role="status">{message}</p>}
   </section>;
 }
