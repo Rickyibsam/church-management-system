@@ -25,7 +25,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       const {data:membership,error:membershipError}=await supabase.from("church_members").select("role").eq("church_id",churchId).eq("user_id",userData.user.id).eq("status","active").maybeSingle();
       if(membershipError) throw membershipError;
       if(!membership||!["owner","admin"].includes(membership.role)) throw new Error("Only church owners and administrators can export a church backup.");
-      const {data:workspace,error:workspaceError}=await supabase.from("churches").select("id,legal_name,display_name,country_code,currency_code,timezone,created_at").eq("id",churchId).single();
+      const {data:workspace,error:workspaceError}=await supabase.from("churches").select("id,legal_name,display_name,country_code,currency_code,timezone,preferred_language,logo_path,header_text,footer_text,address,email,phone,website,created_at,updated_at").eq("id",churchId).single();
       if(workspaceError) throw workspaceError;
       const tables:Record<string,unknown[]>={};
       let totalRows=0;
