@@ -197,3 +197,12 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Notification text is intentionally generic and does not disclose donor, transaction, or confidential pastoral details.
 - Applied Supabase migration `operational_event_notifications` and verified that all three database triggers are installed.
 - This increment has not yet undergone functional/security end-to-end testing; production frontend deployment is not confirmed.
+
+
+## Bank statement import and reconciliation reporting (online development)
+- Added CSV statement import to the Bank Reconciliation workspace. It accepts Date, Description and Amount headers, plus optional Reference; signed positive/negative amounts are retained.
+- Added validation for required headers, date and non-zero numeric amounts, three-letter currency code, 10 MB file size and 5,000-row import cap.
+- Added duplicate reference/date checks against both the CSV itself and existing statement records before inserting.
+- Added a security-invoker reconciliation summary view grouped by church, bank account and currency, showing matched, pending and ignored counts plus net amounts and statement date range.
+- Added the summary report as a read-only finance register. The CSV import and summary UI are committed; the summary view migration is applied to Supabase.
+- Statement file bytes are not retained after import; only normalized statement rows are stored. CSV import and reconciliation matching still require the deferred functional/security test phase.
