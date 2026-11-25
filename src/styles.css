@@ -100,3 +100,22 @@ body{background:#f3f6fc;color:#172a49}
 .topbar{border-bottom-color:#e5d8b7}
 .connection.online{background:#f7f0db;border-color:#e7d39c;color:#765b20}
 @media(max-width:760px){.auth-shell{padding:22px 18px}.modal:has(.auth-shell){width:min(480px,100%)}}
+
+
+/* Full-screen church photograph behind the royal-blue/gold authentication card */
+.modal-backdrop:has(.auth-shell){
+  background:
+    linear-gradient(115deg,rgba(4,20,55,.76),rgba(7,34,83,.56) 48%,rgba(4,17,46,.72)),
+    url("https://images.unsplash.com/photo-1690336607264-20a7bd9222e0?auto=format&fit=crop&fm=jpg&q=85&w=2400") center 48%/cover no-repeat fixed;
+  padding:24px;
+}
+.modal:has(.auth-shell){
+  background:rgba(5,24,59,.94);
+  backdrop-filter:blur(10px);
+  border:1px solid #e0bd63;
+  box-shadow:0 24px 80px rgba(0,0,0,.5),0 0 35px rgba(224,185,83,.18);
+}
+.auth-shell{background:linear-gradient(145deg,rgba(13,53,119,.95),rgba(4,20,52,.97))}
+@media(max-width:760px){
+  .modal-backdrop:has(.auth-shell){padding:12px;background-position:center;background-attachment:scroll}
+}
