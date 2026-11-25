@@ -28,7 +28,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
    const {data,error}=await supabase.from("certificates").select("id,church_id,certificate_type,registration_number,primary_person_name,secondary_person_name,event_date,event_place,pastor_name,issued_at,qr_verification_token,issued_pdf_path,status,form_data").eq("id",certificateId).maybeSingle();
    if(error||!data){if(alive)setMessage(error?.message??"Certificate not found.");return;}
    const {data:churchData}=await supabase.from("churches").select("display_name,legal_name,address,phone,email,website,logo_path,header_text,footer_text").eq("id",data.church_id).maybeSingle();
-   const {data:templateData}=await supabase.from("certificate_templates").select("name,language_code,page_size,orientation,logo_path,header_text,footer_text,pastor_name,pastor_signature_path,seal_path,background_path").eq("church_id",data.church_id).eq("certificate_type",data.certificate_type).eq("is_active",true).eq("is_default",true).order("created_at",{ascending:false}).limit(1).maybeSingle();
+   const {data:templateData}=await supabase.from("certificate_templates").select("name,language_code,page_size,orientation,logo_path,header_text,footer_text,pastor_name,pastor_signature_path,seal_path,background_path").eq("church_id",data.church_id).eq("certificate_type",data.certificate_type).eq("language_code","en").eq("is_active",true).eq("is_default",true).order("created_at",{ascending:false}).limit(1).maybeSingle();
    if(!alive)return;
    setRecord(data as CertificateRecord);setChurch(churchData as ChurchRecord|null);setTemplate(templateData as TemplateRecord|null);
    const url=window.location.origin+"/?verify="+data.qr_verification_token;
