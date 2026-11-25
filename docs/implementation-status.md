@@ -263,3 +263,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The JSON snapshot now includes certificate numbering sequences (owner/admin read-only access), audit export metadata and the current user's notification records, in addition to the previously listed church-scoped tables.
 - The backup format version is now 2 so that future restore validation can reject older snapshots that omit sequence and operational metadata.
 - The export still does not include Auth identities/passwords or private Storage object bytes. A transactional restore is not enabled until the restore path can validate those dependencies and safely recover private files.
+
+
+## Finance notification coverage
+- Donation receipts now notify active owner/admin/accountant/finance users when a receipt transitions to posted; the posting user is excluded.
+- Expenses now notify active owner/admin/accountant/finance users when an approved expense transitions to posted; the posting user is excluded.
+- Notification bodies are generic and do not disclose donor details, amounts, private notes or pastoral case information. The existing realtime inbox delivers the records to each recipient.
