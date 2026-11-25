@@ -408,3 +408,12 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Finance registers now resolve to their actual database permission modules: expenses, donations, budgets or accounts. Attendance service scheduling now checks the dedicated services permission instead of reusing attendance permissions.
 - Dashboard expense alerts now require the same expenses:view permission used by the expense register and its RLS policies.
 - This aligns UI action visibility with database authorization without broadening any role or bypassing RLS. Full role-by-role verification remains part of the later acceptance phase.
+
+
+## Branch Administrator role
+- Added a dedicated `branch_admin` church membership role. The database requires every Branch Administrator to have a branch assignment.
+- Branch Administrators can manage branch-scoped people, families, member documents, certificates, attendance, services, events, ministries, assets and inventory. They cannot manage church-wide finance, pastoral case records, branches or church settings by default.
+- Branch Administrators can create non-administrator user accounts and reset passwords only for other active users in their own branch. Only the Church Owner can assign another Branch Administrator or Church Administrator.
+- Membership update policies prevent Branch Administrators from changing their own membership or promoting users into privileged roles. Branch-level RLS denies access to unassigned/global rows for Branch Administrators.
+- Updated the team management screen and deployed both user-creation and password-reset Edge Functions (version 2).
+- Full branch-isolation and role-escalation tests remain in the deferred acceptance phase.
