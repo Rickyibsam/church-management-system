@@ -133,3 +133,14 @@ body{background:#f3f6fc;color:#172a49}
 .auth-tab.active{background:linear-gradient(135deg,#f4dc98,#c99a34);box-shadow:0 4px 18px rgba(210,168,70,.28)}
 .auth-shell .field{background:rgba(9,30,66,.48);border:1px solid rgba(203,220,246,.34);backdrop-filter:blur(8px)}
 @media(max-width:760px){.modal-backdrop:has(.auth-shell){padding:12px;background-position:center,center;background-attachment:scroll}.auth-shell{padding:22px 18px}}
+
+/* Premium royal-blue and champagne-gold church login backdrop */
+.modal-backdrop:has(.auth-shell){background-color:#061b43;background-image:linear-gradient(110deg,rgba(4,22,58,.58),rgba(9,48,112,.35) 48%,rgba(4,18,48,.62)),url("https://images.squarespace-cdn.com/content/v1/66996dd143567376c0980ae8/cde7a23d-42f1-4ed8-a2d2-425aa9e779f0/Cathedral%2Bweb%2Bcover%2Bresized.jpg?format=2500w");background-position:center,center 52%;background-size:cover,cover;background-repeat:no-repeat;background-attachment:scroll;padding:24px}
+.modal:has(.auth-shell){background:rgba(5,23,55,.34);border:1px solid rgba(232,196,111,.88);border-radius:22px;box-shadow:0 30px 90px rgba(0,0,0,.48),0 0 38px rgba(225,187,91,.18);backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%)}
+.modal:has(.auth-shell) .modal-body{background:transparent;padding:0}
+.auth-shell{background:linear-gradient(145deg,rgba(9,45,105,.43),rgba(3,17,45,.52));border-radius:0;backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px)}
+.auth-brandline{background:rgba(255,255,255,.09);border:1px solid rgba(241,211,145,.5);border-radius:14px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.auth-tab.active{background:linear-gradient(135deg,#f6e2a7,#d1a342);color:#082653}
+.auth-shell .primary-button{background:linear-gradient(135deg,#f4dfa0,#c99a34);color:#082653;border:1px solid #f8e5ad}
+.auth-shell .field{background:rgba(5,24,58,.45);border:1px solid rgba(236,223,191,.35)}
+@media(max-width:760px){.modal-backdrop:has(.auth-shell){padding:12px;background-position:center,center;background-attachment:scroll}}
