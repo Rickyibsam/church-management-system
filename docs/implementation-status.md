@@ -310,3 +310,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Register pagination
 - Generic operational registers now fetch records in 500-row pages instead of silently stopping at the first 100.
 - The UI supports up to 10,000 rows per register load and displays an English warning when that safety cap is reached; larger datasets should be narrowed by date or exported in smaller ranges.
+
+
+## Approval permission enforcement
+- Financial approval/posting RPCs now require the explicit `approve` action instead of treating ordinary `edit` permission as approval authority.
+- This covers expense approval/posting, budget approval, donation posting, journal posting and asset depreciation/disposal. Document verification/rejection also requires the certificate-documents `approve` action.
+- Asset disposal/depreciation additionally require accounting edit permission for the ledger impact.
