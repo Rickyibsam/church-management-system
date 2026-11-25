@@ -274,15 +274,16 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   const [peopleActions,setPeopleActions]=useState({view:false,create:false,edit:false,delete:false,documents:false});
   useEffect(()=>{
     let alive=true;
-    if(!supabase||!churchId){setPeopleActions({view:false,create:false,edit:false,delete:false,documents:false});return ()=>{alive=false;};}
+    const client=supabase;
+    if(!client||!churchId){setPeopleActions({view:false,create:false,edit:false,delete:false,documents:false});return ()=>{alive=false;};}
     const moduleKey=family?"families":"members";
     const actions=["view","create","edit","delete"] as const;
     void Promise.all([
       ...actions.map(async action=>{
-        const {data,error}=await supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:moduleKey,p_action_key:action});
+        const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:moduleKey,p_action_key:action});
         return [action,!error&&data===true] as const;
       }),
-      ...(!family?[supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"member_documents",p_action_key:"view"}).then(({data,error})=>["documents",!error&&data===true] as const)]:[])
+      ...(!family?[client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"member_documents",p_action_key:"view"}).then(({data,error})=>["documents",!error&&data===true] as const)]:[])
     ]).then(results=>{
       if(!alive)return;
       setPeopleActions(Object.fromEntries(results) as {view:boolean;create:boolean;edit:boolean;delete:boolean;documents:boolean});
