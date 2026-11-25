@@ -79,3 +79,7 @@ See `docs/implementation-status.md` for the current implementation and remaining
 ## Authentication setup
 
 - [Church ID and email-free username login](docs/church-id-username-login.md)
+
+
+## Authentication screen theme
+The public sign-in and church-registration screen uses a Royal Blue and Golden visual theme with a church photograph background. The latest implementation is in `src/styles.css` and is built as part of the Cloudflare Workers Static Assets deployment.
