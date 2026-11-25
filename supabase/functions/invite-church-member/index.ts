@@ -1,8 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const corsHeaders = { "Access-Control-Allow-Origin": Deno.env.get("APP_ALLOWED_ORIGIN") ?? "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const allowedOrigin = Deno.env.get("APP_ALLOWED_ORIGIN");
+const corsHeaders = { "Access-Control-Allow-Origin": allowedOrigin ?? "null", "Vary": "Origin", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 Deno.serve(async (req: Request) => {
+ const requestOrigin = req.headers.get("Origin");
+ if (!allowedOrigin || requestOrigin !== allowedOrigin) return json({ error: "Invitation service origin is not configured for this application." }, 403);
  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
  if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
  const authorization = req.headers.get("Authorization");
@@ -37,7 +40,7 @@ Deno.serve(async (req: Request) => {
  const redirectTo=Deno.env.get("APP_REDIRECT_URL");
  const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,redirectTo?{redirectTo}:undefined);
  if(inviteError||!inviteData.user)return json({error:"Unable to send the invitation. Configure a verified SMTP sender if email delivery is unavailable."},400);
- const {error:insertError}=await admin.from("church_members").insert({church_id:churchId,user_id:inviteData.user.id,role,status:"invited",branch_id:branchId});
- if(insertError)return json({error:"Invitation was created, but church access could not be assigned: "+insertError.message},500);
+ const {error:insertError}=await admin.from("church_members").insert({church_id:churchId,user_id:inviteData.user.id,role,status:"invited",branch_id:effectiveBranchId});
+ if(insertError){await admin.auth.admin.deleteUser(inviteData.user.id);return json({error:"Invitation could not be completed. The temporary account was removed; please retry after checking church access settings."},500);}
  return json({message:"Invitation sent. Church access activates after the recipient confirms their email.",invited:true});
 });
