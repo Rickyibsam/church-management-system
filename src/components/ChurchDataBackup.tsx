@@ -153,7 +153,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         if(bytes.byteLength!==Number(file.size))throw new Error("A storage file failed its size validation: "+file.path);
         const perFileLimit=file.bucket==="church-branding"?5*1024*1024:10*1024*1024;
         if(bytes.byteLength>perFileLimit)throw new Error("A storage file exceeds its bucket size limit: "+file.path);
-        const {error:uploadError}=await client.storage.from(file.bucket).upload(targetPath,bytes,{contentType:file.content_type||"application/octet-stream",upsert:false});
+        const {error:uploadError}=await client.storage.from(file.bucket).upload(targetPath,bytes,{contentType:file.content_type||"application/octet-stream",upsert:true});
         if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
         uploaded[file.bucket].push(targetPath);
       }
