@@ -301,3 +301,7 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added Inventory to the action-level permission editor and Assets & Maintenance workspace. Stock movements cannot be edited or deleted; corrections must be entered as adjustments.
 - Added inventory records to the church data export and advanced the snapshot format to version 3.
 - Inventory workflows are implementation-complete at the schema/UI level but remain untested until the planned full functional/security/E2E phase.
+
+
+## Inventory branch notification privacy
+- Low-stock notifications are now restricted to church staff whose membership is global or assigned to the affected branch. Staff assigned to another branch do not receive the alert.
