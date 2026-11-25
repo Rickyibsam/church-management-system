@@ -291,3 +291,13 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Family relationship validation alignment
 - Expanded the database relationship constraint to accept the relationship values used by both the member profile and family relationship forms, including child, grandparent, sibling, guardian, dependent and member.
 - The forms now share the same relationship vocabulary. Existing son/daughter values remain valid so historical links are not invalidated.
+
+
+## Church inventory module
+- Added branch-aware inventory item records with unique church-scoped stock codes, categories, units, reorder levels and optional branch restrictions.
+- Added append-only stock movement records for receipts, issues and adjustments. Database validation checks item/branch ownership, quantity direction and prevents stock from falling below zero.
+- Added read-only stock-on-hand and low-stock report views grouped by branch.
+- Low-stock threshold crossings create generic notifications for active church owners, administrators, pastors, secretaries and staff; the user posting the movement is excluded.
+- Added Inventory to the action-level permission editor and Assets & Maintenance workspace. Stock movements cannot be edited or deleted; corrections must be entered as adjustments.
+- Added inventory records to the church data export and advanced the snapshot format to version 3.
+- Inventory workflows are implementation-complete at the schema/UI level but remain untested until the planned full functional/security/E2E phase.
