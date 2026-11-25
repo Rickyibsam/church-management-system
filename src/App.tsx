@@ -350,6 +350,16 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     if(!family){initial.membership_status="active";initial.joined_on=new Date().toISOString().slice(0,10);initial.relationship="member";initial.is_primary_contact="false";}
     setForm(initial);setEditingId(null);setShow(true);
   }
+  function openNewForFamily(familyId:string){
+    const initial:Record<string,string>={};
+    memberFields.forEach(([key])=>initial[key]="");
+    initial.membership_status="active";
+    initial.joined_on=new Date().toISOString().slice(0,10);
+    initial.family_id=familyId;
+    initial.relationship="child";
+    initial.is_primary_contact="false";
+    setForm(initial);setEditingId(null);setShow(true);
+  }
   async function openEdit(row:Record<string,unknown>){
     const initial:Record<string,string>={};
     (family?familyFields:memberFields).forEach(([key])=>initial[key]=row[key]==null?"":String(row[key]).slice(0,key==="date_of_birth"||key==="joined_on"?10:undefined));
@@ -416,14 +426,14 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
     <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>{family?"Family Code":"Registration no."}</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions">{canEdit&&<button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>}{family&&canViewFamily&&<button className="secondary-button" onClick={()=>setSelectedFamilyId(selectedFamilyId===String(row.id)?null:String(row.id))}>View family</button>}{!family&&<>{canViewDocuments&&<button className="secondary-button" onClick={()=>setSelectedMemberId(selectedMemberId===String(row.id)?null:String(row.id))}>Documents</button>}{canEdit&&<button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button>}</>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
     {!family&&canViewDocuments&&selectedMemberId&&churchId&&<MemberDocuments churchId={churchId} memberId={selectedMemberId}/>}
-    {family&&selectedFamilyId&&churchId&&<FamilyMembersPanel churchId={churchId} familyId={selectedFamilyId} familyName={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_name??"Family")} familyCode={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_number??"—")}/>}
-    {family&&churchId&&<DataModule churchId={churchId} table="family_relationships" permissionModule="families" title="Family relationships" description="Connect members to households and define family roles and primary contacts." fields={[{name:"family_id",label:"Family",required:true,lookup:{table:"families",labelField:"family_name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"relationship",label:"Relationship",required:true,options:["head","spouse","child","parent","grandparent","sibling","guardian","dependent","member","other"].map(value=>({value,label:value.charAt(0).toUpperCase()+value.slice(1)}))},{name:"is_primary_contact",label:"Primary contact",type:"boolean",defaultValue:"false"}]}/>}
+    {family&&selectedFamilyId&&churchId&&<FamilyMembersPanel churchId={churchId} familyId={selectedFamilyId} familyName={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_name??"Family")} familyCode={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_number??"—")} canCreateMember={canCreate} onAddChild={()=>openNewForFamily(selectedFamilyId)}/>}
+    {family&&churchId&&<DataModule churchId={churchId} table="family_relationships" permissionModule="families" title="Family relationships" description="Connect members to households and define family roles and primary contacts." fields={[{name:"family_id",label:"Family",required:true,lookup:{table:"families",labelField:"family_name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"relationship",label:"Relationship",required:true,options:["head","spouse","child","son","daughter","parent","grandparent","sibling","guardian","dependent","member","other"].map(value=>({value,label:value.charAt(0).toUpperCase()+value.slice(1)}))},{name:"is_primary_contact",label:"Primary contact",type:"boolean",defaultValue:"false"}]}/>}
   
   </>;
 }
 
 
-function FamilyMembersPanel({churchId,familyId,familyName,familyCode}:{churchId:string;familyId:string;familyName:string;familyCode:string}) {
+function FamilyMembersPanel({churchId,familyId,familyName,familyCode,canCreateMember,onAddChild}:{churchId:string;familyId:string;familyName:string;familyCode:string;canCreateMember:boolean;onAddChild:()=>void}) {
   const [members,setMembers]=useState<Array<Record<string,unknown>>>([]);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
@@ -443,7 +453,7 @@ function FamilyMembersPanel({churchId,familyId,familyName,familyCode}:{churchId:
   },[churchId,familyId]);
   const children=members.filter(item=>["child","son","daughter"].includes(String(item.relationship)));
   return <div className="panel">
-    <div className="panel-heading"><div><h3>{familyName} — Family Members</h3><p>Family Code: <b>{familyCode}</b> · Parents, children and other household relationships.</p></div><span className="soft-pill">{members.length} linked members</span></div>
+    <div className="panel-heading"><div><h3>{familyName} — Family Members</h3><p>Family Code: <b>{familyCode}</b> · Parents, children and other household relationships.</p></div><div className="record-toolbar"><span className="soft-pill">{members.length} linked members</span><button className="primary-button" disabled={!canCreateMember} onClick={onAddChild}><Plus size={15}/> Add child / member</button></div></div>
     {message&&<div className="notice">{message}</div>}
     {loading?<div className="empty-state">Loading family members...</div>:members.length?<div className="records-table">
       <div className="record-row record-head"><span>Member</span><span>Member Code</span><span>Relationship</span><span>Gender</span><span>Date of Birth</span><span>Membership Status</span><span>Primary Contact</span></div>
