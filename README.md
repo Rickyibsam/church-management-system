@@ -14,7 +14,7 @@ A multi-church management platform for churches in Pakistan and international co
 - Asset register and maintenance records
 - Individual user/module/action permissions, email invitations, audit history and persistent notifications
 - CSV, Excel and PDF exports from operational registers
-- English-first interface; localization and Urdu coverage remain in the online roadmap
+- English-only application interface (no Roman Urdu in screens, controls, reports or system messages); certificate templates may contain Urdu-script document content where configured
 - Responsive web application; offline PWA work is deliberately deferred
 
 ## Architecture
@@ -58,7 +58,7 @@ Do not place a database password or service-role key in frontend environment var
 
 ## Supabase invitation setup
 
-The `invite-church-member` Edge Function is deployed with JWT verification enabled. Before using real email invitations, configure a verified SMTP sender in Supabase Auth and set the function's `APP_ALLOWED_ORIGIN` secret to the deployed application origin and `APP_REDIRECT_URL` to the app's invitation landing URL. The function uses the platform-provided Supabase URL, anon key and service-role key at runtime; no service-role key belongs in this repository.
+The `invite-church-member` Edge Function is deployed with JWT verification enabled. Before using real email invitations, configure a verified SMTP sender in Supabase Auth (**Authentication → Emails → SMTP Settings**), add the deployed application URL under **Authentication → URL Configuration** (Site URL and allowed redirect URLs), and set the Edge Function secrets `APP_ALLOWED_ORIGIN` to the exact deployed application origin (scheme + host, no trailing slash) and `APP_REDIRECT_URL` to the allowed invitation landing URL. The function rejects requests until the exact origin is configured. Never put SMTP passwords or service-role keys in GitHub or frontend build variables. The function uses the platform-provided Supabase URL, anon key and service-role key at runtime; no service-role key belongs in this repository.
 
 ## Current implementation status
 
