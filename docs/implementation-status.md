@@ -214,3 +214,6 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Authentication credentials are excluded. Private Storage file bytes are not included; document metadata may retain storage paths.
 - This is a data export foundation, not a complete disaster-recovery backup. A safe transactional restore workflow is still outstanding and the UI explicitly warns users not to manually import the snapshot into production.
 - Full backup/restore verification remains part of the deferred acceptance and security test phase.
+
+
+- GitHub Actions production TypeScript/Vite build passed for the bank CSV import and church backup settings integration (run 45570122849, commit `e3f3491`). This is a compile/build check only, not end-to-end or security acceptance testing.
