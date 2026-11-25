@@ -358,3 +358,10 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Version 5 restore now validates the exact storage object manifest, bucket, target path, file count and byte totals inside the database restore transaction; direct RPC calls cannot skip the file upload step.
 
 - Notification backup rows remain scoped to the signed-in owner by the existing per-user inbox RLS policy; other members' inbox notifications are intentionally not exported.
+
+
+## Database performance hygiene
+- Added covering indexes for all public foreign-key columns to prevent slow parent-row deletes/updates and improve joins as church data grows.
+- Removed redundant duplicate indexes and combined overlapping branch/profile SELECT policies without weakening their access conditions.
+- Optimized pastoral RLS policies to evaluate the current authenticated user once per statement.
+- The Supabase performance advisor now reports no unindexed foreign keys, duplicate indexes or multiple-permissive-policy warnings. It still lists unused indexes because this project currently has no real church workload; retain the FK indexes until workload-based measurements justify any removal.
