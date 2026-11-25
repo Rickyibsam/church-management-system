@@ -223,3 +223,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Enabled the notifications table in the Supabase Realtime publication.
 - The inbox subscribes to new inserts for the selected church and displays only rows addressed to the signed-in user; existing per-user RLS remains in force.
 - Realtime publication membership was verified in the selected Supabase project. Functional multi-user delivery and reconnect behavior remain for the deferred acceptance test phase.
+
+
+## Dashboard KPI expansion (online development)
+- Expanded the live dashboard from four to six church-scoped KPIs: registered members, families, issued certificates, pending certificate reviews, monthly attendance check-ins and monthly posted donation totals.
+- Donation totals now include posted receipts only, excluding drafts/unposted records.
+- This remains a summary dashboard; full operational alert thresholds and report drill-downs are still to be completed and verified.
