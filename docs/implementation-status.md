@@ -417,3 +417,8 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Membership update policies prevent Branch Administrators from changing their own membership or promoting users into privileged roles. Branch-scoped access excludes unassigned/global rows and does not grant finance or pastoral permissions. Branch-level RLS denies access to unassigned/global rows for Branch Administrators.
 - Updated the team management screen and deployed both user-creation and password-reset Edge Functions (version 2).
 - Full branch-isolation and role-escalation tests remain in the deferred acceptance phase.
+
+
+## Platform Super Admin remains pending
+- The new Branch Administrator role is implemented, but the separate cross-church Platform Super Admin console and its first-account bootstrap are not yet implemented.
+- This must remain separate from church registration: ordinary users must never be able to self-assign platform-wide access. A controlled initial Super Admin identity/credential bootstrap is required before this feature can be completed safely.
