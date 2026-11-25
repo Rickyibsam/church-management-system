@@ -56,8 +56,12 @@ function App() {
   const [query, setQuery] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const [loginChurchCode, setLoginChurchCode] = useState("");
+  const [loginUsername, setLoginUsername] = useState("");
+  const [registerChurchName, setRegisterChurchName] = useState("");
+  const [registerUsername, setRegisterUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"login"|"register">("login");
   const [notice, setNotice] = useState("");
   const [certOpen, setCertOpen] = useState(false);
   const [certType, setCertType] = useState<CertificateType>("marriage");
@@ -72,8 +76,8 @@ function App() {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.email ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user.email ?? null));
+    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.user_metadata?.username ?? data.session?.user.email ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null));
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -105,15 +109,21 @@ function App() {
   const filtered = nav.filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
 
   async function signIn() {
-    if (!supabase) { setNotice("Add Supabase URL and publishable key to your local environment first."); return; }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setNotice(error?.message ?? "Signed in successfully.");
-    if (!error) setAuthOpen(false);
+    if (!supabase) { setNotice("Authentication is not configured."); return; }
+    const { data, error } = await supabase.functions.invoke("login-church-user", { body: { churchCode: loginChurchCode, username: loginUsername, password } });
+    if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to sign in."); return; }
+    const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    if (sessionError) { setNotice(sessionError.message); return; }
+    setChurchId(data.churchId); setLoginUsername(data.username); setAuthOpen(false); setPassword(""); setNotice("Signed in successfully.");
   }
   async function signUp() {
-    if (!supabase) { setNotice("Add Supabase URL and publishable key to your local environment first."); return; }
-    const { error } = await supabase.auth.signUp({ email, password });
-    setNotice(error?.message ?? "Account created. Check your email if confirmation is enabled.");
+    if (!supabase) { setNotice("Authentication is not configured."); return; }
+    const { data, error } = await supabase.functions.invoke("register-church", { body: { churchName: registerChurchName, username: registerUsername, password, countryCode, currencyCode } });
+    if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to register church."); return; }
+    const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    if (sessionError) { setNotice(sessionError.message); return; }
+    setChurchId(data.churchId); setChurchName(registerChurchName); setChurchOptions([{id:data.churchId,display_name:registerChurchName}]);
+    setUserEmail(data.username); setAuthOpen(false); setPassword(""); setNotice("Church registered successfully. Your Church ID is " + data.churchCode + ".");
   }
   async function createChurch() {
     if (!supabase) return;
@@ -165,7 +175,7 @@ function App() {
     </main>
 
     {churchOpen && <Modal title="Church workspaces" onClose={() => setChurchOpen(false)}><div className="workspace-list"><h3>Your churches</h3>{churchOptions.length?churchOptions.map(item=><button key={item.id} className={item.id===churchId?"workspace-option selected":"workspace-option"} onClick={()=>{setChurchId(item.id);setChurchName(item.display_name);setChurchOpen(false);}}><Church size={18}/><span>{item.display_name}</span>{item.id===churchId&&<CheckCircle2 size={16}/>}</button>):<p className="muted">No church workspaces are assigned to this account yet.</p>}<div className="divider-line"></div><h3>Create another church</h3><p className="muted">Your signed-in account will become the first owner.</p><label>Church legal / registered name</label><input className="field" value={legalName} onChange={e => setLegalName(e.target.value)} placeholder="Church registered name"/><label>Country code</label><input className="field" value={countryCode} maxLength={2} onChange={e => setCountryCode(e.target.value.toUpperCase())}/><label>Default currency</label><input className="field" value={currencyCode} maxLength={3} onChange={e => setCurrencyCode(e.target.value.toUpperCase())}/><div className="modal-actions"><button className="secondary-button" onClick={() => setChurchOpen(false)}>Cancel</button><button className="primary-button" onClick={createChurch} disabled={!userEmail || !legalName.trim()}>Create workspace</button></div></div></Modal>}
-    {authOpen && <Modal title="Sign in to Church360" onClose={() => setAuthOpen(false)}><p className="muted">Use your church account. New accounts require an administrator to assign a church and role.</p><label>Email address</label><input className="field" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"/><label>Password</label><input className="field" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"/><div className="modal-actions"><button className="secondary-button" onClick={signUp}>Create account</button><button className="primary-button" onClick={signIn}>Sign in</button></div></Modal>}
+    {authOpen && <Modal title={authMode==="login"?"Church Login":"Register a Church"} onClose={() => setAuthOpen(false)}><div className="modal-actions"><button className={authMode==="login"?"primary-button":"secondary-button"} onClick={()=>setAuthMode("login")}>Sign in</button><button className={authMode==="register"?"primary-button":"secondary-button"} onClick={()=>setAuthMode("register")}>Register church</button></div>{authMode==="login"?<><p className="muted">Sign in using your Church ID, username and password. Email is not required.</p><label>Church ID</label><input className="field" value={loginChurchCode} onChange={e=>setLoginChurchCode(e.target.value.toUpperCase())} placeholder="CH-000001"/><label>Username</label><input className="field" autoComplete="username" value={loginUsername} onChange={e=>setLoginUsername(e.target.value)} placeholder="Your username"/><label>Password</label><input className="field" type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/><div className="modal-actions"><button className="primary-button" onClick={signIn} disabled={!loginChurchCode.trim()||!loginUsername.trim()||!password}>Sign in</button></div></>:<><p className="muted">Register your church without an email address. A Church ID will be generated automatically.</p><label>Church name</label><input className="field" value={registerChurchName} onChange={e=>setRegisterChurchName(e.target.value)} placeholder="Church registered name"/><label>Church Administrator username</label><input className="field" autoComplete="username" value={registerUsername} onChange={e=>setRegisterUsername(e.target.value)} placeholder="Choose a username"/><label>Administrator password (minimum 12 characters)</label><input className="field" type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Create a strong password"/><div className="modal-actions"><button className="primary-button" onClick={signUp} disabled={!registerChurchName.trim()||!registerUsername.trim()||password.length<12}>Register church</button></div></>}</Modal>}
     {certOpen && <CertificateModal type={certType} setType={setCertType} churchId={churchId} countryCode={countryCode} onClose={() => setCertOpen(false)} onSave={async (payload) => { if (!supabase || !churchId) { setNotice("Sign in and create/select a church workspace before saving registrations."); return; } const { data, error } = await supabase.rpc("create_certificate_application", { p_church_id: churchId, p_certificate_type: certType, p_primary_person_name: payload.fullName, p_secondary_person_name: payload.secondName || null, p_event_date: payload.date || null, p_form_data: payload.formData, p_notes: payload.notes || null }); if (error) { setNotice(error.message); return; } const certId = data as string; const { data: authData } = await supabase.auth.getUser(); const { data: requirements } = await supabase.from("certificate_document_requirements").select("id,document_code").eq("church_id",churchId).eq("certificate_type",certType).eq("is_active",true).or("applicable_country.is.null,applicable_country.eq."+countryCode); for (const document of payload.documents.filter(item => item.file)) { const file = document.file!; const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_"); const path = churchId + "/" + certId + "/" + crypto.randomUUID() + "-" + safeName; const upload = await supabase.storage.from("church-private-documents").upload(path,file,{contentType:file.type,upsert:false}); if (upload.error) { setNotice("Registration saved, but an attachment upload failed: " + upload.error.message); return; } const requirement = requirements?.find(item => item.document_code === document.code); const saved = await supabase.from("certificate_attachments").insert({church_id:churchId,certificate_id:certId,requirement_id:requirement?.id??null,document_code:document.code,original_file_name:file.name,storage_path:path,mime_type:file.type,file_size_bytes:file.size,uploaded_by:authData.user?.id??null}); if (saved.error) { setNotice("Registration saved, but attachment metadata could not be saved: " + saved.error.message); return; } } const { data: record } = await supabase.from("certificates").select("registration_number").eq("id", certId).maybeSingle(); setCertOpen(false); setCertificateRefresh(value=>value+1); setNotice("Registration draft saved: " + (record?.registration_number ?? certId)); }}/>}
   </div>;
 }
