@@ -68,3 +68,9 @@ The online build is in progress. The database schema and a growing set of online
 **The application is not production-ready. Cloudflare hosting configuration is now in the repository; a successful production deployment has not yet been verified.** Per project-owner instruction, functional, security and end-to-end testing are deferred until online feature development is complete. The offline edition will begin only after the online build is complete and its testing/bug-fixing phase has passed.
 
 See `docs/implementation-status.md` for the current implementation and remaining work.
+
+
+## Project operations
+- Implementation status: `docs/implementation-status.md`
+- Online acceptance test plan: `docs/acceptance-test-plan.md`
+- Email invitation setup: `docs/email-invitations.md`
