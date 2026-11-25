@@ -161,7 +161,7 @@ export default function CertificatePrint({certificateId,onClose}:{certificateId:
         </div>
         <div className="print-rule"/>
         <div className="print-footer">{template?.footer_text||church.footer_text||[church.phone,church.email,church.website].filter(Boolean).join(" · ")}</div>
-        <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString():""} · {church.legal_name}</div>
+        <div className="print-issued">Issued {record.issued_at?new Date(record.issued_at).toLocaleDateString("en-GB"):""} · {church.legal_name}</div>
        </div>
       </div>
      </>
