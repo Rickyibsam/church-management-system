@@ -10,6 +10,21 @@ export default function MemberDocuments({churchId,memberId}:{churchId:string;mem
  const [message,setMessage]=useState("");
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
+ const [canUpload,setCanUpload]=useState(false);
+ const [canVerify,setCanVerify]=useState(false);
+ useEffect(()=>{
+  let alive=true;const client=supabase;
+  if(!client){setCanUpload(false);setCanVerify(false);return ()=>{alive=false;};}
+  void Promise.all(["create","edit"].map(async action=>{
+   const {data,error}=await client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"member_documents",p_action_key:action});
+   return [action,!error&&data===true] as const;
+  })).then(results=>{
+   if(!alive)return;
+   const permissions=Object.fromEntries(results) as {create:boolean;edit:boolean};
+   setCanUpload(permissions.create);setCanVerify(permissions.edit);
+  });
+  return ()=>{alive=false;};
+ },[churchId]);
  async function load(){
   if(!supabase){setLoading(false);return;}
   setLoading(true);
@@ -19,7 +34,7 @@ export default function MemberDocuments({churchId,memberId}:{churchId:string;mem
  }
  useEffect(()=>{void load();},[churchId,memberId]);
  async function upload(){
-  if(!supabase||!file)return;
+  if(!supabase||!file||!canUpload)return;
   if(file.size>10*1024*1024){setMessage("File size must not exceed 10 MB.");return;}
   if(!["application/pdf","image/jpeg","image/png"].includes(file.type)){setMessage("Only PDF, JPG and PNG files are accepted.");return;}
   setSaving(true);setMessage("");
@@ -39,15 +54,15 @@ export default function MemberDocuments({churchId,memberId}:{churchId:string;mem
   if(error)setMessage("Unable to open document: "+error.message);else window.open(data.signedUrl,"_blank","noopener,noreferrer");
  }
  async function verify(row:MemberDocument){
-  if(!supabase)return;
+  if(!supabase||!canVerify)return;
   const {data:userData}=await supabase.auth.getUser();
   const {error}=await supabase.from("member_documents").update({verified_at:new Date().toISOString(),verified_by:userData.user?.id??null}).eq("id",row.id).eq("church_id",churchId);
   if(error)setMessage("Unable to verify document: "+error.message);else{setMessage("Document verified.");await load();}
  }
  return <div className="panel member-documents"><div className="panel-heading"><div><h3>Member documents</h3><p>Private identity and supporting files. Access is limited by church permissions.</p></div></div>
-  <div className="form-grid"><div><label>Document type</label><select className="field" value={documentType} onChange={e=>setDocumentType(e.target.value)}>{["identity","birth_record","membership_form","address_proof","consent","other"].map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select></div><div><label>Choose PDF or image (max 10 MB)</label><input className="field" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>setFile(e.target.files?.[0]??null)}/></div></div>
-  <div className="modal-actions"><button className="primary-button" disabled={!file||saving} onClick={()=>void upload()}><Upload size={15}/>{saving?"Uploading...":"Upload document"}</button></div>
+  {canUpload&&<><div className="form-grid"><div><label>Document type</label><select className="field" value={documentType} onChange={e=>setDocumentType(e.target.value)}>{["identity","birth_record","membership_form","address_proof","consent","other"].map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select></div><div><label>Choose PDF or image (max 10 MB)</label><input className="field" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>setFile(e.target.files?.[0]??null)}/></div></div>
+  <div className="modal-actions"><button className="primary-button" disabled={!file||saving} onClick={()=>void upload()}><Upload size={15}/>{saving?"Uploading...":"Upload document"}</button></div></>}
   {message&&<div className="notice">{message}</div>}
-  {loading?<div className="empty-state">Loading member documents...</div>:rows.length?<div className="review-list">{rows.map(row=><div className="review-card" key={row.id}><div className="review-icon"><FileText/></div><div className="review-main"><b>{row.file_name}</b><small>{row.document_type.replaceAll("_"," ")} · {row.file_size_bytes?Math.round(row.file_size_bytes/1024)+" KB":"File"}</small><span className={"review-status "+(row.verified_at?"verified":"pending")}>{row.verified_at?"Verified":"Not verified"}</span></div><div className="review-actions"><button className="secondary-button" onClick={()=>void open(row.storage_path)}><ExternalLink size={14}/> Open</button>{!row.verified_at&&<button className="secondary-button" onClick={()=>void verify(row)}><CheckCircle2 size={14}/> Verify</button>}</div></div>)}</div>:<div className="empty-state"><FileText/><b>No documents uploaded</b><small>Upload member identity or supporting documents.</small></div>}
+  {loading?<div className="empty-state">Loading member documents...</div>:rows.length?<div className="review-list">{rows.map(row=><div className="review-card" key={row.id}><div className="review-icon"><FileText/></div><div className="review-main"><b>{row.file_name}</b><small>{row.document_type.replaceAll("_"," ")} · {row.file_size_bytes?Math.round(row.file_size_bytes/1024)+" KB":"File"}</small><span className={"review-status "+(row.verified_at?"verified":"pending")}>{row.verified_at?"Verified":"Not verified"}</span></div><div className="review-actions"><button className="secondary-button" onClick={()=>void open(row.storage_path)}><ExternalLink size={14}/> Open</button>{!row.verified_at&&canVerify&&<button className="secondary-button" onClick={()=>void verify(row)}><CheckCircle2 size={14}/> Verify</button>}</div></div>)}</div>:<div className="empty-state"><FileText/><b>No documents uploaded</b><small>Upload member identity or supporting documents.</small></div>}
  </div>;
 }
