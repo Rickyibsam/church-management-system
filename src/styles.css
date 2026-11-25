@@ -144,3 +144,42 @@ body{background:#f3f6fc;color:#172a49}
 .auth-shell .primary-button{background:linear-gradient(135deg,#f4dfa0,#c99a34);color:#082653;border:1px solid #f8e5ad}
 .auth-shell .field{background:rgba(5,24,58,.45);border:1px solid rgba(236,223,191,.35)}
 @media(max-width:760px){.modal-backdrop:has(.auth-shell){padding:12px;background-position:center,center;background-attachment:scroll}}
+
+
+/* Inspirational theme: golden sunrise and the cross */
+.modal-backdrop:has(.auth-shell){
+  background-color:#071b3d;
+  background-image:
+    linear-gradient(110deg,rgba(4,20,52,.58),rgba(7,35,78,.24) 52%,rgba(4,17,43,.58)),
+    url("https://blog.cph.org/hs-fs/hubfs/_blogs/CPH_blog/Worship/2023/When-I-Survey-the-Wondrous-Cross.jpg?height=1122&name=When-I-Survey-the-Wondrous-Cross.jpg&width=2000");
+  background-position:center,center 48%;
+  background-size:cover,cover;
+  background-repeat:no-repeat;
+  background-attachment:scroll;
+  padding:24px;
+}
+.modal:has(.auth-shell){
+  background:rgba(5,22,54,.32);
+  border:1px solid rgba(242,207,126,.92);
+  border-radius:22px;
+  box-shadow:0 30px 90px rgba(0,0,0,.48),0 0 40px rgba(236,190,83,.24);
+  backdrop-filter:blur(20px) saturate(145%);
+  -webkit-backdrop-filter:blur(20px) saturate(145%);
+}
+.auth-shell{
+  background:linear-gradient(145deg,rgba(9,43,99,.44),rgba(3,17,44,.52));
+  border-radius:0;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.auth-brandline{
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(247,218,153,.58);
+}
+.auth-tab.active{background:linear-gradient(135deg,#fff0bd,#d2a13d);color:#082653}
+.auth-shell .primary-button{background:linear-gradient(135deg,#fff0bd,#d2a13d);color:#082653;border:1px solid #ffe9ae}
+.auth-shell .field{background:rgba(5,24,58,.46);border:1px solid rgba(245,225,185,.42)}
+@media(max-width:760px){
+  .modal-backdrop:has(.auth-shell){padding:12px;background-position:center,center;background-attachment:scroll}
+  .auth-shell{padding:22px 18px}
+}
