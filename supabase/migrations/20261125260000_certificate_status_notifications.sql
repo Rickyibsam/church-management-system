@@ -32,7 +32,8 @@ begin
      and cm.status='active'
      and cm.role in ('owner','admin','pastor','secretary')
      and (cm.branch_id is null or new.branch_id is null or cm.branch_id=new.branch_id)
-     and cm.user_id is distinct from coalesce(auth.uid(),new.applicant_user_id);
+     and cm.user_id is distinct from auth.uid()
+     and cm.user_id is distinct from new.applicant_user_id;
 
   if new.applicant_user_id is not null and new.applicant_user_id is distinct from auth.uid()
      and exists(select 1 from public.church_members cm where cm.church_id=new.church_id and cm.user_id=new.applicant_user_id and cm.status='active') then
