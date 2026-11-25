@@ -257,3 +257,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Revoked anonymous/public execution from expense approval, budget approval, asset disposal, depreciation posting, donation posting, expense posting, journal posting and certificate reissue RPCs; authenticated execution remains granted and each function retains its in-function church/action permission checks.
 - The public certificate QR verification RPC remains intentionally available to anonymous users and returns only its limited verification projection.
 - Supabase Security Advisor now reports no anonymous-executable SECURITY DEFINER RPCs other than the intentionally public certificate verification function. Authenticated SECURITY DEFINER functions remain subject to their own authorization checks and are reviewed during the deferred full security test phase.
+
+
+## Backup snapshot coverage update
+- The JSON snapshot now includes certificate numbering sequences (owner/admin read-only access), audit export metadata and the current user's notification records, in addition to the previously listed church-scoped tables.
+- The backup format version is now 2 so that future restore validation can reject older snapshots that omit sequence and operational metadata.
+- The export still does not include Auth identities/passwords or private Storage object bytes. A transactional restore is not enabled until the restore path can validate those dependencies and safely recover private files.
