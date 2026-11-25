@@ -106,7 +106,7 @@ body{background:#f3f6fc;color:#172a49}
 .modal-backdrop:has(.auth-shell){
   background:
     linear-gradient(115deg,rgba(4,20,55,.76),rgba(7,34,83,.56) 48%,rgba(4,17,46,.72)),
-    url("https://images.unsplash.com/photo-1690336607264-20a7bd9222e0?auto=format&fit=crop&fm=jpg&q=85&w=2400") center 48%/cover no-repeat fixed;
+    url("https://images.unsplash.com/photo-1776653096690-325005d1d2bc?auto=format&fit=crop&fm=jpg&q=90&w=2600") center 48%/cover no-repeat fixed;
   padding:24px;
 }
 .modal:has(.auth-shell){
@@ -119,3 +119,17 @@ body{background:#f3f6fc;color:#172a49}
 @media(max-width:760px){
   .modal-backdrop:has(.auth-shell){padding:12px;background-position:center;background-attachment:scroll}
 }
+
+
+/* Visible church photograph and glassmorphism authentication */
+.modal-backdrop:has(.auth-shell){background-color:#061b42;background-image:linear-gradient(115deg,rgba(4,18,49,.48),rgba(7,31,76,.30) 48%,rgba(4,17,46,.52)),url("https://images.unsplash.com/photo-1776653096690-325005d1d2bc?auto=format&fit=crop&fm=jpg&q=90&w=2600");background-position:center,center 48%;background-size:cover,cover;background-repeat:no-repeat;background-attachment:scroll;padding:24px}
+.modal:has(.auth-shell){background:rgba(5,20,48,.30);backdrop-filter:blur(18px) saturate(135%);-webkit-backdrop-filter:blur(18px) saturate(135%);border:1px solid rgba(235,199,111,.82);box-shadow:0 28px 90px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.20);overflow:hidden}
+.modal:has(.auth-shell) .modal-body{background:transparent;padding:0}
+.auth-shell{background:linear-gradient(145deg,rgba(12,48,105,.40),rgba(3,18,46,.48));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:0;padding:30px 32px 28px}
+.auth-brandline{padding:14px 16px;margin:-4px -4px 20px;border:1px solid rgba(238,205,125,.48);border-radius:14px;background:rgba(255,255,255,.10);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.12)}
+.auth-brand-mark{background:rgba(239,207,133,.20);border:1px solid rgba(244,218,157,.75);color:#ffe7a7;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+.auth-tabs{background:rgba(3,16,42,.36);border:1px solid rgba(232,197,112,.40);backdrop-filter:blur(12px)}
+.auth-tab{background:rgba(255,255,255,.06)}
+.auth-tab.active{background:linear-gradient(135deg,#f4dc98,#c99a34);box-shadow:0 4px 18px rgba(210,168,70,.28)}
+.auth-shell .field{background:rgba(9,30,66,.48);border:1px solid rgba(203,220,246,.34);backdrop-filter:blur(8px)}
+@media(max-width:760px){.modal-backdrop:has(.auth-shell){padding:12px;background-position:center,center;background-attachment:scroll}.auth-shell{padding:22px 18px}}
