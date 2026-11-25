@@ -67,8 +67,9 @@ function App() {
   const [certType, setCertType] = useState<CertificateType>("marriage");
   const [certificateRefresh, setCertificateRefresh] = useState(0);
   const [churchId, setChurchId] = useState<string | null>(null);
+  const [activeChurchCode, setActiveChurchCode] = useState("");
   const [churchName, setChurchName] = useState("");
-  const [churchOptions,setChurchOptions] = useState<Array<{id:string;display_name:string}>>([]);
+  const [churchOptions,setChurchOptions] = useState<Array<{id:string;display_name:string;church_code?:string}>>([]);
   const [churchOpen, setChurchOpen] = useState(false);
   const [legalName, setLegalName] = useState("");
   const [countryCode, setCountryCode] = useState("PK");
@@ -90,13 +91,13 @@ function App() {
       if (membershipError) { setNotice("Unable to load church workspaces: " + membershipError.message); return; }
       const ids = [...new Set((memberships ?? []).map(item => item.church_id as string))];
       if (!ids.length) { setChurchId(null); setChurchName(""); setChurchOptions([]); return; }
-      const { data: churches, error: churchError } = await supabase.from("churches").select("id,display_name").in("id",ids).order("display_name");
+      const { data: churches, error: churchError } = await supabase.from("churches").select("id,display_name,church_code").in("id",ids).order("display_name");
       if (!alive) return;
       if (churchError) { setNotice("Unable to load church details: " + churchError.message); return; }
-      const options=(churches??[]) as Array<{id:string;display_name:string}>;
+      const options=(churches??[]) as Array<{id:string;display_name:string;church_code?:string}>;
       setChurchOptions(options);
       const selected=options.find(item=>item.id===churchId)??options[0];
-      if (selected) { setChurchId(selected.id); setChurchName(selected.display_name); }
+      if (selected) { setChurchId(selected.id); setChurchName(selected.display_name); setActiveChurchCode(selected.church_code??""); }
     }
     void loadWorkspace();
     return () => { alive = false; };
@@ -114,7 +115,7 @@ function App() {
     if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to sign in."); return; }
     const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
     if (sessionError) { setNotice(sessionError.message); return; }
-    setChurchId(data.churchId); setLoginUsername(data.username); setAuthOpen(false); setPassword(""); setNotice("Signed in successfully.");
+    setChurchId(data.churchId); setActiveChurchCode(data.churchCode??loginChurchCode); setLoginUsername(data.username); setAuthOpen(false); setPassword(""); setNotice("Signed in successfully.");
   }
   async function signUp() {
     if (!supabase) { setNotice("Authentication is not configured."); return; }
@@ -122,14 +123,14 @@ function App() {
     if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to register church."); return; }
     const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
     if (sessionError) { setNotice(sessionError.message); return; }
-    setChurchId(data.churchId); setChurchName(registerChurchName); setChurchOptions([{id:data.churchId,display_name:registerChurchName}]);
+    setChurchId(data.churchId); setActiveChurchCode(data.churchCode??""); setChurchName(registerChurchName); setChurchOptions([{id:data.churchId,display_name:registerChurchName,church_code:data.churchCode}]);
     setUserEmail(data.username); setAuthOpen(false); setPassword(""); setNotice("Church registered successfully. Your Church ID is " + data.churchCode + ".");
   }
   async function createChurch() {
     if (!supabase) return;
     const { data, error } = await supabase.rpc("create_church", { p_legal_name: legalName, p_display_name: legalName, p_country_code: countryCode, p_currency_code: currencyCode, p_timezone: countryCode === "PK" ? "Asia/Karachi" : "UTC" });
     if (error) { setNotice(error.message); return; }
-    setChurchId(data as string); setChurchName(legalName); setChurchOptions(old=>[...old,{id:data as string,display_name:legalName}]); setChurchOpen(false); setNotice("Church workspace created. You are its owner.");
+    setChurchId(data as string); setChurchName(legalName); const {data:createdChurch}=await supabase.from("churches").select("church_code").eq("id",data as string).single(); setActiveChurchCode(createdChurch?.church_code??""); setChurchOptions(old=>[...old,{id:data as string,display_name:legalName,church_code:createdChurch?.church_code}]); setChurchOpen(false); setNotice("Church workspace created. You are its owner.");
   }
   async function signOut() {
     await supabase?.auth.signOut(); setNotice("You have signed out.");
@@ -142,7 +143,7 @@ function App() {
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={sidebarOpen ? "sidebar open" : "sidebar"}>
       <div className="brand"><div className="brand-mark"><Church size={22}/></div><div><b>Church360</b><small>Management System</small></div><button className="icon-button mobile-close" onClick={() => setSidebarOpen(false)}><X/></button></div>
-      <button className="church-switch" onClick={() => setChurchOpen(true)}><span className="church-avatar">C</span><span><b>{churchName || "Create church workspace"}</b><small>{churchName ? "Active church" : "Setup your first church"}</small></span><ChevronDown size={16}/></button>
+      <button className="church-switch" onClick={() => setChurchOpen(true)}><span className="church-avatar">C</span><span><b>{churchName || "Create church workspace"}</b><small>{churchName ? "Church ID: "+(activeChurchCode||"Loading...") : "Setup your first church"}</small></span><ChevronDown size={16}/></button>
       <div className="nav-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a module..." /></div>
       <nav>{(query ? { Search: filtered } : grouped) && Object.entries(query ? { Search: filtered } : grouped).map(([group, items]) =>
         <section className="nav-group" key={group}><label>{group}</label>{items.map(item => {
