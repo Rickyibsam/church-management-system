@@ -266,6 +266,7 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
   const [editingId,setEditingId] = useState<string|null>(null);
   const [search,setSearch] = useState("");
   const [selectedMemberId,setSelectedMemberId] = useState<string|null>(null);
+  const [selectedFamilyId,setSelectedFamilyId] = useState<string|null>(null);
   const [form,setForm] = useState<Record<string,string>>({});
   const [message,setMessage] = useState("");
   const [saving,setSaving] = useState(false);
@@ -368,11 +369,52 @@ function People({ kind, churchId }: { kind: "members" | "families"; churchId: st
       {(family?familyFields:memberFields).map(([key,label])=><div key={key} className={key==="address"||key==="notes"?"form-full":""}><label>{label}{(!family&&["first_name","last_name"].includes(key))||key==="family_name"?" *":""}</label>{key==="gender"?<select className="field" value={form[key]??""} onChange={e=>change(key,e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="unspecified">Prefer not to say</option></select>:key==="membership_status"?<select className="field" value={form[key]??"active"} onChange={e=>change(key,e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="transferred">Transferred</option><option value="deceased">Deceased</option></select>:<input className="field" type={["date_of_birth","joined_on"].includes(key)?"date":"text"} value={form[key]??""} onChange={e=>change(key,e.target.value)}/>}</div>)}
       {!family&&<><div className="form-full"><label>Family household</label><select className="field" value={form.family_id??""} onChange={e=>change("family_id",e.target.value)}><option value="">No family linked</option>{familyOptions.map(item=><option key={item.id} value={item.id}>{item.family_name}</option>)}</select></div>{!!form.family_id&&<><div><label>Family relationship</label><select className="field" value={form.relationship??"member"} onChange={e=>change("relationship",e.target.value)}>{["head","spouse","son","daughter","parent","sibling","guardian","dependent","member","other"].map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div className="form-full"><label><input type="checkbox" checked={form.is_primary_contact==="true"} onChange={e=>change("is_primary_contact",String(e.target.checked))}/> Primary family contact</label></div></>}</>}
     </div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving} onClick={()=>void save()}>{saving?"Saving...":editingId?"Update profile":"Save record"}</button></div></div>}
-    <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>Registration no.</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions"><button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>{!family&&<><button className="secondary-button" onClick={()=>setSelectedMemberId(selectedMemberId===String(row.id)?null:String(row.id))}>Documents</button><button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button></>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
+    <div className="panel">{loading?<div className="empty-state">Loading records...</div>:visible.length?<div className="records-table"><div className="record-row record-head"><span>{family?"Family":"Member"}</span><span>{family?"Family Code":"Registration no."}</span><span>Phone</span><span>{family?"Address":"Status"}</span><span>Actions</span></div>{visible.map(row=><div className="record-row" key={String(row.id)}><b>{family?String(row.family_name??""):[row.first_name,row.middle_name,row.last_name].filter(Boolean).join(" ")}</b><span>{String(family?row.family_number??"—":row.member_number??"—")}</span><span>{String(row.phone??"—")}</span><span>{String(family?row.address??"—":row.membership_status??"active")}</span><span className="record-actions"><button className="icon-button" title="Edit" onClick={()=>openEdit(row)}><Settings size={15}/></button>{family&&<button className="secondary-button" onClick={()=>setSelectedFamilyId(selectedFamilyId===String(row.id)?null:String(row.id))}>View family</button>}{!family&&<><button className="secondary-button" onClick={()=>setSelectedMemberId(selectedMemberId===String(row.id)?null:String(row.id))}>Documents</button><button className="secondary-button" onClick={()=>void archiveMember(row)} disabled={row.membership_status==="inactive"}>Archive</button></>}</span></div>)}</div>:<div className="empty-state"><Users/><b>{family?"No families registered":"No members registered"}</b><small>{churchId?"Add the first record to begin your register.":"Sign in and create a church workspace first."}</small></div>}</div>
     {!family&&selectedMemberId&&churchId&&<MemberDocuments churchId={churchId} memberId={selectedMemberId}/>}
+    {family&&selectedFamilyId&&churchId&&<FamilyMembersPanel churchId={churchId} familyId={selectedFamilyId} familyName={String(rows.find(row=>String(row.id)===selectedFamilyId)?.family_name??"Family")}/>}
     {family&&churchId&&<DataModule churchId={churchId} table="family_relationships" title="Family relationships" description="Connect members to households and define family roles and primary contacts." fields={[{name:"family_id",label:"Family",required:true,lookup:{table:"families",labelField:"family_name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"relationship",label:"Relationship",required:true,options:["head","spouse","child","parent","sibling","guardian","other"].map(value=>({value,label:value.charAt(0).toUpperCase()+value.slice(1)}))},{name:"is_primary_contact",label:"Primary contact",type:"boolean",defaultValue:"false"}]}/>}
   
   </>;
+}
+
+
+function FamilyMembersPanel({churchId,familyId,familyName}:{churchId:string;familyId:string;familyName:string}) {
+  const [members,setMembers]=useState<Array<Record<string,unknown>>>([]);
+  const [message,setMessage]=useState("");
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    let alive=true;
+    async function load(){
+      if(!supabase){setLoading(false);return;}
+      const {data,error}=await supabase.from("family_relationships")
+        .select("id,relationship,is_primary_contact,member:members(id,member_number,first_name,middle_name,last_name,date_of_birth,gender,membership_status)")
+        .eq("church_id",churchId).eq("family_id",familyId).order("created_at");
+      if(!alive)return;
+      if(error)setMessage("Unable to load family members: "+error.message);
+      else setMembers((data??[]) as unknown as Array<Record<string,unknown>>);
+      setLoading(false);
+    }
+    void load();return()=>{alive=false;};
+  },[churchId,familyId]);
+  const children=members.filter(item=>["son","daughter"].includes(String(item.relationship)));
+  return <div className="panel">
+    <div className="panel-heading"><div><h3>{familyName} — Family Members</h3><p>Parents, children and other household relationships linked to this family code.</p></div><span className="soft-pill">{members.length} linked members</span></div>
+    {message&&<div className="notice">{message}</div>}
+    {loading?<div className="empty-state">Loading family members...</div>:members.length?<div className="records-table">
+      <div className="record-row record-head"><span>Member</span><span>Member Code</span><span>Relationship</span><span>Date of Birth</span><span>Primary Contact</span></div>
+      {members.map(item=>{
+        const person=(item.member??{}) as Record<string,unknown>;
+        const fullName=[person.first_name,person.middle_name,person.last_name].filter(Boolean).join(" ");
+        return <div className="record-row" key={String(item.id)}>
+          <b>{fullName||"Unnamed member"}</b><span>{String(person.member_number??"—")}</span>
+          <span>{String(item.relationship??"member").replaceAll("_"," ")}</span>
+          <span>{String(person.date_of_birth??"—")}</span>
+          <span>{item.is_primary_contact?"Yes":"No"}</span>
+        </div>;
+      })}
+    </div>:<div className="empty-state"><Users/><b>No members linked yet</b><small>Register a member and select this family to link parents or children.</small></div>}
+    <div className="notice">{children.length} children linked to this family. Child profiles include date of birth and membership details.</div>
+  </div>;
 }
 
 function SettingsPage({churchId}:{churchId:string|null}) {
