@@ -392,3 +392,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added a confidential, security-invoker pastoral due/overdue follow-up register. It exposes only the case subject, due time, assigned user and overdue flag; access continues to follow the source pastoral tables' RLS policies.
 
 - Standardized date, time and number formatting to the explicit English `en-GB` locale instead of inheriting the browser language. Certificate PDF generation selects English templates so the generated document language matches the current PDF renderer; Urdu-script PDF output is not advertised until proper font shaping is implemented.
+
+- Added source/target tenant remapping and strict storage-path validation to backup restore. Both the browser and transactional database function reject dot-segment paths; a SQL check confirmed normal target paths are accepted and traversal paths are rejected.
