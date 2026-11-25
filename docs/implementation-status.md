@@ -395,3 +395,9 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Restore now rejects database storage references that are not inside the source church folder, in addition to validating every uploaded manifest path and rejecting `.` / `..` path segments. A SQL check confirmed valid tenant-scoped paths are remapped to the target workspace.
 - The separate church workspace logo path is also validated against the source tenant before it is remapped; blank logo paths remain null. This closes the metadata path outside the table-row restore path.
 - Added an owner-only server-side restore preflight. Before any file upload, the RPC verifies the target has only its initial owner/head-office branch, no operational rows and no objects in either church storage bucket. Anonymous execution is revoked; authenticated execution is granted. This prevents overwriting existing target storage during restore.
+
+
+## Church username-login foreign-key indexing
+- Added covering indexes for the branch, creator and Auth user foreign keys on `church_login_accounts`.
+- Applied migration `20261125121057_index_church_login_account_foreign_keys` to the selected Supabase project and committed the matching migration file.
+- Supabase Performance Advisor now reports zero unindexed foreign keys and zero duplicate-index findings. Unused-index notices remain expected while the project has no real church workload.
