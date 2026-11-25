@@ -401,3 +401,10 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Added covering indexes for the branch, creator and Auth user foreign keys on `church_login_accounts`.
 - Applied migration `20261125121057_index_church_login_account_foreign_keys` to the selected Supabase project and committed the matching migration file.
 - Supabase Performance Advisor now reports zero unindexed foreign keys and zero duplicate-index findings. Unused-index notices remain expected while the project has no real church workload.
+
+
+## Operations permission-key alignment
+- Audited the live Supabase RLS policies against the operations workspace UI permission checks.
+- Finance registers now resolve to their actual database permission modules: expenses, donations, budgets or accounts. Attendance service scheduling now checks the dedicated services permission instead of reusing attendance permissions.
+- Dashboard expense alerts now require the same expenses:view permission used by the expense register and its RLS policies.
+- This aligns UI action visibility with database authorization without broadening any role or bypassing RLS. Full role-by-role verification remains part of the later acceptance phase.
