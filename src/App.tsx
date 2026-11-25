@@ -76,9 +76,16 @@ function App() {
   const [currencyCode, setCurrencyCode] = useState("PKR");
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.user_metadata?.username ?? data.session?.user.email ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null));
+    if (!supabase) { setAuthOpen(true); return; }
+    supabase.auth.getSession().then(({ data }) => {
+      const session = data.session;
+      setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null);
+      setAuthOpen(!session);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user.user_metadata?.username ?? session?.user.email ?? null);
+      setAuthOpen(!session);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
