@@ -305,3 +305,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 ## Inventory branch notification privacy
 - Low-stock notifications are now restricted to church staff whose membership is global or assigned to the affected branch. Staff assigned to another branch do not receive the alert.
+
+
+## Register pagination
+- Generic operational registers now fetch records in 500-row pages instead of silently stopping at the first 100.
+- The UI supports up to 10,000 rows per register load and displays an English warning when that safety cap is reached; larger datasets should be narrowed by date or exported in smaller ranges.
