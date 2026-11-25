@@ -206,3 +206,11 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added a security-invoker reconciliation summary view grouped by church, bank account and currency, showing matched, pending and ignored counts plus net amounts and statement date range.
 - Added the summary report as a read-only finance register. The CSV import and summary UI are committed; the summary view migration is applied to Supabase.
 - Statement file bytes are not retained after import; only normalized statement rows are stored. CSV import and reconciliation matching still require the deferred functional/security test phase.
+
+
+## Church data backup export (online development)
+- Added an owner/admin-only JSON data snapshot export in Church Settings.
+- Export is restricted to the selected church workspace and reads through the signed-in user's existing RLS policies. The export includes row counts and a format/version manifest.
+- Authentication credentials are excluded. Private Storage file bytes are not included; document metadata may retain storage paths.
+- This is a data export foundation, not a complete disaster-recovery backup. A safe transactional restore workflow is still outstanding and the UI explicitly warns users not to manually import the snapshot into production.
+- Full backup/restore verification remains part of the deferred acceptance and security test phase.
