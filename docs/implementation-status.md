@@ -181,3 +181,12 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Fixed a malformed currency field declaration in the pledge register discovered during source inspection.
 - This is implementation work only; end-to-end and security testing remain intentionally deferred until online feature development is complete. Production deployment is not confirmed.
 - Added a security-invoker pledge balance report showing pledged, allocated and outstanding amounts; it follows the underlying pledge/allocation row-level access rules.
+
+
+## Bank statement reconciliation (online development)
+- Added a church-scoped bank reconciliation register for cash/bank statement lines, including statement date, reference, description, amount, currency and matching status.
+- Added database RLS policies tied to the existing Accounts view/create/edit/delete permissions.
+- Added database validation so a statement item can only be matched to a posted journal line in the same church and the chart-of-accounts asset mapped to the selected active financial account. A ledger line cannot be reconciled twice.
+- Added the Bank Reconciliation workspace under Finance & Accounting.
+- Supabase migration `20261125072855_bank_statement_reconciliation` is applied and the new table is visible in the selected project.
+- This is a first reconciliation workflow increment. Statement-file import, reconciliation summary/totals, and full verification remain outstanding; the full testing phase is still deferred until online feature completion.
