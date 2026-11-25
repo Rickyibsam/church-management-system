@@ -322,3 +322,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Added an authenticated, read-only permission-check RPC that delegates to the same database permission helper used by RLS.
 - Generic registers now hide Add, Edit, Delete and approval/posting actions when the signed-in user lacks the corresponding action permission.
 - Member and family screens now hide create/edit/archive/document controls according to their module permissions. Database RLS and protected RPC checks remain the final authority.
+
+
+## Dependency security update
+- Replaced the stale npm-registry SheetJS package with the official SheetJS 0.20.3 tarball from the vendor CDN.
+- Upgraded jsPDF to 4.2.1 and Vite to 6.4.5 to address published security advisories.
+- GitHub production build completed successfully after the upgrades; the install step reported **0 npm audit vulnerabilities**.
