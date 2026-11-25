@@ -190,7 +190,16 @@ function App() {
 
 function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (key: ModuleKey) => void; onNew: () => void; churchName: string; churchId: string | null }) {
   const [canCreateMember,setCanCreateMember]=useState(false);
-  const [stats,setStats]=useState([{label:"Registered Members",value:"—",hint:"Member directory",icon:Users},{label:"Families",value:"—",hint:"Family register",icon:HeartHandshake},{label:"Certificates Issued",value:"—",hint:"Certificate register",icon:FileBadge},{label:"Pending Certificates",value:"—",hint:"Awaiting review",icon:FileText},{label:"Attendance This Month",value:"—",hint:"Recorded check-ins",icon:ClipboardList},{label:"Donations This Month",value:"—",hint:"Posted receipts only",icon:Banknote},{label:"Low Stock Items",value:"—",hint:"Inventory reorder alerts",icon:Package}]);
+  const [stats,setStats]=useState<Array<{label:string;value:string;hint:string;icon:typeof Users;target?:ModuleKey}>>([
+    {label:"Registered Members",value:"—",hint:"Open member directory",icon:Users,target:"members"},
+    {label:"Families",value:"—",hint:"Open family register",icon:HeartHandshake,target:"families"},
+    {label:"Certificates Issued",value:"—",hint:"Open certificate register",icon:FileBadge,target:"certificates"},
+    {label:"Pending Certificates",value:"—",hint:"Review applications",icon:FileText,target:"certificates"},
+    {label:"Attendance This Month",value:"—",hint:"Open attendance",icon:ClipboardList,target:"attendance"},
+    {label:"Donations This Month",value:"—",hint:"Open donations",icon:Banknote,target:"donations"},
+    {label:"Low Stock Items",value:"—",hint:"Review inventory alerts",icon:Package,target:"assets"}
+  ]);
+  const [alerts,setAlerts]=useState<Array<{label:string;detail:string;count:number;target:ModuleKey}>>([]);
   useEffect(()=>{
     let alive=true;const client=supabase;
     if(!client||!churchId){setCanCreateMember(false);return ()=>{alive=false;};}
@@ -204,34 +213,57 @@ function Dashboard({ onNavigate, onNew, churchName, churchId }: { onNavigate: (k
       if(!supabase||!churchId){setStats(old=>old.map(item=>({...item,value:"—"})));return;}
       setLoading(true);
       const now=new Date();const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString();const nextMonth=new Date(now.getFullYear(),now.getMonth()+1,1).toISOString();
-      const [members,families,certificates,pendingCertificates,attendance,donations]=await Promise.all([
+      const [members,families,certificates,pendingCertificates,attendance,donations,inventoryPermission,pastoralPermission,financePermission,eventPermission]=await Promise.all([
         supabase.from("members").select("id",{count:"exact",head:true}).eq("church_id",churchId),
         supabase.from("families").select("id",{count:"exact",head:true}).eq("church_id",churchId),
         supabase.from("certificates").select("id",{count:"exact",head:true}).eq("church_id",churchId).eq("status","issued"),
         supabase.from("certificates").select("id",{count:"exact",head:true}).eq("church_id",churchId).in("status",["submitted","under_review"]),
         supabase.from("attendance_records").select("id",{count:"exact",head:true}).eq("church_id",churchId).gte("check_in_at",monthStart).lt("check_in_at",nextMonth),
-        supabase.from("donations").select("amount").eq("church_id",churchId).eq("status","posted").gte("donated_at",monthStart).lt("donated_at",nextMonth)
+        supabase.from("donations").select("amount").eq("church_id",churchId).eq("status","posted").gte("donated_at",monthStart).lt("donated_at",nextMonth),
+        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"inventory",p_action_key:"view"}),
+        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"pastoral",p_action_key:"view"}),
+        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"finance",p_action_key:"view"}),
+        supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"events",p_action_key:"view"})
       ]);
       if(!alive)return;
       const total=(donations.data??[]).reduce((sum,row)=>sum+Number(row.amount??0),0);
-      const {data:inventoryAllowed}=await supabase.rpc("can_church_action",{p_church_id:churchId,p_module_key:"inventory",p_action_key:"view"});
-      const lowStock=inventoryAllowed===true?await supabase.from("inventory_low_stock").select("item_id",{count:"exact",head:true}).eq("church_id",churchId):null;
-      setStats([
-        {label:"Registered Members",value:String(members.count??0),hint:"Member directory",icon:Users},
-        {label:"Families",value:String(families.count??0),hint:"Family register",icon:HeartHandshake},
-        {label:"Certificates Issued",value:String(certificates.count??0),hint:"Certificate register",icon:FileBadge},
-        {label:"Pending Certificates",value:String(pendingCertificates.count??0),hint:"Awaiting review",icon:FileText},
-        {label:"Attendance This Month",value:String(attendance.count??0),hint:"Recorded check-ins",icon:ClipboardList},
-        {label:"Donations This Month",value:new Intl.NumberFormat("en-GB",{maximumFractionDigits:2}).format(total),hint:"Posted receipts only",icon:Banknote},
-        {label:"Low Stock Items",value:inventoryAllowed===true?String(lowStock?.count??0):"Restricted",hint:"Inventory reorder alerts",icon:Package}
+      const inventoryAllowed=inventoryPermission.data===true;
+      const lowStock=inventoryAllowed?await supabase.from("inventory_low_stock").select("item_id",{count:"exact",head:true}).eq("church_id",churchId):null;
+      const [dueFollowups,pendingExpenses,upcomingEvents,upcomingServices]=await Promise.all([
+        pastoralPermission.data===true?supabase.from("pastoral_followups_due_report").select("id",{count:"exact",head:true}).eq("church_id",churchId):Promise.resolve({count:null}),
+        financePermission.data===true?supabase.from("expenses").select("id",{count:"exact",head:true}).eq("church_id",churchId).in("status",["draft","approved"]):Promise.resolve({count:null}),
+        eventPermission.data===true?supabase.from("church_events").select("id",{count:"exact",head:true}).eq("church_id",churchId).gte("starts_at",now.toISOString()).lt("starts_at",new Date(now.getTime()+7*86400000).toISOString()):Promise.resolve({count:null}),
+        eventPermission.data===true?supabase.from("church_services").select("id",{count:"exact",head:true}).eq("church_id",churchId).gte("starts_at",now.toISOString()).lt("starts_at",new Date(now.getTime()+7*86400000).toISOString()):Promise.resolve({count:null})
       ]);
+      const lowCount=lowStock?.count??0;
+      const dueCount=dueFollowups.count??0;
+      const expenseCount=pendingExpenses.count??0;
+      const eventCount=(upcomingEvents.count??0)+(upcomingServices.count??0);
+      setStats([
+        {label:"Registered Members",value:String(members.count??0),hint:"Open member directory",icon:Users,target:"members"},
+        {label:"Families",value:String(families.count??0),hint:"Open family register",icon:HeartHandshake,target:"families"},
+        {label:"Certificates Issued",value:String(certificates.count??0),hint:"Open certificate register",icon:FileBadge,target:"certificates"},
+        {label:"Pending Certificates",value:String(pendingCertificates.count??0),hint:"Review applications",icon:FileText,target:"certificates"},
+        {label:"Attendance This Month",value:String(attendance.count??0),hint:"Open attendance",icon:ClipboardList,target:"attendance"},
+        {label:"Donations This Month",value:new Intl.NumberFormat("en-GB",{maximumFractionDigits:2}).format(total),hint:"Open donations",icon:Banknote,target:"donations"},
+        {label:"Low Stock Items",value:inventoryAllowed?String(lowCount):"Restricted",hint:"Review inventory alerts",icon:Package,target:"assets"}
+      ]);
+      const nextAlerts:Array<{label:string;detail:string;count:number;target:ModuleKey}>=[];
+      if(pendingCertificates.count)nextAlerts.push({label:"Certificates awaiting review",detail:"Submitted or under-review registrations need attention.",count:pendingCertificates.count,target:"certificates"});
+      if(dueCount)nextAlerts.push({label:"Pastoral follow-ups due",detail:"Confidential follow-ups are visible only to authorized pastoral users.",count:dueCount,target:"pastoral"});
+      if(expenseCount)nextAlerts.push({label:"Expenses requiring action",detail:"Draft or approved expenses are waiting for approval or posting.",count:expenseCount,target:"finance"});
+      if(lowCount)nextAlerts.push({label:"Inventory below reorder level",detail:"Review low-stock items by branch.",count:lowCount,target:"assets"});
+      if(eventCount)nextAlerts.push({label:"Upcoming services and events",detail:"Scheduled within the next seven days.",count:eventCount,target:"events"});
+      setAlerts(nextAlerts);
       setLoading(false);
     }
     void load();return()=>{alive=false;};
   },[churchId]);
   return <><div className="welcome-row"><div><div className="eyebrow">CHURCH ADMINISTRATION</div><h2>{churchName ? "Welcome to " + churchName : "Welcome to your church workspace"}</h2><p>One secure place to manage people, records, ministries and resources.</p></div>{canCreateMember&&<button className="primary-button" onClick={onNew} disabled={!churchId}><Plus size={17}/> New registration</button>}</div>
     <div className="setup-banner"><div className="setup-icon"><ShieldCheck/></div><div><b>{churchId?"Church workspace connected":"Your workspace setup is next"}</b><p>{churchId?"Live summary data is being loaded from this church workspace.":"Sign in and create your first church workspace to manage records and invite authorized staff."}</p></div><span className="status-pill">{churchId?(loading?"Loading":"Connected"):"Setup pending"}</span></div>
-    <div className="stat-grid">{stats.map(s=>{const Icon=s.icon;return <div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></div>;})}</div>
+    <div className="stat-grid">{stats.map(s=>{const Icon=s.icon;return <button type="button" className="stat-card stat-card-link" key={s.label} onClick={()=>s.target&&onNavigate(s.target)}><div className="stat-top"><span>{s.label}</span><Icon size={19}/></div><strong>{s.value}</strong><small>{s.hint}</small></button>;})}</div>
+    <div className="section-heading"><div><h3>Attention required</h3><p>Live operational alerts based on your access permissions.</p></div></div>
+    <div className="panel dashboard-alerts">{loading?<div className="empty-state">Checking operational alerts...</div>:alerts.length?alerts.map(alert=><button type="button" className="dashboard-alert" key={alert.label} onClick={()=>onNavigate(alert.target)}><span className="dashboard-alert-count">{alert.count}</span><span className="dashboard-alert-copy"><b>{alert.label}</b><small>{alert.detail}</small></span><span className="dashboard-alert-open">Open</span></button>):<div className="empty-state"><CheckCircle2/><b>No outstanding alerts</b><small>There are no pending operational items visible to your account.</small></div>}</div>
     <div className="section-heading"><div><h3>Quick access</h3><p>Open a core area of your church administration.</p></div></div>
     <div className="quick-grid">{[{label:"Register a member",icon:Users,key:"members" as ModuleKey,desc:"Member profiles and household links"},{label:"Family register",icon:HeartHandshake,key:"families" as ModuleKey,desc:"Households and family relationships"},{label:"Certificates",icon:FileBadge,key:"certificates" as ModuleKey,desc:"Marriage, birth, death and baptism"},{label:"Inventory & Assets",icon:Package,key:"assets" as ModuleKey,desc:"Stock levels, equipment and maintenance"},{label:"Church settings",icon:Settings,key:"settings" as ModuleKey,desc:"Branding, language and permissions"}].map(x=>{const Icon=x.icon;return <button className="quick-card" key={x.label} onClick={()=>onNavigate(x.key)}><span><Icon/></span><b>{x.label}</b><small>{x.desc}</small></button>;})}</div>
     <div className="section-heading"><div><h3>Development roadmap</h3><p>Build the full online system before beginning the testing phase.</p></div></div>
