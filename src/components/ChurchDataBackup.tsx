@@ -64,7 +64,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       async function collectFolder(bucket:string,path:string,depth=0):Promise<void>{
         if(depth>12)throw new Error("Storage folder nesting exceeded the backup safety limit.");
         for(let offset=0;;offset+=100){
-          const {data,error}=await storageClient.storage.from(bucket).list(path,{limit:100,offset});
+          const {data,error}=await storageClient.storage.from(bucket).list(path,{limit:100,offset,sortBy:{column:"name",order:"asc"}});
           if(error)throw new Error("Unable to list "+bucket+" storage: "+error.message);
           const page=data??[];
           for(const entry of page){
