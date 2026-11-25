@@ -316,3 +316,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Financial approval/posting RPCs now require the explicit `approve` action instead of treating ordinary `edit` permission as approval authority.
 - This covers expense approval/posting, budget approval, donation posting, journal posting and asset depreciation/disposal. Document verification/rejection also requires the certificate-documents `approve` action.
 - Asset disposal/depreciation additionally require accounting edit permission for the ledger impact.
+
+
+## UI action permission enforcement
+- Added an authenticated, read-only permission-check RPC that delegates to the same database permission helper used by RLS.
+- Generic registers now hide Add, Edit, Delete and approval/posting actions when the signed-in user lacks the corresponding action permission.
+- Member and family screens now hide create/edit/archive/document controls according to their module permissions. Database RLS and protected RPC checks remain the final authority.
