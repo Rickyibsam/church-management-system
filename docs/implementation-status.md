@@ -356,3 +356,5 @@ No functional, security or end-to-end test phase has been started, per the reque
 - **Restore is implemented but not yet functionally tested.** The selected Supabase project currently has no Auth users or church workspaces, so a real owner-to-empty-workspace restore test cannot be run until the first owner account and test workspaces exist. Full restore, storage cleanup and failure-injection tests remain in the planned acceptance phase.
 
 - Version 5 restore now validates the exact storage object manifest, bucket, target path, file count and byte totals inside the database restore transaction; direct RPC calls cannot skip the file upload step.
+
+- Notification backup rows remain scoped to the signed-in owner by the existing per-user inbox RLS policy; other members' inbox notifications are intentionally not exported.
