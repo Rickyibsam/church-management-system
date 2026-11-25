@@ -98,7 +98,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         limitations:[
           "Authentication accounts and passwords are never exported; referenced user accounts must already exist in the same Supabase project before restore.",
           "Storage files are included up to 50 MB and 2,000 files across the two church storage buckets.",
-          "A validated transactional restore workflow is not yet enabled. Do not upload this file into production tables manually."
+          "Database records restore transactionally into a new empty workspace. Storage files are uploaded first and removed if the database transaction fails."
         ]
       };
       const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
@@ -152,7 +152,8 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         if(uploadError)throw new Error("Unable to restore storage file "+file.path+": "+uploadError.message);
         uploaded[file.bucket].push(targetPath);
       }
-      const {storage_files:ignoredFiles,...databaseSnapshot}=parsed;
+      const databaseSnapshot={...parsed};
+      delete databaseSnapshot.storage_files;
       const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
       if(restoreError)throw new Error("Database restore was rolled back: "+restoreError.message);
       const restored=result as {records_restored?:number;tables_restored?:number};
