@@ -275,3 +275,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The server-side `private.has_church_permission` helper now applies separate defaults for view, create, edit, delete, approve and issue instead of granting every action merely because a role can access a module.
 - The team permission editor uses the same action-specific defaults. Owners and administrators retain full access; explicit per-user permission overrides continue to take precedence for other roles.
 - Existing RLS policies and protected RPCs call the shared helper, so the tightened defaults apply at the database boundary as well as in the UI.
+
+
+## Family code sequence durability
+- Family codes now use a private per-church sequence table instead of calculating the next number from the highest visible family record.
+- Deleting a family cannot cause its code to be reused. The sequence table is not exposed through the public API; only the server-side trigger can advance it.
+- The selected database currently has no family records, so no existing family data was changed by this update.
