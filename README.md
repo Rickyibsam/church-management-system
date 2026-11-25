@@ -15,7 +15,7 @@ A multi-church management platform for churches in Pakistan and international co
 - Individual user/module/action permissions, email invitations, audit history and persistent notifications
 - CSV, Excel and PDF exports from operational registers
 - Version 5 church backup exports with private storage files and owner-only transactional database restore into a new empty workspace
-- English-only application interface (no Roman Urdu in screens, controls, reports or system messages); certificate templates may contain Urdu-script document content where configured
+- English-only application interface, including controls, reports, dates and number formatting; Roman Urdu is not used in the software
 - Responsive web application; offline PWA work is deliberately deferred
 
 ## Architecture
