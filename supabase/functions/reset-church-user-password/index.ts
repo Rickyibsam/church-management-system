@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
  const {data:targetMembership}=await admin.from("church_members").select("role,status,branch_id").eq("church_id",churchId).eq("user_id",targetUserId).maybeSingle();
  if(!targetMembership||targetMembership.status!=="active")return reply({error:"The selected account is not an active member of this church."},404);
  if(targetMembership.role==="owner"||(targetMembership.role==="admin"&&callerMembership.role!=="owner")||(targetMembership.role==="branch_admin"&&callerMembership.role!=="owner"))return reply({error:"You do not have permission to reset this account's password."},403);
- if(callerMembership.role==="branch_admin"&&(!callerMembership.branch_id||targetMembership.branch_id!==callerMembership.branch_id||targetUserId===userData.user.id))return reply({error:"Branch Administrators can reset passwords only for other active users in their assigned branch."},403);
+ if(callerMembership.role==="branch_admin"&&(!callerMembership.branch_id||targetMembership.branch_id!==callerMembership.branch_id||targetUserId===userData.user.id||["pastor","accountant"].includes(targetMembership.role)))return reply({error:"Branch Administrators can reset passwords only for non-privileged users in their assigned branch."},403);
  const {error:updateError}=await admin.auth.admin.updateUserById(targetUserId,{password:newPassword});
  if(updateError)return reply({error:"The password could not be updated. Check the password requirements and try again."},400);
  return reply({message:"Password reset successfully."});
