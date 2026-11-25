@@ -395,3 +395,4 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 - Added source/target tenant remapping and strict storage-path validation to backup restore. Both the browser and transactional database function reject dot-segment paths; a SQL check confirmed normal target paths are accepted and traversal paths are rejected.
 - Restore now rejects database storage references that are not inside the source church folder, in addition to validating every uploaded manifest path and rejecting `.` / `..` path segments. A SQL check confirmed valid tenant-scoped paths are remapped to the target workspace.
+- The separate church workspace logo path is also validated against the source tenant before it is remapped; blank logo paths remain null. This closes the metadata path outside the table-row restore path.
