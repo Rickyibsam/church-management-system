@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Circle } from "lucide-react";
 import { supabase } from "../lib/supabase";
-type Notice={id:string;title:string;body:string;notification_type:string;read_at:string|null;created_at:string};
+type Notice={id:string;user_id:string|null;title:string;body:string;notification_type:string;read_at:string|null;created_at:string};
 export default function NotificationsInbox({churchId}:{churchId:string|null}){
  const [rows,setRows]=useState<Notice[]>([]);
  const [message,setMessage]=useState("");
@@ -13,11 +13,22 @@ export default function NotificationsInbox({churchId}:{churchId:string|null}){
   if(userError||!userData.user){setRows([]);setLoading(false);return;}
   setUserId(userData.user.id);
   setLoading(true);
-  const {data,error}=await supabase.from("notifications").select("id,title,body,notification_type,read_at,created_at").eq("church_id",churchId).eq("user_id",userData.user.id).order("created_at",{ascending:false}).limit(100);
+  const {data,error}=await supabase.from("notifications").select("id,user_id,title,body,notification_type,read_at,created_at").eq("church_id",churchId).eq("user_id",userData.user.id).order("created_at",{ascending:false}).limit(100);
   if(error)setMessage("Unable to load notifications: "+error.message);else setRows((data??[]) as Notice[]);
   setLoading(false);
  }
  useEffect(()=>{void load();},[churchId]);
+ useEffect(()=>{
+  if(!supabase||!churchId||!userId)return;
+  const channel=supabase.channel("church-notifications-"+churchId+"-"+userId)
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:"church_id=eq."+churchId},payload=>{
+    const incoming=payload.new as Notice;
+    if(incoming.user_id===userId){
+     setRows(old=>old.some(item=>item.id===incoming.id)?old:[incoming,...old].slice(0,100));
+    }
+   }).subscribe();
+  return()=>{void supabase.removeChannel(channel);};
+ },[churchId,userId]);
  async function markRead(id:string){
   if(!supabase||!userId)return;
   const {error}=await supabase.from("notifications").update({read_at:new Date().toISOString()}).eq("id",id).eq("user_id",userId);
