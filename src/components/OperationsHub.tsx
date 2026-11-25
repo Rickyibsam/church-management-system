@@ -65,7 +65,7 @@ export default function OperationsHub({ churchId, kind }: { churchId: string | n
   ? active.key==="expenses"?"expenses":active.key==="pledges"?"donations":active.key==="budgets"||active.key==="budget-lines"||active.key==="budget-performance"?"budgets":"accounts"
   : kind==="pastoral"?"pastoral"
   : kind==="assets"?(active.key.startsWith("inventory")?"inventory":"assets")
-  : kind==="attendance"?"attendance":undefined;
+  : kind==="attendance"?(active.key==="services"?"services":"attendance"):undefined;
  const Icon = icons[kind];
  return <section>
   <div className="page-intro"><div><h2>{kind==="finance"?"Finance & Accounting":kind==="pastoral"?"Pastoral Care":kind==="reports"?"Reports, Notifications & Audit":kind==="attendance"?"Attendance Management":"Assets & Maintenance"}</h2><p>Online church operations workspace. Select a register to manage records.</p></div><Icon size={26}/></div>
