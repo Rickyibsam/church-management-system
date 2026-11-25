@@ -286,3 +286,8 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Family-to-child relationship consistency
 - Member profiles now use the same `child` relationship value as the Family Relationships register; older `son`/`daughter` values remain visible and counted for compatibility.
 - The member-to-family selector displays both family name and the generated Family Code, reducing the chance of linking a child to the wrong household.
+
+
+## Family relationship validation alignment
+- Expanded the database relationship constraint to accept the relationship values used by both the member profile and family relationship forms, including child, grandparent, sibling, guardian, dependent and member.
+- The forms now share the same relationship vocabulary. Existing son/daughter values remain valid so historical links are not invalidated.
