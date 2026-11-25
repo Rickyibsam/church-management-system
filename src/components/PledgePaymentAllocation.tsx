@@ -15,6 +15,13 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
  const [message,setMessage]=useState("");
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
+ const [canAllocate,setCanAllocate]=useState(false);
+ useEffect(()=>{
+  let alive=true;const client=supabase;
+  if(!client||!churchId){setCanAllocate(false);return ()=>{alive=false;};}
+  void client.rpc("can_church_action",{p_church_id:churchId,p_module_key:"donations",p_action_key:"edit"}).then(({data,error})=>{if(alive)setCanAllocate(!error&&data===true);});
+  return ()=>{alive=false;};
+ },[churchId]);
 
  async function load(){
   if(!supabase||!churchId){setLoading(false);return;}
@@ -37,7 +44,7 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
  const donationOutstanding=selectedDonation?Math.max(0,Number(selectedDonation.amount)-donationAllocated):0;
  const compatibleDonations=donations.filter(d=>!selectedPledge||d.currency_code===selectedPledge.currency_code);
  async function allocate(){
-  if(!supabase||!selectedPledge||!selectedDonation)return;
+  if(!supabase||!selectedPledge||!selectedDonation||!canAllocate)return;
   const value=Number(amount);
   if(!Number.isFinite(value)||value<=0){setMessage("Enter a valid allocation amount.");return;}
   if(selectedPledge.currency_code!==selectedDonation.currency_code){setMessage("Donation and pledge currencies must match.");return;}
@@ -51,7 +58,7 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
  return <section className="panel" style={{marginTop:20}}>
   <div className="page-intro"><div><h3>Donation Pledge Payments</h3><p>Allocate posted donation receipts to pledges. Outstanding balances and pledge status are calculated automatically.</p></div></div>
   {message&&<p role="status" className="notice">{message}</p>}
-  <div className="form-grid">
+  {canAllocate&&<div className="form-grid">">
    <label>Donation pledge<select value={pledgeId} onChange={e=>setPledgeId(e.target.value)}><option value="">Select a pledge</option>{pledges.map(p=><option key={p.id} value={p.id}>{p.donor_name} — {Number(p.amount).toFixed(2)} {p.currency_code} ({p.status})</option>)}</select></label>
    <label>Posted donation receipt<select value={donationId} onChange={e=>setDonationId(e.target.value)}><option value="">Select a posted receipt</option>{compatibleDonations.map(d=><option key={d.id} value={d.id}>{d.receipt_number??d.id.slice(0,8)} — {d.donor_name??"Donor"} — {Number(d.amount).toFixed(2)} {d.currency_code}</option>)}</select></label>
    <label>Allocation amount<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00"/></label>
@@ -62,6 +69,7 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
   </div>}
   <button className="primary-button" type="button" disabled={busy||!selectedPledge||!selectedDonation||!amount} onClick={()=>void allocate()}>{busy?"Allocating…":"Allocate payment"}</button>
   <h4 style={{marginTop:24}}>Recent allocations</h4>
+</div>}{!canAllocate&&<p className="notice">You do not have permission to allocate donation payments.</p>}
   {loading?<p>Loading payment allocations…</p>:allocations.length===0?<p>No pledge payments have been allocated yet.</p>:<div className="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Donor</th><th>Amount</th></tr></thead><tbody>{allocations.map(a=><tr key={a.id}><td>{new Date(a.allocated_at).toLocaleDateString()}</td><td>{a.donations?.receipt_number??a.donation_id.slice(0,8)}</td><td>{a.donations?.donor_name??"—"}</td><td>{Number(a.amount).toFixed(2)}</td></tr>)}</tbody></table></div>}
  </section>;
 }
