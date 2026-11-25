@@ -229,3 +229,6 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Expanded the live dashboard from four to six church-scoped KPIs: registered members, families, issued certificates, pending certificate reviews, monthly attendance check-ins and monthly posted donation totals.
 - Donation totals now include posted receipts only, excluding drafts/unposted records.
 - This remains a summary dashboard; full operational alert thresholds and report drill-downs are still to be completed and verified.
+
+
+- GitHub Actions build passed after fixing the nullable Supabase client guard in the realtime notification subscription (run 45570409248, commit `39b5ffd`). This build includes the dashboard KPI and realtime inbox changes.
