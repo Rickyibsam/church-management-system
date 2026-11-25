@@ -328,3 +328,7 @@ No functional, security or end-to-end test phase has been started, per the reque
 - Replaced the stale npm-registry SheetJS package with the official SheetJS 0.20.3 tarball from the vendor CDN.
 - Upgraded jsPDF to 4.2.1 and Vite to 6.4.5 to address published security advisories.
 - GitHub production build completed successfully after the upgrades; the install step reported **0 npm audit vulnerabilities**.
+
+
+## Dashboard inventory alert KPI
+- Added a low-stock item count to the dashboard. The count is shown only when the current user has inventory view permission; otherwise the KPI displays `Restricted` rather than leaking branch inventory information.
