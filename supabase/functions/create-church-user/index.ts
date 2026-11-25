@@ -20,7 +20,7 @@ Deno.serve(async(req)=>{
  if(!callerMembership||callerMembership.status!=="active"||!["owner","admin","branch_admin"].includes(callerMembership.role))return reply({error:"Only an active Church Owner, Administrator or Branch Administrator can create users."},403);
  if(role==="admin"&&callerMembership.role!=="owner")return reply({error:"Only the Church Owner can create another administrator."},403);
  if(role==="branch_admin"&&callerMembership.role!=="owner")return reply({error:"Only the Church Owner can assign Branch Administrator access."},403);
- if(callerMembership.role==="branch_admin"&&(!callerMembership.branch_id||branchId!==callerMembership.branch_id||["admin","branch_admin"].includes(role)))return reply({error:"Branch Administrators can create non-administrator accounts only within their assigned branch."},403);
+ if(callerMembership.role==="branch_admin"&&(!callerMembership.branch_id||branchId!==callerMembership.branch_id||!["secretary","ministry_leader","staff","volunteer","member"].includes(role)))return reply({error:"Branch Administrators can create only secretary, ministry leader, staff, volunteer or member accounts in their assigned branch."},403);
  if(role==="branch_admin"&&!branchId)return reply({error:"A Branch Administrator account must be assigned to a branch."},400);
  if(branchId){const {data:branch}=await admin.from("church_branches").select("id").eq("id",branchId).eq("church_id",churchId).maybeSingle();if(!branch)return reply({error:"The selected branch does not belong to this church."},400);}
  const authEmail="u-"+crypto.randomUUID()+"@login.church360.invalid";
