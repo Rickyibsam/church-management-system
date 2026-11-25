@@ -63,7 +63,7 @@ The `invite-church-member` Edge Function is deployed with JWT verification enabl
 
 ## Current implementation status
 
-The online build is in progress. The database schema and a growing set of online workflows are implemented, including member/family registers, certificates, private documents, permissions, invitations, attendance, pastoral care, accounting, reports and notifications. Inventory, branch-scoped low-stock alerts, UI/RLS action permissions and transactional backup restore foundations are implemented. Full restore/failure-injection testing, remaining integrations and other advanced workflows are still in progress.
+The online build is in progress. The database schema and a growing set of online workflows are implemented, including member/family registers, certificates, private documents, permissions, invitations, attendance, pastoral care, accounting, reports and notifications. Inventory, branch-scoped low-stock alerts, UI/RLS action permissions, Branch Administrator access and transactional backup restore foundations are implemented. The separate cross-church Platform Super Admin console and its secure first-account bootstrap remain outstanding. Full restore/failure-injection testing and the broader acceptance phase are deferred until online feature development is complete.
 
 **The application is not production-ready. Cloudflare hosting configuration is now in the repository; a successful production deployment has not yet been verified.** Per project-owner instruction, functional, security and end-to-end testing are deferred until online feature development is complete. The offline edition will begin only after the online build is complete and its testing/bug-fixing phase has passed.
 
