@@ -22,7 +22,7 @@ Delivery order requested by the project owner:
 - Audit trigger foundation and Cloudflare Workers Static Assets hosting configuration.
 
 ## Remaining before acceptance testing
-- Configure the deployed Cloudflare application origin and redirect URL in Supabase Edge Function secrets, then configure a verified SMTP sender in Supabase Auth. See `docs/email-invitations.md`; credentials must be entered in Supabase Dashboard and never committed to Git.
+- Set the exact `APP_ALLOWED_ORIGIN` Supabase Edge Function secret for the deployed Cloudflare Worker. Email is not required for church registration, username/password login, or branch-user accounts; SMTP is only needed if the optional legacy email-invitation workflow is used.
 - Create the first owner account and church workspace, then prepare a controlled source backup and a separate empty target workspace to test real restore behavior.
 - Verify the latest Cloudflare Worker deployment after the latest GitHub changes; GitHub build success alone does not prove the Worker deployment completed.
 - Complete any final integration gaps discovered during the planned acceptance pass.
@@ -64,6 +64,8 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Reconciled the repository migration filenames with the actual applied Supabase migration versions, including the separate read-only certificate-history policy correction, to prevent duplicate migration execution during future deployment workflows.
 
 - Added a private member-document manager for identity and supporting records, including file-type/size checks, signed-link viewing, document verification metadata and church-scoped access.
+- Added email-free church registration and Church ID + username + password login, with system-generated Church IDs and branch-specific username accounts.
+- Added owner/admin password reset for active church users through a JWT-protected Edge Function; owners can reset non-owner accounts, while administrators cannot reset another administrator.
 - Added attendance integrity rules requiring a member or visitor name, restricting attendance statuses/methods and recording the authenticated check-in user by default.
 
 - Added editable certificate document-requirement and certificate-template registers in church settings, including country applicability, required/active flags, language, paper layout, header/footer and pastor details. Default template text and configured signature/seal assets are now reflected in certificate preview/PDF output.
