@@ -54,7 +54,7 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
   const deleteAction=actionKey==="delete";
   const approveAction=actionKey==="approve";
   const issueAction=actionKey==="issue";
-  if(["members","families"].includes(moduleKey))return (["pastor","secretary","staff"].includes(role)&&basic)||(role==="pastor"&&deleteAction);
+  if(["members","families","member_documents"].includes(moduleKey))return (["pastor","secretary","staff"].includes(role)&&basic)||(role==="pastor"&&deleteAction);
   if(["certificates","certificate_documents"].includes(moduleKey))return (["pastor","secretary"].includes(role)&&basic)||(role==="pastor"&&(approveAction||issueAction||deleteAction));
   if(["attendance","services","events","ministries"].includes(moduleKey))return (["pastor","secretary","ministry_leader","staff","volunteer"].includes(role)&&basic)||(["pastor","secretary"].includes(role)&&(deleteAction||approveAction));
   if(["accounts","finance","expenses","donations","budgets"].includes(moduleKey))return (["accountant","finance"].includes(role)&&basic)||(["accountant","finance"].includes(role)&&approveAction);
