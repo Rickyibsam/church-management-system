@@ -144,6 +144,8 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       if(userError||!userData.user)throw new Error("Sign in before restoring a backup.");
       const {data:membership,error:membershipError}=await client.from("church_members").select("role,status").eq("church_id",churchId).eq("user_id",userData.user.id).maybeSingle();
       if(membershipError||membership?.role!=="owner"||membership.status!=="active")throw new Error("Only the active owner of the target church can restore a backup.");
+      const {data:targetReady,error:preflightError}=await client.rpc("assert_church_backup_target_empty",{p_target_church_id:churchId});
+      if(preflightError||targetReady!==true)throw new Error("The target workspace is not ready for restore: "+(preflightError?.message??"Empty workspace verification failed."));
       const seen=new Set<string>();
       for(let fileIndex=0;fileIndex<files.length;fileIndex++){
         const file=files[fileIndex];
