@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { UserPlus, Users, ShieldCheck, Settings2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-type TeamRow={id:string;user_id:string;role:string;status:string;branch_id:string|null;profiles?:{display_name:string|null}|null};
+type TeamRow={id:string;user_id:string;role:string;status:string;branch_id:string|null;profiles?:{display_name:string|null;username?:string|null}|null};
 type Permission={id?:string;church_id:string;church_member_id:string;module_key:string;action_key:string;allowed:boolean};
 const roles=["admin","pastor","accountant","secretary","ministry_leader","staff","volunteer","member"];
 const modules=[["members","Members"],["families","Families"],["branches","Branches"],["certificates","Certificates"],["certificate_documents","Certificate documents"],["member_documents","Member documents"],["attendance","Attendance"],["services","Services"],["events","Events"],["ministries","Ministries"],["pastoral","Pastoral care"],["accounts","Accounting"],["expenses","Expenses"],["donations","Donations"],["budgets","Budgets"],["assets","Assets"],["inventory","Inventory"]] as const;
@@ -11,7 +11,9 @@ const actions=["view","create","edit","delete","approve","issue"] as const;
 export default function TeamManagement({churchId}:{churchId:string|null}){
  const [rows,setRows]=useState<TeamRow[]>([]);
  const [permissions,setPermissions]=useState<Permission[]>([]);
- const [inviteEmail,setInviteEmail]=useState("");
+ const [inviteUsername,setInviteUsername]=useState("");
+ const [invitePassword,setInvitePassword]=useState("");
+ const [inviteDisplayName,setInviteDisplayName]=useState("");
  const [role,setRole]=useState("secretary");
  const [show,setShow]=useState(false);
  const [expanded,setExpanded]=useState<string|null>(null);
@@ -35,13 +37,13 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
  }
  useEffect(()=>{void load();},[churchId]);
  async function add(){
-  if(!supabase||!churchId||!inviteEmail.trim())return;
+  if(!supabase||!churchId||!inviteUsername.trim()||invitePassword.length<12)return;
   setSaving(true);setMessage("");
-  const {data,error}=await supabase.functions.invoke("invite-church-member",{body:{churchId,email:inviteEmail.trim(),role,branchId:inviteBranchId||null}});
+  const {data,error}=await supabase.functions.invoke("create-church-user",{body:{churchId,username:inviteUsername.trim(),password:invitePassword,displayName:inviteDisplayName.trim()||inviteUsername.trim(),role,branchId:inviteBranchId||null}});
   setSaving(false);
   if(error){setMessage("Unable to invite user: "+error.message);return;}
   if(data?.error){setMessage(data.error);return;}
-  setInviteEmail("");setInviteBranchId("");setShow(false);setMessage(data?.message??"Invitation processed.");await load();
+  setInviteUsername("");setInvitePassword("");setInviteDisplayName("");setInviteBranchId("");setShow(false);setMessage(data?.message??"Invitation processed.");await load();
  }
  async function changeStatus(id:string,status:string){
   if(!supabase)return;
@@ -79,7 +81,7 @@ export default function TeamManagement({churchId}:{churchId:string|null}){
  return <>
   <div className="page-intro"><div><h2>Users & Permissions</h2><p>Manage church team roles and individual module actions.</p></div><button className="primary-button" disabled={!churchId||!canManage} onClick={()=>setShow(true)}><UserPlus size={16}/> Invite user</button></div>
   {message&&<div className="notice">{message}</div>}
-  {show&&<div className="panel form-panel"><p className="muted">Send a secure church invitation to the person’s email address. New users will receive an account invitation; existing accounts will be assigned church access.</p><div className="form-grid"><div className="form-full"><label>Email address</label><input className="field" type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="person@example.com"/></div><div><label>Church role</label><select className="field" value={role} onChange={e=>setRole(e.target.value)}>{roles.filter(item=>item!=="admin"||callerRole==="owner").map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div><label>Church branch</label><select className="field" value={inviteBranchId} onChange={e=>setInviteBranchId(e.target.value)}><option value="">Main / default branch</option>{branchOptions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving||!inviteEmail.trim()} onClick={()=>void add()}>{saving?"Sending...":"Send invitation"}</button></div></div>}
+  {show&&<div className="panel form-panel"><p className="muted">Create a username and password for a user in this church. Email is not required. Share the temporary password securely.</p><div className="form-grid"><div><label>Username</label><input className="field" autoComplete="off" value={inviteUsername} onChange={e=>setInviteUsername(e.target.value)} placeholder="Unique username"/></div><div><label>Display name</label><input className="field" value={inviteDisplayName} onChange={e=>setInviteDisplayName(e.target.value)} placeholder="Full name"/></div><div className="form-full"><label>Temporary password (minimum 12 characters)</label><input className="field" type="password" autoComplete="new-password" value={invitePassword} onChange={e=>setInvitePassword(e.target.value)} placeholder="Create a strong password"/></div><div><label>Church role</label><select className="field" value={role} onChange={e=>setRole(e.target.value)}>{roles.filter(item=>item!=="admin"||callerRole==="owner").map(item=><option key={item} value={item}>{item.replaceAll("_"," ")}</option>)}</select></div><div><label>Church branch</label><select className="field" value={inviteBranchId} onChange={e=>setInviteBranchId(e.target.value)}><option value="">Main / default branch</option>{branchOptions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div><div className="modal-actions"><button className="secondary-button" onClick={()=>setShow(false)}>Cancel</button><button className="primary-button" disabled={saving||!inviteUsername.trim()||invitePassword.length<12} onClick={()=>void add()}>{saving?"Creating...":"Create user account"}</button></div></div>}
   <div className="panel">{rows.length?<div className="team-list">{rows.map(row=><div className="team-row-wrap" key={row.id}>
    <div className="team-row"><div className="team-avatar"><Users size={17}/></div><div className="team-main"><b>{row.profiles?.display_name||row.user_id}</b><small>{row.user_id}{row.branch_id?" · "+(branchOptions.find(item=>item.id===row.branch_id)?.name??"Branch"):" · Main / default branch"}</small></div><span className="role-pill">{row.role.replaceAll("_"," ")}</span><select className="status-select" disabled={!canManage} value={row.status} onChange={e=>void changeStatus(row.id,e.target.value)}><option value="invited">Invited</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="left">Left</option></select><button className="secondary-button" disabled={!canManage} onClick={()=>setExpanded(expanded===row.id?null:row.id)}><Settings2 size={15}/> Permissions</button></div>
    {expanded===row.id&&<div className="permission-panel"><p className="muted">Enable specific actions for this user. A saved override replaces the role's default for that module/action. Owners and admins retain full access.</p><div className="permission-grid"><div className="permission-head"><b>Module</b>{actions.map(action=><b key={action}>{action}</b>)}</div>{modules.map(([key,label])=><div className="permission-row" key={key}><span>{label}</span>{actions.map(action=><label key={action} className="permission-check"><input type="checkbox" checked={isAllowed(row,key,action)} disabled={row.role==="owner"||row.role==="admin"} onChange={e=>void setPermission(row,key,action,e.target.checked)}/></label>)}</div>)}</div></div>}
