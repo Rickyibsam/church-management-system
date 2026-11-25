@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Account = { id: string; name: string; currency_code: string };
@@ -41,6 +41,8 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Array<{statement_date:string;reference_number:string|null;description:string;statement_amount:number;currency_code:string}>>([]);
+
+  useEffect(() => { void loadAccounts(); }, [churchId]);
 
   async function loadAccounts() {
     if (!supabase || !churchId) return;
@@ -112,7 +114,7 @@ export default function BankStatementImport({ churchId }: { churchId: string | n
   return <section className="panel settings-panel">
     <div className="page-intro"><div><h3>Import bank statement (CSV)</h3><p>Upload a CSV containing Date, Description and Amount columns. Reference is optional. Positive amounts are credits and negative amounts are debits.</p></div></div>
     <div className="form-grid">
-      <div><label>Cash / bank account</label><select className="field" value={accountId} onFocus={() => void loadAccounts()} onChange={event => {setAccountId(event.target.value); const found=accounts.find(item=>item.id===event.target.value); if(found?.currency_code)setCurrency(found.currency_code);}}><option value="">Select account</option>{accounts.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+      <div><label>Cash / bank account</label><select className="field" value={accountId} onChange={event => {setAccountId(event.target.value); const found=accounts.find(item=>item.id===event.target.value); if(found?.currency_code)setCurrency(found.currency_code);}}><option value="">Select account</option>{accounts.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
       <div><label>Currency code</label><input className="field" value={currency} maxLength={3} onChange={event=>setCurrency(event.target.value.toUpperCase())}/></div>
       <div className="form-full"><label>Statement CSV file</label><input className="field" type="file" accept=".csv,text/csv" onChange={event=>{setFile(event.target.files?.[0]??null);setPreview([]);}}/></div>
     </div>
