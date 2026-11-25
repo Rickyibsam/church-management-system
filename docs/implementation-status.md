@@ -382,3 +382,9 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Access matrix coverage
 - Added member-document actions to the team custom permission matrix. Server-side RLS remains the enforcement boundary; UI checks are supplementary.
 - Software interface copy is maintained in English; Roman Urdu is not used in application labels or system messages.
+
+
+## Reporting and email delivery notes
+- Added the read-only `family_directory_report` view (security-invoker) with generated family code, family name, primary contact, linked member count and child count. It is available in the Reports hub and inherits row-level security from its source tables.
+- The invitation Edge Function is deployed with JWT verification and server-side role/branch checks. SMTP delivery is code-ready but still requires the deployed app origin, redirect URL and a verified SMTP sender to be configured in Supabase Dashboard. See `docs/email-invitations.md`; credentials must never be committed to Git.
+- Build checks have passed for the family report migration and UI commits. Full transactional restore testing still requires a controlled source backup and a newly created empty target workspace; it is not being simulated against live church data.
