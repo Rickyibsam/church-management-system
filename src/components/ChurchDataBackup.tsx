@@ -46,7 +46,9 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       for(const table of BACKUP_TABLES) {
         const records:unknown[]=[];
         for(let offset=0;;offset+=500) {
-          const {data,error}=await client.from(table).select("*").eq("church_id",churchId).range(offset,offset+499);
+          let request=client.from(table).select("*").eq("church_id",churchId);
+          request=table==="certificate_sequences"?request.order("certificate_type",{ascending:true}):request.order("id",{ascending:true});
+          const {data,error}=await request.range(offset,offset+499);
           if(error) throw new Error("Backup stopped at "+table+": "+error.message);
           const page=data??[];
           records.push(...page);
