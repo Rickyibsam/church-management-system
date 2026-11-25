@@ -101,6 +101,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         storage_files:storageFiles,
         limitations:[
           "Authentication accounts and passwords are never exported; referenced user accounts must already exist in the same Supabase project before restore.",
+          "Notifications are exported only for the signed-in owner because inbox rows are private to each user.",
           "Storage files are included up to 50 MB and 2,000 files across the two church storage buckets.",
           "Database records restore transactionally into a new empty workspace. Storage files are uploaded first and removed if the database transaction fails."
         ]
