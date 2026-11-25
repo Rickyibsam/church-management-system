@@ -340,7 +340,7 @@ No functional, security or end-to-end test phase has been started, per the reque
 
 
 ## Backup storage coverage
-- Version 4 JSON exports now include the binary contents of files under the church's private-document and branding storage folders, with MIME type, path and size metadata.
+- Version 5 JSON exports now include the binary contents of files under the church's private-document and branding storage folders, with MIME type, path and size metadata.
 - Export safety limits are 2,000 files and 50 MB total. If listing or downloading any file fails, the export is aborted rather than silently creating a partial archive.
 - Added owner/admin-only read access for listing branding assets. Private documents continue to use the existing church document view policy.
 - Authentication identities and passwords remain excluded. The transactional restore procedure is still pending; file-complete export does not mean restore is ready.
@@ -352,5 +352,7 @@ No functional, security or end-to-end test phase has been started, per the reque
 - The current signed-in owner must also be the active owner in the source backup. Referenced Auth users must still exist in the same Supabase project; passwords and Auth identities are not recreated.
 - Restore preserves original family codes, certificate numbering sequences, chart-of-account hierarchy, member/family links and certificate correction chains. Inventory history is replayed chronologically and checked for negative running balances.
 - Private documents and branding files are uploaded to the target church paths before the database transaction. If file upload or the database transaction fails, uploaded files are removed as a compensating rollback. PostgreSQL data is atomic; Supabase Storage and PostgreSQL cannot share one cross-service ACID transaction.
-- The UI accepts version 4 JSON backups, validates row/file counts and sizes, and requires explicit confirmation before restoring. Safety limits: 100,000 database records, 2,000 files and 50 MB storage data.
+- The UI accepts version 5 JSON backups, validates row/file counts and sizes, and requires explicit confirmation before restoring. Safety limits: 100,000 database records, 2,000 files and 50 MB storage data.
 - **Restore is implemented but not yet functionally tested.** The selected Supabase project currently has no Auth users or church workspaces, so a real owner-to-empty-workspace restore test cannot be run until the first owner account and test workspaces exist. Full restore, storage cleanup and failure-injection tests remain in the planned acceptance phase.
+
+- Version 5 restore now validates the exact storage object manifest, bucket, target path, file count and byte totals inside the database restore transaction; direct RPC calls cannot skip the file upload step.
