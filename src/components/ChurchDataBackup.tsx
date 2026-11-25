@@ -124,6 +124,9 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
     if(!window.confirm("Restore this backup into the selected NEW empty church workspace? Existing operational data is never overwritten."))return;
     setBusy(true);setMessage("");
     const uploaded:Record<string,string[]>={"church-private-documents":[],"church-branding":[]};
+    let restoreRpcStarted=false;
+    let restoreRpcRejected=false;
+    let restoreRpcCommitted=false;
     try{
       if(restoreFile.size>80*1024*1024)throw new Error("The backup file exceeds the 80 MB restore limit.");
       const parsed=JSON.parse(await restoreFile.text()) as Record<string,unknown>;
@@ -162,20 +165,30 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       setMessage("Restoring database records transactionally...");
       const databaseSnapshot:Record<string,unknown>={...parsed,storage_manifest:files.map(file=>({bucket:file.bucket,path:churchId+file.path.slice(sourceChurchId.length),size:file.size}))};
       delete databaseSnapshot["storage_files"];
+      restoreRpcStarted=true;
       const {data:result,error:restoreError}=await client.rpc("restore_church_backup",{p_target_church_id:churchId,p_snapshot:databaseSnapshot});
-      if(restoreError)throw new Error("Database restore was rolled back: "+restoreError.message);
+      if(restoreError){
+        const status=(restoreError as {status?:unknown}).status;
+        restoreRpcRejected=typeof status==="number"&&status>=400;
+        throw new Error(restoreRpcRejected?"Database restore was rolled back: "+restoreError.message:"The restore request outcome could not be confirmed. Uploaded files were retained for recovery; do not retry until the target workspace has been checked.");
+      }
+      restoreRpcCommitted=true;
       const restored=result as {records_restored?:number;tables_restored?:number};
       setMessage("Restore completed successfully: "+Number(restored.records_restored??0).toLocaleString()+" records across "+Number(restored.tables_restored??BACKUP_TABLES.length)+" tables and "+files.length+" storage files.");
       setRestoreFile(null);
     }catch(error){
       let cleanupFailed=false;
-      for(const [bucket,paths] of Object.entries(uploaded)){
-        for(let offset=0;offset<paths.length;offset+=100){
-          const {error:cleanupError}=await client.storage.from(bucket).remove(paths.slice(offset,offset+100));
-          if(cleanupError)cleanupFailed=true;
+      const outcomeUnknown=restoreRpcStarted&&!restoreRpcRejected&&!restoreRpcCommitted;
+      if(!outcomeUnknown&&!restoreRpcCommitted){
+        for(const [bucket,paths] of Object.entries(uploaded)){
+          for(let offset=0;offset<paths.length;offset+=100){
+            const {error:cleanupError}=await client.storage.from(bucket).remove(paths.slice(offset,offset+100));
+            if(cleanupError)cleanupFailed=true;
+          }
         }
       }
-      setMessage((error instanceof Error?error.message:"Backup restore failed.")+(cleanupFailed?" Some uploaded files could not be removed automatically; contact the church owner before retrying.":" Any files uploaded for this failed restore were rolled back."));
+      const detail=error instanceof Error?error.message:"Backup restore failed.";
+      setMessage(detail+(outcomeUnknown?" Storage files were intentionally retained because the database result is uncertain. Ask an owner to verify the target workspace before retrying.":restoreRpcCommitted?" Database restore was committed; do not remove its storage files.":cleanupFailed?" Some uploaded files could not be removed automatically; contact the church owner before retrying.":" Any files uploaded for this failed restore were rolled back."));
     }finally{setBusy(false);}
   }
   return <section className="panel settings-panel">
