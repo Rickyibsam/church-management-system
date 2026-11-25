@@ -113,7 +113,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       link.download="church-backup-"+String(workspace.display_name||"workspace").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+new Date().toISOString().slice(0,10)+".json";
       link.click();
       URL.revokeObjectURL(url);
-      setMessage("Backup export created: "+totalRows.toLocaleString()+" records across "+BACKUP_TABLES.length+" tables and "+storageFiles.length+" files ("+(storageBytes/1024/1024).toFixed(1)+" MB).");
+      setMessage("Backup export created: "+totalRows.toLocaleString("en-GB")+" records across "+BACKUP_TABLES.length+" tables and "+storageFiles.length+" files ("+(storageBytes/1024/1024).toFixed(1)+" MB).");
     } catch(error) {
       setMessage(error instanceof Error?error.message:"Backup export failed. No complete backup file was created.");
     } finally { setBusy(false); }
@@ -174,7 +174,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       }
       restoreRpcCommitted=true;
       const restored=result as {records_restored?:number;tables_restored?:number};
-      setMessage("Restore completed successfully: "+Number(restored.records_restored??0).toLocaleString()+" records across "+Number(restored.tables_restored??BACKUP_TABLES.length)+" tables and "+files.length+" storage files.");
+      setMessage("Restore completed successfully: "+Number(restored.records_restored??0).toLocaleString("en-GB")+" records across "+Number(restored.tables_restored??BACKUP_TABLES.length)+" tables and "+files.length+" storage files.");
       setRestoreFile(null);
     }catch(error){
       let cleanupFailed=false;
