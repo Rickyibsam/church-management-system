@@ -54,6 +54,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
         }
         tables[table]=records;
         totalRows+=records.length;
+        if(totalRows>100000)throw new Error("The backup exceeds the 100,000-record restore safety limit. Export a smaller workspace archive.");
       }
       const storageFiles:Array<{bucket:string;path:string;content_type:string;size:number;content_base64:string}>=[];
       let storageBytes=0;
@@ -129,6 +130,7 @@ export default function ChurchDataBackup({ churchId }: { churchId: string | null
       if(files.length>2000)throw new Error("The backup contains more than 2,000 files.");
       const totalBytes=files.reduce((sum,file)=>sum+Number(file.size||0),0);
       if(totalBytes>50*1024*1024)throw new Error("The backup storage files exceed the 50 MB restore limit.");
+      if(Number(parsed.storage_total_bytes??totalBytes)!==totalBytes)throw new Error("Backup storage byte-count validation failed.");
       if(Number(parsed.storage_file_count??files.length)!==files.length)throw new Error("Backup storage file count validation failed.");
       const {data:userData,error:userError}=await client.auth.getUser();
       if(userError||!userData.user)throw new Error("Sign in before restoring a backup.");
