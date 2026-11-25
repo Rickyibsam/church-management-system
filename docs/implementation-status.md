@@ -237,7 +237,7 @@ No functional, security or end-to-end test phase has been started, per the reque
 ## Family registration code and child profiles
 - New family records receive a church-scoped, system-generated registration code in the format `FAM-000001`; users cannot manually change the code.
 - Existing family records with a missing code are backfilled when the migration runs. Number allocation is transaction-locked per church to prevent concurrent duplicate codes.
-- The Family Register displays the code and provides a family detail view showing linked household members, relationship, member code, date of birth and primary-contact status. Children are identified by the son/daughter relationship and remain linked to their own member profiles.
+- The Family Register displays the code and provides a family detail view showing linked household members, relationship, member code, date of birth and primary-contact status. Children are identified by the configured child relationship and remain linked to their own member profiles.
 - The application interface remains English; Roman Urdu is not used in software labels, forms, reports or system messages.
 - Basic implementation/build verification is separate from the deferred full functional, security and end-to-end testing phase.
 
