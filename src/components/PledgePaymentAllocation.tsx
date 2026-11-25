@@ -58,18 +58,20 @@ export default function PledgePaymentAllocation({churchId}:{churchId:string|null
  return <section className="panel" style={{marginTop:20}}>
   <div className="page-intro"><div><h3>Donation Pledge Payments</h3><p>Allocate posted donation receipts to pledges. Outstanding balances and pledge status are calculated automatically.</p></div></div>
   {message&&<p role="status" className="notice">{message}</p>}
-  {canAllocate&&<div className="form-grid">">
-   <label>Donation pledge<select value={pledgeId} onChange={e=>setPledgeId(e.target.value)}><option value="">Select a pledge</option>{pledges.map(p=><option key={p.id} value={p.id}>{p.donor_name} — {Number(p.amount).toFixed(2)} {p.currency_code} ({p.status})</option>)}</select></label>
-   <label>Posted donation receipt<select value={donationId} onChange={e=>setDonationId(e.target.value)}><option value="">Select a posted receipt</option>{compatibleDonations.map(d=><option key={d.id} value={d.id}>{d.receipt_number??d.id.slice(0,8)} — {d.donor_name??"Donor"} — {Number(d.amount).toFixed(2)} {d.currency_code}</option>)}</select></label>
-   <label>Allocation amount<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00"/></label>
-  </div>
-  {(selectedPledge||selectedDonation)&&<div className="quick-grid" style={{marginTop:12}}>
-   {selectedPledge&&<div className="quick-card"><b>Pledge outstanding</b><strong>{pledgeOutstanding.toFixed(2)} {selectedPledge.currency_code}</strong></div>}
-   {selectedDonation&&<div className="quick-card"><b>Receipt unallocated</b><strong>{donationOutstanding.toFixed(2)} {selectedDonation.currency_code}</strong></div>}
-  </div>}
-  <button className="primary-button" type="button" disabled={busy||!selectedPledge||!selectedDonation||!amount} onClick={()=>void allocate()}>{busy?"Allocating…":"Allocate payment"}</button>
+  {canAllocate&&<>
+   <div className="form-grid">
+    <label>Donation pledge<select value={pledgeId} onChange={e=>setPledgeId(e.target.value)}><option value="">Select a pledge</option>{pledges.map(p=><option key={p.id} value={p.id}>{p.donor_name} — {Number(p.amount).toFixed(2)} {p.currency_code} ({p.status})</option>)}</select></label>
+    <label>Posted donation receipt<select value={donationId} onChange={e=>setDonationId(e.target.value)}><option value="">Select a posted receipt</option>{compatibleDonations.map(d=><option key={d.id} value={d.id}>{d.receipt_number??d.id.slice(0,8)} — {d.donor_name??"Donor"} — {Number(d.amount).toFixed(2)} {d.currency_code}</option>)}</select></label>
+    <label>Allocation amount<input type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00"/></label>
+   </div>
+   {(selectedPledge||selectedDonation)&&<div className="quick-grid" style={{marginTop:12}}>
+    {selectedPledge&&<div className="quick-card"><b>Pledge outstanding</b><strong>{pledgeOutstanding.toFixed(2)} {selectedPledge.currency_code}</strong></div>}
+    {selectedDonation&&<div className="quick-card"><b>Receipt unallocated</b><strong>{donationOutstanding.toFixed(2)} {selectedDonation.currency_code}</strong></div>}
+   </div>}
+   <button className="primary-button" type="button" disabled={busy||!selectedPledge||!selectedDonation||!amount} onClick={()=>void allocate()}>{busy?"Allocating…":"Allocate payment"}</button>
+  </>}
+  {!canAllocate&&<p className="notice">You do not have permission to allocate donation payments.</p>}
   <h4 style={{marginTop:24}}>Recent allocations</h4>
-</div>}{!canAllocate&&<p className="notice">You do not have permission to allocate donation payments.</p>}
   {loading?<p>Loading payment allocations…</p>:allocations.length===0?<p>No pledge payments have been allocated yet.</p>:<div className="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Donor</th><th>Amount</th></tr></thead><tbody>{allocations.map(a=><tr key={a.id}><td>{new Date(a.allocated_at).toLocaleDateString()}</td><td>{a.donations?.receipt_number??a.donation_id.slice(0,8)}</td><td>{a.donations?.donor_name??"—"}</td><td>{Number(a.amount).toFixed(2)}</td></tr>)}</tbody></table></div>}
  </section>;
 }
