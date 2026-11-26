@@ -21,12 +21,15 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !anon || !secret) return reply({ error: "Server configuration is incomplete." }, 500);
 
+  const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+
   let body: { action?: string; username?: string; password?: string; setupKey?: string };
   try { body = await req.json(); } catch { return reply({ error: "Invalid request body." }, 400); }
 
   const action = body.action;
   if (action === "overview") {
-    const token = req.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
     if (!token) return reply({ error: "Authentication required." }, 401);
     const client = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: auth, error: authError } = await client.auth.getUser(token);
@@ -45,7 +48,6 @@ Deno.serve(async (req) => {
     return reply({ error: "Enter a valid username and a password of at least 12 characters." }, 400);
   }
 
-  const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
   if (action === "register") {
     const setupKey = Deno.env.get("SUPPORT_BOOTSTRAP_KEY");
     if (!setupKey || !body.setupKey || body.setupKey.length !== setupKey.length ||
