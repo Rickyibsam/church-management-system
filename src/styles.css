@@ -287,3 +287,106 @@ body{background:#f3f6fc;color:#172a49}
   .auth-tabs .auth-tab{font-size:9px;padding:10px 4px}
   .auth-form{padding:18px 14px}
 }
+
+
+/* Exact Church360 reference-inspired full-screen login layout */
+.auth-overlay{
+ position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+ padding:clamp(8px,2vw,24px);box-sizing:border-box;overflow:auto;
+ background:#071c49;
+}
+.church360-login-page{
+ width:min(100%,1440px);min-height:min(850px,calc(100vh - 32px));
+ display:grid;grid-template-columns:1.08fr .92fr;overflow:hidden;
+ border:2px solid rgba(245,207,116,.78);border-radius:22px;
+ background:linear-gradient(130deg,#102e68,#061a43);
+ box-shadow:0 25px 80px rgba(0,0,0,.55);
+}
+.auth-visual{
+ position:relative;min-height:620px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;
+ padding:48px 28px;box-sizing:border-box;
+ background:
+  radial-gradient(ellipse at 52% 59%,rgba(255,245,178,.98) 0,rgba(255,190,79,.85) 8%,rgba(255,131,56,.38) 24%,transparent 49%),
+  linear-gradient(180deg,#203e79 0%,#6d83a7 26%,#f4a45f 57%,#172d38 82%,#07182d 100%);
+}
+.auth-visual:before{
+ content:"";position:absolute;inset:0;
+ background:repeating-conic-gradient(from 0deg at 52% 60%,rgba(255,230,163,.15) 0deg 1deg,transparent 1deg 9deg);
+ mask-image:radial-gradient(ellipse at 52% 60%,black 0,transparent 58%);
+}
+.auth-visual:after{
+ content:"";position:absolute;left:0;right:0;bottom:0;height:30%;
+ background:linear-gradient(165deg,transparent 0 22%,#172d29 23% 38%,#0a1d25 39% 100%);
+ clip-path:polygon(0 45%,15% 30%,28% 47%,44% 22%,60% 40%,75% 15%,100% 42%,100% 100%,0 100%);
+}
+.auth-visual-cross{
+ position:absolute;z-index:1;left:22%;top:28%;font-family:Georgia,serif;
+ font-size:clamp(170px,22vw,310px);line-height:1;color:#24170f;
+ text-shadow:5px 8px 8px rgba(0,0,0,.42);transform:scaleX(.82);
+}
+.auth-visual-copy{
+ position:relative;z-index:2;margin-bottom:12px;text-align:center;
+ color:#fff0b6;font:italic 700 clamp(24px,3vw,38px)/1.18 Georgia,serif;
+ text-shadow:0 3px 10px #000,0 0 20px #000;
+}
+.auth-side{
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ padding:clamp(20px,4vw,58px);box-sizing:border-box;
+ background:linear-gradient(150deg,#0b2c69 0%,#061a43 100%);
+}
+.auth-brandline{
+ display:flex;align-items:center;justify-content:center;gap:12px;
+ margin:0 0 28px;padding:0;border:0;background:none;box-shadow:none;text-align:left;
+}
+.auth-brand-symbol{font-size:46px;line-height:1;color:#f6cf68;text-shadow:0 2px 12px #d89a22}
+.auth-brandline b{display:block;color:#fff;font-size:clamp(30px,3vw,44px);font-weight:800;letter-spacing:-1.5px}
+.auth-brandline small{display:block;margin-top:2px;color:#f4d27a;font-size:13px;letter-spacing:1.4px}
+.auth-card{
+ width:min(100%,510px);box-sizing:border-box;padding:clamp(20px,3vw,34px);
+ border:1px solid rgba(240,198,102,.8);border-radius:20px;
+ background:linear-gradient(145deg,rgba(20,55,112,.96),rgba(4,22,57,.98));
+ box-shadow:0 18px 48px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.auth-card h2{margin:0 0 18px;text-align:center;color:#fff;font-size:clamp(20px,2vw,27px)}
+.auth-card .auth-tabs{display:flex;gap:5px;margin:0 0 16px;padding:4px;border:1px solid rgba(242,206,125,.28);border-radius:10px;background:rgba(2,14,40,.48)}
+.auth-card .auth-tab{flex:1;min-width:0;padding:9px 4px;border:0;border-radius:7px;background:transparent;color:#d9e3f5;font-size:11px}
+.auth-card .auth-tab.active{background:linear-gradient(135deg,#fff0bd,#d7a333);color:#082653;font-weight:800}
+.auth-form{width:100%;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none}
+.auth-form>.muted{margin:0 0 12px;color:#c7d4e9;font-size:12px}
+.auth-card label{display:block;margin:12px 0 6px;color:#f5e7c5;font-size:12px}
+.auth-card .field{width:100%;min-height:43px;box-sizing:border-box;border:1px solid rgba(211,222,243,.22);border-radius:10px;background:rgba(4,19,48,.55);color:#fff;padding:10px 13px;font-size:13px}
+.auth-card .field::placeholder{color:#9cacc7}
+.auth-options{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.auth-card .auth-remember{display:flex;align-items:center;gap:7px;margin:0;font-size:11px;color:#e9edf7}
+.auth-remember input{accent-color:#e3b443}
+.auth-forgot{color:#f4d06e;font-size:11px;cursor:default}
+.auth-card .modal-actions{margin-top:16px}
+.auth-card .primary-button{width:100%;min-height:45px;border:1px solid #ffe6a0;border-radius:24px;background:linear-gradient(135deg,#fff0bd,#d99d20);color:#082653;font-weight:800;font-size:14px}
+.auth-or{display:flex;align-items:center;gap:12px;margin:13px 0;color:#dbe2ee;font-size:11px}
+.auth-or:before,.auth-or:after{content:"";height:1px;flex:1;background:rgba(230,202,140,.5)}
+.auth-register-button{width:100%;min-height:44px;border:1px solid rgba(238,190,85,.8);border-radius:24px;background:rgba(4,20,50,.55);color:#fff1c5;font-size:13px;font-weight:700}
+.auth-register-button:hover{background:rgba(220,166,50,.16)}
+.auth-credit{width:100%;margin-top:18px;text-align:center;color:#b8c5dc;font-size:10px;line-height:1.6}
+.auth-credit b{color:#f3d17c}
+.auth-notice{margin-bottom:12px;font-size:11px}
+@media(max-width:850px){
+ .church360-login-page{grid-template-columns:1fr;min-height:calc(100vh - 16px);width:min(100%,560px)}
+ .auth-visual{min-height:180px;padding:20px;background-position:center 58%}
+ .auth-visual-cross{left:12%;top:4%;font-size:145px}
+ .auth-visual-copy{font-size:21px;margin:0 0 4px 36%}
+ .auth-side{padding:22px 16px}
+ .auth-brandline{margin-bottom:16px}
+ .auth-brand-symbol{font-size:34px}
+ .auth-brandline b{font-size:30px}
+ .auth-card{padding:20px}
+}
+@media(max-width:420px){
+ .auth-overlay{padding:0}
+ .church360-login-page{border-radius:0;border:0;min-height:100svh}
+ .auth-visual{min-height:145px}
+ .auth-visual-cross{font-size:115px}
+ .auth-visual-copy{font-size:17px}
+ .auth-side{padding:16px 12px}
+ .auth-card{padding:16px 13px}
+ .auth-card .auth-tab{font-size:9px}
+}
