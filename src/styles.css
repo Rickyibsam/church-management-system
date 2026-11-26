@@ -199,3 +199,91 @@ body{background:#f3f6fc;color:#172a49}
 .dashboard-alert-copy small{font-size:10px;line-height:1.45;color:#7c899b}
 .dashboard-alert-open{font-size:10px;font-weight:700;color:#4b6889}
 @media(max-width:760px){.dashboard-alerts{padding:4px 10px}.dashboard-alert{gap:9px}.dashboard-alert-copy small{font-size:9px}}
+
+
+/* Church360 inspirational split-screen authentication */
+.modal-backdrop:has(.auth-shell){
+  position:fixed;inset:0;z-index:1000;padding:0!important;display:grid;place-items:stretch;
+  background:#061a42!important;
+}
+.modal:has(.auth-shell){
+  width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  overflow:auto!important;background:transparent!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.modal:has(.auth-shell) .modal-body{height:100%;padding:0!important;background:transparent!important}
+.auth-shell{
+  position:relative;isolation:isolate;box-sizing:border-box;width:100%;min-height:100vh;
+  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(390px,.92fr);
+  grid-template-rows:auto auto 1fr auto;align-items:center;justify-items:center;
+  gap:18px 5vw;padding:clamp(24px,5vh,58px) clamp(24px,7vw,100px);
+  border-radius:0!important;background:linear-gradient(110deg,rgba(3,18,48,.12),rgba(3,18,48,.72))!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.auth-shell::before{
+  content:"";grid-column:1;grid-row:1/5;align-self:stretch;justify-self:stretch;z-index:-1;
+  min-height:calc(100vh - 2 * clamp(24px,5vh,58px));border-radius:24px;
+  background:
+    linear-gradient(180deg,rgba(5,20,48,.04) 35%,rgba(5,20,48,.38)),
+    url("https://blog.cph.org/hs-fs/hubfs/_blogs/CPH_blog/Worship/2023/When-I-Survey-the-Wondrous-Cross.jpg?height=1122&name=When-I-Survey-the-Wondrous-Cross.jpg&width=2000") center 48%/cover no-repeat;
+  box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,225,157,.45);
+}
+.auth-shell::after{
+  content:"With God\\A All Things Are Possible";white-space:pre;grid-column:1;grid-row:4;
+  justify-self:center;align-self:end;margin:0 0 34px;text-align:center;
+  color:#fff0bd;font:italic 700 clamp(20px,2.3vw,31px) Georgia,serif;
+  text-shadow:0 3px 14px rgba(0,0,0,.85);pointer-events:none;
+}
+.auth-brandline,.auth-tabs,.auth-form,.auth-credit{
+  grid-column:2;width:min(100%,480px);box-sizing:border-box;
+}
+.auth-brandline{
+  grid-row:1;justify-self:stretch;display:flex;justify-content:center;gap:14px;
+  margin:0!important;padding:14px 18px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;
+}
+.auth-brand-mark{width:54px;height:54px;border-radius:14px;font-size:30px}
+.auth-brandline b{font-size:clamp(27px,3vw,38px);letter-spacing:-1px}
+.auth-brandline small{font-size:12px;letter-spacing:1.4px;text-transform:uppercase}
+.auth-tabs{
+  grid-row:2;margin:0!important;padding:5px!important;gap:4px!important;
+  border:1px solid rgba(235,202,126,.48)!important;border-radius:12px!important;
+  background:rgba(4,19,49,.55)!important;backdrop-filter:blur(12px)!important;
+}
+.auth-tab{padding:11px 7px;font-size:11px}
+.auth-form{
+  grid-row:3;align-self:center;padding:clamp(20px,3vw,32px);
+  border:1px solid rgba(245,211,133,.75);border-radius:20px;
+  background:linear-gradient(145deg,rgba(8,37,85,.88),rgba(3,17,46,.93));
+  box-shadow:0 24px 70px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.auth-form>.muted{font-size:12px;margin:0 0 16px}
+.auth-shell label{font-size:11px;margin:15px 0 7px}
+.auth-shell .field{width:100%;box-sizing:border-box;min-height:46px;font-size:13px}
+.auth-shell .modal-actions{margin-top:20px}
+.auth-shell .primary-button{min-height:48px;font-size:13px;border-radius:10px}
+.auth-credit{
+  grid-row:4;justify-self:center;text-align:center;color:rgba(235,239,249,.78);
+  font-size:9px;line-height:1.7;padding:4px 8px;letter-spacing:.2px
+}
+.auth-credit b{color:#f0d58c}
+.auth-notice{font-size:11px}
+@media(max-width:820px){
+  .auth-shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr auto;gap:12px;padding:18px 14px;min-height:100svh}
+  .auth-shell::before{grid-column:1;grid-row:1/5;min-height:0;border-radius:0;opacity:.58}
+  .auth-shell::after{display:none}
+  .auth-brandline,.auth-tabs,.auth-form,.auth-credit{grid-column:1;width:min(100%,480px)}
+  .auth-brandline{grid-row:1;padding:8px!important}
+  .auth-brand-mark{width:42px;height:42px;font-size:24px}
+  .auth-brandline b{font-size:28px}
+  .auth-tabs{grid-row:2}
+  .auth-form{grid-row:3;padding:22px 18px}
+  .auth-credit{grid-row:4;padding-bottom:4px}
+}
+@media(max-width:420px){
+  .auth-shell{padding:12px 10px;gap:9px}
+  .auth-tabs .auth-tab{font-size:9px;padding:10px 4px}
+  .auth-form{padding:18px 14px}
+}
