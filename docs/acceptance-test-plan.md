@@ -15,13 +15,25 @@ Never use real CNIC scans, medical/pastoral details or donor financial data in t
 
 ## Authentication, tenancy and invitations
 
-- Sign up, email confirmation, sign in, sign out and password reset.
+- Register a church with a required official church email; verify the email is persisted on the church record.
+- Reject missing/invalid church email, duplicate usernames and weak passwords; confirm failed registration leaves no orphan church or Auth user.
+- Sign in/out with Church ID + username + password. Staff users must not need individual email addresses.
+- Verify password reset works through the supported church-admin recovery flow.
 - Create the first church and verify the creator becomes its owner.
 - Switch between multiple church workspaces without leaking data.
 - Invite a new user, confirm email, and verify membership activation.
 - Assign an existing confirmed user and prevent duplicate memberships.
 - Confirm only the owner can grant the administrator role.
 - Reject unauthorized, expired, wrong-origin and cross-church invitation requests.
+
+## Platform Supporting Portal
+
+- Confirm the Supporting Portal is a separate login tab and is not available to church staff accounts.
+- Configure the exact allowed Worker origin and a private one-time Support Owner bootstrap key.
+- Register the single Support Owner; verify a second registration is permanently rejected, including concurrent attempts.
+- Verify incorrect username/password, missing setup key, wrong origin and non-Support-Owner tokens are rejected.
+- Verify only the registered singleton Support Owner can load the church directory; normal church admins cannot enumerate other churches.
+- Confirm the Support Owner identity is separate from all church memberships and does not bypass church RLS through the browser.
 
 ## Members, families and children
 
