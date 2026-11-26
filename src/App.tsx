@@ -50,6 +50,21 @@ const certTypes: { value: CertificateType; label: string; prefix: string }[] = [
   { value: "transfer", label: "Church Transfer", prefix: "TRF" }
 ];
 
+async function getFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (error && typeof error === "object" && "context" in error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      try {
+        const payload = await context.clone().json() as { error?: unknown; message?: unknown };
+        if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
+        if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+      } catch { /* Use the SDK message below when the response is not JSON. */ }
+    }
+  }
+  if (error instanceof Error && error.message && !error.message.includes("non-2xx")) return error.message;
+  return fallback;
+}
+
 function App() {
   const [active, setActive] = useState<ModuleKey>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -129,7 +144,7 @@ function App() {
     setAuthBusy(true); setNotice("");
     try {
       const { data, error } = await supabase.functions.invoke("login-church-user", { body: { churchCode: loginChurchCode, username: loginUsername, password } });
-      if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to sign in."); return; }
+      if (error || data?.error || !data?.session) { setNotice(data?.error ?? (error ? await getFunctionErrorMessage(error, "Unable to sign in. Check your Church ID, username and password.") : "Unable to sign in. Check your Church ID, username and password.")); return; }
       const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
       if (sessionError) { setNotice(sessionError.message); return; }
       setChurchId(data.churchId); setActiveChurchCode(data.churchCode??loginChurchCode); setLoginUsername(data.username); setAuthOpen(false); setPassword(""); setNotice("Signed in successfully.");
@@ -142,7 +157,7 @@ function App() {
     setAuthBusy(true); setNotice("");
     try {
       const { data, error } = await supabase.functions.invoke("register-church", { body: { churchName: registerChurchName, churchEmail: registerChurchEmail, username: registerUsername, password, countryCode, currencyCode } });
-      if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to register church."); return; }
+      if (error || data?.error || !data?.session) { setNotice(data?.error ?? (error ? await getFunctionErrorMessage(error, "Church registration failed. Please check the details and try again.") : "Church registration failed. Please check the details and try again.")); return; }
       const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
       if (sessionError) { setNotice(sessionError.message); return; }
       setChurchId(data.churchId); setActiveChurchCode(data.churchCode??""); setChurchName(registerChurchName); setChurchOptions([{id:data.churchId,display_name:registerChurchName,church_code:data.churchCode}]);
@@ -159,7 +174,7 @@ function App() {
         action: supportAction, username: supportUsername, password: supportPassword,
         ...(supportAction === "register" ? { setupKey: supportSetupKey } : {})
       }});
-      if (error || data?.error || !data?.session) { setNotice(data?.error ?? error?.message ?? "Unable to access Support Portal."); return; }
+      if (error || data?.error || !data?.session) { setNotice(data?.error ?? (error ? await getFunctionErrorMessage(error, "Unable to access Support Portal. Please check your credentials.") : "Unable to access Support Portal. Please check your credentials.")); return; }
       const { error: sessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
       if (sessionError) { setNotice(sessionError.message); return; }
       setSupportOwner(true); setUserEmail(data.username); setAuthOpen(false); setSupportPassword(""); setSupportSetupKey("");
