@@ -426,3 +426,12 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - A separate Supporting Portal tab, Support Owner login, one-time bootstrap registration and church-directory overview are implemented. This identity is separate from every church account and is not assigned ordinary church-admin permissions.
 - The singleton database record prevents a second Support Owner registration. The Edge Function validates the Support Owner role and singleton account before returning cross-church directory data.
 - The initial Support Owner must still be registered after `SUPPORT_BOOTSTRAP_KEY` and `APP_ALLOWED_ORIGIN` are configured. Additional support operations (for example, audited account recovery or support tickets) are not included in this first directory-only console and must not be assumed available.
+
+
+## Branch authorization hardening — 26 November 2026
+- Added server-side branch-scope checks to certificate creation, status transitions, document verification/rejection and certificate reissue. Reissued certificates now retain the original branch assignment.
+- Added branch-scope checks to expense approval and posting, donation posting, and asset depreciation/disposal RPCs. Church-wide financial journal posting remains governed by the explicit accounts approval permission and is not granted to Branch Administrators by default.
+- Applied the SQL changes directly to the selected Supabase project and committed matching migrations: `20261126100000_enforce_certificate_branch_scope.sql`, `20261126110000_enforce_branch_scope_on_financial_and_certificate_rpcs.sql`, and `20261126120000_enforce_branch_scope_on_asset_accounting_rpcs.sql`.
+- SQL definition checks confirmed the branch helper is present in the modified RPCs. Runtime role-isolation tests remain pending until test church, branch and user accounts exist.
+- The two RLS-enabled account tables with no policies (`church_login_accounts`, `platform_support_accounts`) have no direct anon/authenticated grants; they remain accessed through their controlled server-side functions. Do not add permissive policies to silence the informational linter notice.
+- GitHub build #250 passed for the first certificate branch-scope migration. Later branch-hardening migrations require their own build run; the GitHub workflow verifies frontend compilation only and does not deploy Cloudflare.
