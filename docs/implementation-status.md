@@ -437,3 +437,10 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - GitHub build #250 passed for the first certificate branch-scope migration. Later branch-hardening migrations require their own build run; the GitHub workflow verifies frontend compilation only and does not deploy Cloudflare.
 
 - Tightened `private.has_church_branch_access`: users assigned to a branch can no longer see records with a NULL/unassigned branch. Only church owners/admins or genuinely unassigned global church staff can access unassigned records; assigned branch staff must match the record's branch. This is applied centrally to RLS policies and protected RPCs that use the helper.
+
+## Church creation authorization hardening — 26 November 2026
+- Closed a church-onboarding bypass: the former authenticated `create_church` RPC allowed any signed-in user to create additional church workspaces without the required official church email.
+- Revoked execution of the old RPC from PUBLIC, anon, authenticated and service_role. Added a service-role-only creation RPC that requires an existing initial owner Auth user and explicitly checks the PostgREST service_role claim.
+- Updated the `register-church` Edge Function to create the initial church through the trusted service-role RPC while retaining the official church email validation, owner account, username mapping and returned login session. Deployed Edge Function version 6 (ACTIVE).
+- Removed the in-app “Create another church” shortcut. New church workspaces must go through the official registration form and supply the church email.
+- Database and source changes are committed. A live registration test still requires an actual registration using a valid official church email and a test administrator password; no church or Auth user currently exists in the selected project.
