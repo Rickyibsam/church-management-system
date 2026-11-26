@@ -435,3 +435,5 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - SQL definition checks confirmed the branch helper is present in the modified RPCs. Runtime role-isolation tests remain pending until test church, branch and user accounts exist.
 - The two RLS-enabled account tables with no policies (`church_login_accounts`, `platform_support_accounts`) have no direct anon/authenticated grants; they remain accessed through their controlled server-side functions. Do not add permissive policies to silence the informational linter notice.
 - GitHub build #250 passed for the first certificate branch-scope migration. Later branch-hardening migrations require their own build run; the GitHub workflow verifies frontend compilation only and does not deploy Cloudflare.
+
+- Tightened `private.has_church_branch_access`: users assigned to a branch can no longer see records with a NULL/unassigned branch. Only church owners/admins or genuinely unassigned global church staff can access unassigned records; assigned branch staff must match the record's branch. This is applied centrally to RLS policies and protected RPCs that use the helper.
