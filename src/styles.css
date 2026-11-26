@@ -390,3 +390,79 @@ body{background:#f3f6fc;color:#172a49}
  .auth-card{padding:16px 13px}
  .auth-card .auth-tab{font-size:9px}
 }
+
+
+/* Final pixel-matched Church360 login artwork + official NOSHAAB identity */
+.auth-overlay{position:fixed!important;inset:0!important;z-index:5000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;overflow:auto!important;background:#071b48!important}
+.church360-login-page{
+ width:100%!important;max-width:1440px!important;height:100vh!important;min-height:620px!important;max-height:900px!important;
+ display:grid!important;grid-template-columns:1.02fr .98fr!important;overflow:hidden!important;
+ border:2px solid #f2d58e!important;border-radius:18px!important;background:#082354!important;
+ box-shadow:0 20px 70px rgba(0,0,0,.5)!important
+}
+.auth-visual{
+ min-width:0!important;min-height:0!important;position:relative!important;
+ background:#d18a4b url("/church360-login-scenic.jpg") center center/cover no-repeat!important;
+}
+.auth-visual:before,.auth-visual:after{display:none!important}
+.auth-visual-cross,.auth-visual-copy{display:none!important}
+.auth-side{
+ min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;
+ padding:clamp(18px,3.4vw,48px)!important;background:linear-gradient(155deg,#0c2d69 0%,#071d4a 58%,#041537 100%)!important
+}
+.auth-brandline{
+ display:flex!important;align-items:center!important;justify-content:center!important;width:min(100%,510px)!important;
+ margin:0 0 18px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important
+}
+.auth-brandline img{display:block!important;width:min(230px,68%)!important;height:auto!important;max-height:118px!important;object-fit:contain!important}
+.auth-card{
+ width:min(100%,510px)!important;box-sizing:border-box!important;padding:clamp(18px,2.5vw,30px)!important;
+ border:1px solid rgba(255,211,117,.9)!important;border-radius:18px!important;
+ background:linear-gradient(145deg,rgba(17,51,105,.98),rgba(4,21,56,.99))!important;
+ box-shadow:0 15px 38px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.14)!important
+}
+.auth-card h2{font-size:clamp(20px,2vw,25px)!important;color:#fff!important;margin:0 0 14px!important;text-align:center!important}
+.auth-card .auth-tabs{display:flex!important;margin:0 0 14px!important;padding:4px!important;border:1px solid rgba(255,217,140,.35)!important;border-radius:8px!important;background:rgba(2,14,40,.45)!important}
+.auth-card .auth-tab{flex:1!important;min-width:0!important;padding:8px 5px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:#e8edf8!important;font-size:11px!important}
+.auth-card .auth-tab.active{background:linear-gradient(180deg,#ffe7a1,#e4ae3d)!important;color:#092451!important;font-weight:800!important}
+.auth-form{width:100%!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+.auth-card .muted{color:#d4def0!important;font-size:12px!important}
+.auth-card label{display:block!important;margin:11px 0 6px!important;color:#f5e9cb!important;font-size:12px!important}
+.auth-card .field{width:100%!important;min-height:42px!important;box-sizing:border-box!important;padding:10px 13px!important;border:1px solid rgba(210,226,249,.25)!important;border-radius:9px!important;background:rgba(3,17,46,.72)!important;color:#fff!important;font-size:13px!important}
+.auth-card .field::placeholder{color:#9eacc4!important}
+.auth-options{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-top:9px!important}
+.auth-card .auth-remember{display:flex!important;align-items:center!important;gap:7px!important;margin:0!important;font-size:11px!important}
+.auth-remember input{accent-color:#eab642!important}
+.auth-forgot{color:#ffdc83!important;font-size:11px!important}
+.auth-card .modal-actions{margin-top:15px!important}
+.auth-card .primary-button{width:100%!important;min-height:43px!important;border:1px solid #ffdf92!important;border-radius:24px!important;background:linear-gradient(180deg,#ffdc78,#e5a927)!important;color:#081e44!important;font-size:14px!important;font-weight:800!important;box-shadow:0 3px 12px rgba(0,0,0,.24)!important}
+.auth-or{display:flex!important;align-items:center!important;gap:12px!important;margin:11px 0!important;color:#f2e5c7!important;font-size:11px!important}
+.auth-or:before,.auth-or:after{content:""!important;flex:1!important;height:1px!important;background:rgba(255,218,145,.45)!important}
+.auth-register-button{width:100%!important;min-height:42px!important;border:1px solid #e7b94f!important;border-radius:24px!important;background:rgba(3,18,48,.5)!important;color:#fff0c7!important;font-size:13px!important;font-weight:700!important}
+.auth-support-link{display:block!important;margin:10px auto 0!important;padding:4px 12px!important;border:0!important;background:transparent!important;color:#f1d17c!important;font-size:11px!important;text-decoration:underline!important}
+.auth-credit{
+ display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;
+ width:min(100%,510px)!important;margin-top:14px!important;padding:8px 10px!important;box-sizing:border-box!important;
+ border-top:1px solid rgba(255,218,145,.24)!important;color:#d7e0f1!important;
+ text-align:left!important;font-size:9px!important;line-height:1.55!important
+}
+.auth-credit img{display:block!important;width:88px!important;height:73px!important;flex:0 0 88px!important;object-fit:contain!important;border-radius:5px!important}
+.auth-credit b{color:#ffdc86!important;font-size:10px!important}
+.auth-notice{margin-bottom:10px!important;font-size:11px!important}
+@media(max-width:800px){
+ .church360-login-page{height:auto!important;min-height:100svh!important;max-height:none!important;grid-template-columns:1fr!important;grid-template-rows:190px auto!important;border:0!important;border-radius:0!important}
+ .auth-visual{min-height:190px!important;background-position:center 48%!important}
+ .auth-side{padding:16px 14px 20px!important}
+ .auth-brandline{margin:0 0 10px!important}
+ .auth-brandline img{width:185px!important;max-height:85px!important}
+ .auth-card{padding:18px 16px!important}
+ .auth-credit{margin-top:10px!important}
+}
+@media(max-width:420px){
+ .church360-login-page{grid-template-rows:150px auto!important}
+ .auth-visual{min-height:150px!important}
+ .auth-side{padding:12px 10px 16px!important}
+ .auth-card{padding:15px 12px!important}
+ .auth-credit img{width:70px!important;height:58px!important;flex-basis:70px!important}
+ .auth-credit{gap:8px!important;font-size:8px!important}
+}
