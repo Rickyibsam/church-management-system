@@ -22,9 +22,11 @@ Delivery order requested by the project owner:
 - Audit trigger foundation and Cloudflare Workers Static Assets hosting configuration.
 
 ## Remaining before acceptance testing
-- Set the exact `APP_ALLOWED_ORIGIN` Supabase Edge Function secret for the deployed Cloudflare Worker. Email is not required for church registration, username/password login, or branch-user accounts; SMTP is only needed if the optional legacy email-invitation workflow is used.
-- Create the first owner account and church workspace, then prepare a controlled source backup and a separate empty target workspace to test real restore behavior.
+- Configure the Supabase Edge Function secrets `APP_ALLOWED_ORIGIN` (exact value: `https://church-management-system.ibsamricky.workers.dev`) and `SUPPORT_BOOTSTRAP_KEY` (a private random value of at least 32 characters). The same origin secret is used by registration and the Support Portal.
+- The church registration Edge Function now requires and stores the official church email; deployed function version 3. Staff accounts continue to use Church ID + username + password and do not need individual email addresses.
+- The Support Portal Edge Function is deployed at version 3. Its overview endpoint is restricted to the single Support Owner account; the first Support Owner has not yet been registered because the bootstrap secret must first be configured.
 - Verify the latest Cloudflare Worker deployment after the latest GitHub changes; GitHub build success alone does not prove the Worker deployment completed.
+- Create the first owner account and church workspace, then prepare a controlled source backup and a separate empty target workspace to test real restore behavior.
 - Complete any final integration gaps discovered during the planned acceptance pass.
 
 ## Testing and offline
@@ -419,6 +421,7 @@ GitHub TypeScript/Vite production builds and selected SQL safety checks have bee
 - Full branch-isolation and role-escalation tests remain in the deferred acceptance phase.
 
 
-## Platform Super Admin remains pending
-- The new Branch Administrator role is implemented, but the separate cross-church Platform Super Admin console and its first-account bootstrap are not yet implemented.
-- This must remain separate from church registration: ordinary users must never be able to self-assign platform-wide access. A controlled initial Super Admin identity/credential bootstrap is required before this feature can be completed safely.
+## Platform Support Owner console
+- A separate Supporting Portal tab, Support Owner login, one-time bootstrap registration and church-directory overview are implemented. This identity is separate from every church account and is not assigned ordinary church-admin permissions.
+- The singleton database record prevents a second Support Owner registration. The Edge Function validates the Support Owner role and singleton account before returning cross-church directory data.
+- The initial Support Owner must still be registered after `SUPPORT_BOOTSTRAP_KEY` and `APP_ALLOWED_ORIGIN` are configured. Additional support operations (for example, audited account recovery or support tickets) are not included in this first directory-only console and must not be assumed available.
