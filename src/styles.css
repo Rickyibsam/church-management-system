@@ -402,7 +402,7 @@ body{background:#f3f6fc;color:#172a49}
 }
 .auth-visual{
  min-width:0!important;min-height:0!important;position:relative!important;
- background:#d18a4b url("/church360-login-scenic.jpg") center center/cover no-repeat!important;
+ background:#d18a4b url("/church360-login-scenic.jpg?v=20261126") center center/cover no-repeat!important;
 }
 .auth-visual:before,.auth-visual:after{display:none!important}
 .auth-visual-cross,.auth-visual-copy{display:none!important}
