@@ -555,3 +555,15 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
  .auth-card .primary-button,.auth-register-button{min-height:31px!important}
  .auth-credit img{width:48px!important;height:38px!important;flex-basis:48px!important}
 }
+
+
+/* Church360 modern church sunrise background — royal blue and gold */
+.auth-visual{
+ background-image:url("/church360-modern-church.svg?v=20261126")!important;
+ background-position:center center!important;
+ background-size:cover!important;
+ background-repeat:no-repeat!important;
+}
+@media(max-width:800px){
+ .auth-visual{background-position:36% center!important}
+}
