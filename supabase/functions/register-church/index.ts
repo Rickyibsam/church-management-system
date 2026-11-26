@@ -12,7 +12,9 @@ Deno.serve(async req => {
   let body: {churchName?:string;churchEmail?:string;username?:string;password?:string;displayName?:string;countryCode?:string;currencyCode?:string;timezone?:string};
   try { body=await req.json(); } catch { return reply({error:"Invalid request body."},400); }
   const churchName=body.churchName?.trim(), churchEmail=body.churchEmail?.trim().toLowerCase(), username=body.username?.trim(), password=body.password??"";
-  if (!churchName || churchName.length>160 || !churchEmail || churchEmail.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(churchEmail) || !username || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,29}$/.test(username) || password.length<12 || password.length>128)
+  const emailAt=churchEmail?.indexOf("@")??-1, emailDot=churchEmail?.lastIndexOf(".")??-1;
+  const emailValid=!!churchEmail&&emailAt>0&&emailAt===churchEmail.lastIndexOf("@")&&emailDot>emailAt+1&&emailDot<churchEmail.length-1&&![...churchEmail].some(ch=>ch.charCodeAt(0)<=32);
+  if (!churchName || churchName.length>160 || !churchEmail || churchEmail.length>254 || !emailValid || !username || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,29}$/.test(username) || password.length<12 || password.length>128)
     return reply({error:"Enter a church name, valid official email, a 3–30 character username, and a password of at least 12 characters."},400);
   const admin=createClient(url,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}});
   const authEmail="u-"+crypto.randomUUID()+"@login.church360.invalid";
