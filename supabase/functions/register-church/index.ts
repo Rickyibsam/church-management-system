@@ -23,9 +23,8 @@ Deno.serve(async req => {
   const publicClient=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:login,error:loginError}=await publicClient.auth.signInWithPassword({email:authEmail,password});
   if (loginError || !login.session) { await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Unable to initialize the administrator session."},500); }
-  const signed=createClient(url,anon,{global:{headers:{Authorization:"Bearer "+login.session.access_token}},auth:{persistSession:false,autoRefreshToken:false}});
   const country=(body.countryCode||"PK").toUpperCase(), currency=(body.currencyCode||"PKR").toUpperCase();
-  const {data:churchId,error:churchError}=await signed.rpc("create_church",{p_legal_name:churchName,p_display_name:churchName,p_country_code:country,p_currency_code:currency,p_timezone:body.timezone||(country==="PK"?"Asia/Karachi":"UTC")});
+  const {data:churchId,error:churchError}=await admin.rpc("create_church",{p_owner_user_id:created.user.id,p_legal_name:churchName,p_display_name:churchName,p_country_code:country,p_currency_code:currency,p_timezone:body.timezone||(country==="PK"?"Asia/Karachi":"UTC")});
   if (churchError || !churchId) { await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Church registration could not be completed."},400); }
   const {error:emailError}=await admin.from("churches").update({email:churchEmail}).eq("id",churchId);
   if (emailError) { await admin.from("churches").delete().eq("id",churchId); await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Unable to save the church email address."},400); }
