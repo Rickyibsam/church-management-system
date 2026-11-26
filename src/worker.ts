@@ -1,5 +1,11 @@
+interface WorkerEnv {
+  ASSETS: {
+    fetch(request: Request): Promise<Response>;
+  };
+}
+
 export default {
-  fetch(request, env) {
+  fetch(request: Request, env: WorkerEnv): Promise<Response> {
     return env.ASSETS.fetch(request);
   },
 };
