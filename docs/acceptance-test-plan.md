@@ -115,3 +115,9 @@ Never use real CNIC scans, medical/pastoral details or donor financial data in t
 - Verify the production Cloudflare Worker serves the tested commit and Supabase environment.
 - Record defects, fixes, test evidence and release approval.
 - Only after all online acceptance tests pass, begin the offline PWA phase. Do not cache identity documents or sensitive pastoral notes by default.
+
+## Added security regression checks — 26 November 2026
+- [ ] Confirm authenticated and anonymous roles cannot execute the legacy church-creation RPC.
+- [ ] Confirm only service_role can execute the owner-ID church-creation RPC.
+- [ ] Register a church through the official registration form; verify official email is saved, Church ID is generated, one owner and one head-office branch are created, and the initial username/password can log in.
+- [ ] Confirm direct RPC attempts cannot create a second workspace or bypass official church email registration.
