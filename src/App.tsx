@@ -77,8 +77,8 @@ function App() {
   const [churchName, setChurchName] = useState("");
   const [churchOptions,setChurchOptions] = useState<Array<{id:string;display_name:string;church_code?:string}>>([]);
   const [churchOpen, setChurchOpen] = useState(false);
-  const [countryCode, setCountryCode] = useState("PK");
-  const [currencyCode, setCurrencyCode] = useState("PKR");
+  const [countryCode] = useState("PK");
+  const [currencyCode] = useState("PKR");
 
   useEffect(() => {
     if (!supabase) { setAuthOpen(true); return; }
