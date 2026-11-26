@@ -26,6 +26,7 @@ Delivery order requested by the project owner:
 - The church registration Edge Function now requires and stores the official church email; deployed function version 3. Staff accounts continue to use Church ID + username + password and do not need individual email addresses.
 - The Support Portal Edge Function is deployed at version 3. Its overview endpoint is restricted to the single Support Owner account; the first Support Owner has not yet been registered because the bootstrap secret must first be configured.
 - Verify the latest Cloudflare Worker deployment after the latest GitHub changes; GitHub build success alone does not prove the Worker deployment completed.
+- Cloudflare Workers Builds must use the browser-safe build variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; use `npm run build` as the build command and `npx wrangler deploy` as the deploy command with the repository root as the root directory. Never expose the Supabase service-role key in Worker build variables.
 - Create the first owner account and church workspace, then prepare a controlled source backup and a separate empty target workspace to test real restore behavior.
 - Complete any final integration gaps discovered during the planned acceptance pass.
 
