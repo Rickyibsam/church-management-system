@@ -20,6 +20,9 @@ jobs:
       - name: Dependency security audit
         run: npm audit --audit-level=moderate
       - name: Build production assets
+        env:
+          VITE_SUPABASE_URL: https://qgpvtvepneoixuropdlp.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_h6-M53x-pk6ib3-LjlsOOg_61-U6Ghb
         run: npm run build
       - name: Deploy to Cloudflare Workers
         env:
@@ -27,7 +30,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           # Remove accidental line breaks from the repository secret before using it as an HTTP header.
-          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '\r\n')"
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [[ "$CLOUDFLARE_API_TOKEN" == *" "* ]]; then
             echo "::error::CLOUDFLARE_API_TOKEN is empty or contains spaces. Save only the token secret value in GitHub Actions Secrets."
             exit 1
