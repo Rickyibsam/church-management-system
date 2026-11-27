@@ -22,8 +22,14 @@ jobs:
       - name: Build production assets
         run: npm run build
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Remove accidental line breaks from the repository secret before using it as an HTTP header.
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '\r\n')"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [[ "$CLOUDFLARE_API_TOKEN" == *" "* ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is empty or contains spaces. Save only the token secret value in GitHub Actions Secrets."
+            exit 1
+          fi
+          npx --yes wrangler@3.90.0 deploy
