@@ -239,6 +239,28 @@ Deno.serve(async (req) => {
     return reply({ message: "Password reset successfully. Copy this temporary password now; it will not be shown again.", username: target.username, temporaryPassword: newPassword });
   }
 
+  if (action === "reset_all_active_passwords") {
+    const churchId = String((body as Record<string, unknown>).churchId ?? "").trim();
+    if (!churchId) return reply({ error: "Select a church first." }, 400);
+    const { data: control } = await admin.from("platform_church_controls").select("access_status").eq("church_id", churchId).maybeSingle();
+    if (control?.access_status === "suspended") return reply({ error: "Reactivate this church before resetting its user passwords." }, 403);
+    const [accounts, memberships] = await Promise.all([
+      admin.from("church_login_accounts").select("user_id,username,is_active").eq("church_id", churchId).eq("is_active", true).limit(500),
+      admin.from("church_members").select("user_id,status").eq("church_id", churchId).eq("status", "active").limit(500)
+    ]);
+    if (accounts.error || memberships.error) return reply({ error: "Unable to load active church accounts." }, 500);
+    const activeIds = new Set((memberships.data ?? []).map(row => row.user_id));
+    const credentials: Array<{ username: string; temporaryPassword: string }> = [];
+    for (const account of accounts.data ?? []) {
+      if (!activeIds.has(account.user_id)) continue;
+      const password = temporaryPassword();
+      const { error } = await admin.auth.admin.updateUserById(account.user_id, { password });
+      if (error) return reply({ error: "Password reset stopped after " + credentials.length + " accounts. Refresh the user list and retry remaining active accounts." }, 400);
+      credentials.push({ username: account.username, temporaryPassword: password });
+    }
+    return reply({ message: "Temporary passwords generated for all active users. Copy this list now; it will not be stored or shown again.", credentials });
+  }
+
   if (action === "set_plan") {
     const churchId = body.churchId?.trim();
     const planName = body.planName?.trim() || "Free";
