@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays,
+  Activity, Baby, Banknote, Bell, BookOpen, Building2, CalendarDays, MessageCircle,
   CheckCircle2, ChevronDown, Church, ClipboardList, FileBadge, FileText,
   FolderLock, HeartHandshake, Home, LayoutDashboard, LogOut,
   Menu, Package, Plus, Search, Settings, ShieldCheck, Users, Wallet, X
@@ -36,7 +36,8 @@ const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[]
   { key: "donations", label: "Tithes & Donations", icon: Banknote, group: "Finance" },
   { key: "assets", label: "Assets & Inventory", icon: Building2, group: "Management" },
   { key: "reports", label: "Reports & Audit", icon: Activity, group: "Management" },
-  { key: "settings", label: "Settings", icon: Settings, group: "Management" }
+  { key: "settings", label: "Settings", icon: Settings, group: "Management" },
+  { key: "support", label: "Support Inbox", icon: MessageCircle, group: "Communication" }
 ];
 
 const certTypes: { value: CertificateType; label: string; prefix: string }[] = [
@@ -240,7 +241,7 @@ function App() {
           active === "finance" ? <OperationsHub churchId={churchId} kind="finance"/> : active === "donations" ? <DataModule churchId={churchId} table="donations" permissionModule="donations" title="Tithes & Donations" description="Record donations, post them to the general ledger and generate receipt numbers." financialAction="donation" extraColumns={["status","receipt_number"]} extraDisplay={[{name:"receipt_number",label:"Receipt no."},{name:"status",label:"Status"}]} fields={[{name:"donor_name",label:"Donor name"},{name:"branch_id",label:"Branch",lookup:{table:"church_branches",labelField:"name"}},{name:"donation_type",label:"Donation type"},{name:"amount",label:"Amount",type:"number"},{name:"currency_code",label:"Currency code"},{name:"donated_at",label:"Donation date",type:"datetime-local"},{name:"account_id",label:"Cash / bank account",lookup:{table:"financial_accounts",labelField:"name"}},{name:"income_account_id",label:"Income chart account",lookup:{table:"chart_of_accounts",labelField:"account_name",filterField:"account_type",filterValue:"income"}},{name:"payment_method",label:"Payment method"},{name:"notes",label:"Notes"}]}/> :
           active === "assets" ? <OperationsHub churchId={churchId} kind="assets"/> :
           active === "reports" ? <OperationsHub churchId={churchId} kind="reports"/> :
-          <SettingsPage churchId={churchId}/>}
+          active === "support" ? <ChurchSupportContact churchId={churchId} fullPage/> : <SettingsPage churchId={churchId}/>}
       </div>
     </main>
 
