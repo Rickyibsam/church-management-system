@@ -563,3 +563,91 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
  background-repeat:no-repeat!important;
 }
 @media(max-width:800px){.auth-visual{background-position:38% center!important}}
+
+
+/* Church360 premium sunrise glass-crystal login finish */
+.auth-visual{
+  background-image:url("https://images.unsplash.com/photo-1656248899783-5d4d9adc42fb?auto=format&fit=crop&w=2400&q=90")!important;
+  background-position:center center!important;
+  background-size:cover!important;
+}
+.church360-login-page:before{
+  background:linear-gradient(90deg,rgba(4,18,48,.02) 0%,rgba(4,18,48,.08) 43%,rgba(3,15,43,.22) 62%,rgba(3,15,43,.42) 100%)!important;
+}
+.auth-side{
+  background:linear-gradient(145deg,rgba(8,39,91,.48),rgba(3,17,48,.62))!important;
+  border-left:1px solid rgba(255,226,157,.58)!important;
+  backdrop-filter:blur(18px) saturate(155%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(155%)!important;
+}
+.auth-brandline img{
+  filter:drop-shadow(0 5px 18px rgba(255,205,94,.34))!important;
+}
+.auth-card{
+  position:relative!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,232,180,.72)!important;
+  border-radius:24px!important;
+  background:linear-gradient(135deg,rgba(255,255,255,.20),rgba(97,151,224,.12) 38%,rgba(4,25,68,.48) 100%)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.46),inset 0 -1px 0 rgba(255,220,145,.22)!important;
+  backdrop-filter:blur(24px) saturate(175%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(175%)!important;
+}
+.auth-card:before{
+  content:""!important;position:absolute!important;inset:0!important;pointer-events:none!important;
+  border-radius:inherit!important;
+  background:linear-gradient(125deg,rgba(255,255,255,.18),transparent 34%,transparent 68%,rgba(255,218,137,.10))!important;
+}
+.auth-card h2,.auth-card .auth-form{position:relative!important;z-index:1!important}
+.auth-card .auth-tabs{
+  border:1px solid rgba(255,231,177,.48)!important;
+  border-radius:14px!important;
+  padding:5px!important;
+  background:rgba(5,26,67,.32)!important;
+  box-shadow:inset 0 1px 8px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(12px)!important;
+}
+.auth-card .auth-tab{
+  min-height:36px!important;border-radius:10px!important;
+  color:#f5f7ff!important;font-weight:650!important;
+  transition:background .2s ease,box-shadow .2s ease!important;
+}
+.auth-card .auth-tab.active{
+  color:#09224f!important;
+  background:linear-gradient(135deg,#fff4cc,#f2ca70 58%,#d99b2d)!important;
+  box-shadow:0 3px 14px rgba(246,190,70,.32),inset 0 1px 0 rgba(255,255,255,.8)!important;
+}
+.auth-card .field{
+  border:1px solid rgba(218,232,255,.46)!important;
+  border-radius:13px!important;
+  background:rgba(3,22,61,.34)!important;
+  box-shadow:inset 0 2px 9px rgba(0,0,0,.15),0 1px 0 rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(10px)!important;
+}
+.auth-card .field:focus{
+  outline:none!important;border-color:#f5d27c!important;
+  box-shadow:0 0 0 3px rgba(246,202,104,.17),0 0 20px rgba(246,202,104,.14)!important;
+}
+.auth-card .primary-button{
+  background:linear-gradient(180deg,#fff1b8 0%,#f5c95f 46%,#d9951d 100%)!important;
+  border:1px solid rgba(255,246,210,.95)!important;
+  box-shadow:0 7px 22px rgba(219,154,33,.30),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.auth-register-button{
+  border:1px solid rgba(255,224,151,.72)!important;
+  background:rgba(7,32,78,.34)!important;
+  backdrop-filter:blur(12px)!important;
+}
+.auth-credit{
+  border-top-color:rgba(255,226,160,.46)!important;
+  background:rgba(4,20,54,.22)!important;
+  backdrop-filter:blur(12px)!important;
+}
+@media(max-width:800px){
+  .auth-side{
+    background:linear-gradient(180deg,rgba(5,29,75,.54),rgba(3,17,47,.78))!important;
+    backdrop-filter:blur(16px) saturate(155%)!important;
+    -webkit-backdrop-filter:blur(16px) saturate(155%)!important;
+  }
+  .auth-card{border-radius:20px!important}
+}
