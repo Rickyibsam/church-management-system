@@ -5,17 +5,17 @@ import { supabase } from "../lib/supabase";
 type Church={id:string;church_code:string;display_name:string};
 type Module={module_key:string;label:string;group_name:string;icon_name:string;is_active:boolean;sort_order:number};
 type Settings=Record<string,unknown>;
-type Props={churches:Church[];call:(action:string,extra?:Record<string,unknown>)=>Promise<any>;onRefresh?:()=>Promise<void>};
+type Props={churches:Church[];call:(action:string,extra?:Record<string,unknown>)=>Promise<any>;onRefresh?:()=>Promise<void>;moduleCatalog:Array<{module_key:string;label:string;group_name:string;icon_name:string;sort_order:number}>};
 const defaults:Settings={brandTitle:"Church360",subtitle:"Church Management System",welcomeText:"Sign in to your church workspace",loginButtonText:"Sign In",churchIdLabel:"Church ID",usernameLabel:"Username",passwordLabel:"Password",fontFamily:"DM Sans",fontSize:13,headingSize:26,textColor:"#ffffff",accentColor:"#e5b95f",overlayColor:"#061436",overlayOpacity:72,cardPosition:"center",visualPosition:"left",showLogo:true,showWelcome:true,showFooter:true,footerText:"Copyright © 2026 NOSHAAB TECH. All Rights Reserved.",backgroundFit:"cover",logoUrl:"",logoPath:"",logoPosition:"footer",headingAlign:"center",welcomeAlign:"center",labelAlign:"left",footerAlign:"center"};
 const fonts=["DM Sans","Manrope","Arial","Georgia","Verdana","Tahoma","Trebuchet MS","system-ui"];
 const groups=["Overview","Administration","People","Records","Operations","Care","Finance","Insights","Support","General"];
-export default function PlatformConfiguration({churches,call,onRefresh}:Props){
+export default function PlatformConfiguration({churches,call,onRefresh,moduleCatalog}:Props){
  const [section,setSection]=useState<"modules"|"login"|"register">("modules"),[catalog,setCatalog]=useState<Module[]>([]),[assignments,setAssignments]=useState<Record<string,boolean>>({}),[churchId,setChurchId]=useState(""),[scope,setScope]=useState("global"),[settings,setSettings]=useState<Settings>(defaults);
  const [newKey,setNewKey]=useState(""),[newLabel,setNewLabel]=useState(""),[newGroup,setNewGroup]=useState("General"),[churchName,setChurchName]=useState(""),[churchEmail,setChurchEmail]=useState(""),[adminUsername,setAdminUsername]=useState(""),[adminPassword,setAdminPassword]=useState(""),[created,setCreated]=useState<{churchCode:string;username:string;password:string}|null>(null);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState("");
  async function load(church=churchId){
   setBusy(true);setError("");
-  try{const d=await call("module_configuration",church?{churchId:church}:{});setCatalog((d.catalog??[]).map((m:Module)=>({...m,is_active:m.is_active!==false})));setAssignments(Object.fromEntries((d.assignments??[]).map((x:{module_key:string;is_enabled:boolean})=>[x.module_key,x.is_enabled])));setSettings({...defaults,...(d.loginSettings??{}),...(scope==="church"?(d.churchLoginSettings??{}):{})});}
+  try{await call("sync_module_catalog",{moduleCatalog});const d=await call("module_configuration",church?{churchId:church}:{});setCatalog((d.catalog??[]).map((m:Module)=>({...m,is_active:m.is_active!==false})));setAssignments(Object.fromEntries((d.assignments??[]).map((x:{module_key:string;is_enabled:boolean})=>[x.module_key,x.is_enabled])));setSettings({...defaults,...(d.loginSettings??{}),...(scope==="church"?(d.churchLoginSettings??{}):{})});}
   catch(e){setError(e instanceof Error?e.message:"Unable to load configuration.");}finally{setBusy(false);}
  }
  useEffect(()=>{if(section!=="register")void load(churchId);},[churchId,section,scope]);
