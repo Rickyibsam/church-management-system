@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     if (action === "get_church_messages") {
       const { data, error } = await admin.from("platform_support_messages")
         .select("id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
-        .eq("church_id", churchId).order("created_at", { ascending: true }).limit(100);
+        .eq("church_id", churchId).order("created_at", { ascending: false }).limit(200);
       if (error) return reply({ error: "Unable to load support conversation history." }, 500);
       await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
         .eq("church_id", churchId).eq("direction", "outbound").eq("is_read", false);
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
         const { data: signed, error: signedError } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
         return { ...item, attachment_url: signedError ? null : signed?.signedUrl ?? null };
       }));
-      return reply({ messages });
+      return reply({ messages: messages.reverse() });
     }
     if (action === "mark_church_messages_read") {
       const { error } = await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
