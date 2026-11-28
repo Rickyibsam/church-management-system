@@ -555,11 +555,11 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 }
 
 
-/* User-provided full-bleed cross-at-sunset login background */
+/* Royal blue and gold full-screen login background: real cross at sunset photograph */
 .auth-visual{
- background-image:url("/church-login-cross-sunset.jpg?v=20261128")!important;
+ background-image:url("https://images.unsplash.com/photo-1656248899783-5d4d9adc42fb?auto=format&fit=crop&w=2400&q=85")!important;
  background-position:center center!important;
  background-size:cover!important;
  background-repeat:no-repeat!important;
 }
-@media(max-width:800px){.auth-visual{background-position:34% center!important}}
+@media(max-width:800px){.auth-visual{background-position:38% center!important}}
