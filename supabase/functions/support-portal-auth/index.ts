@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
       admin.from("churches").select("id", { count: "exact", head: true }),
       admin.from("members").select("id", { count: "exact", head: true }),
       admin.from("donations").select("id,amount,donated_at").gte("donated_at", from).lte("donated_at", to).limit(5000),
-      admin.from("expenses").select("id,amount,expense_date").gte("expense_date", from.slice(0,10)).lte("expense_date", to.slice(0,10)).limit(5000),
+      admin.from("expenses").select("id,amount,spent_at").gte("spent_at", from).lte("spent_at", to).limit(5000),
       admin.from("church_events").select("id", { count: "exact", head: true }),
       admin.from("certificates").select("id", { count: "exact", head: true })
     ]);
