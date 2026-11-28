@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
   let body: {
     action?: string; username?: string; password?: string; setupKey?: string;
-    churchId?: string; status?: string; targetUserId?: string; backupId?: string; planName?: string;
+    churchId?: string; status?: string; targetUserId?: string; newPassword?: string; backupId?: string; planName?: string;
     monthlyFee?: number; currencyCode?: string; billingCycle?: string;
     frequency?: string; runTime?: string; timezone?: string; retentionCount?: number;
     from?: string; to?: string;
