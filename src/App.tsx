@@ -240,7 +240,7 @@ function App() {
 
   const verificationToken = new URLSearchParams(window.location.search).get("verify");
   if (verificationToken) return <CertificateVerify token={verificationToken}/>;
-  if (supportOwner) return <SupportPortal username={userEmail ?? "Support Owner"} onSignOut={signOut}/>;
+  if (supportOwner) return <SupportPortal username={userEmail ?? "Support Owner"} onSignOut={signOut} moduleCatalog={nav.map((item,index)=>({module_key:item.key,label:item.label,group_name:item.group,icon_name:"LayoutDashboard",sort_order:(index+1)*10}))}/>;
 
   return <div className="app-shell">
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
