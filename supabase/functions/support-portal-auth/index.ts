@@ -267,7 +267,7 @@ Deno.serve(async (req) => {
       return reply({ error: "Enter a valid backup schedule." }, 400);
     const { error } = await admin.from("platform_backup_schedules").upsert({
       church_id: churchId, is_enabled: true, frequency, run_time: runTime, timezone, retention_count: retentionCount,
-      updated_by: auth.user.id, updated_at: new Date().toISOString()
+      next_run_at: new Date(Date.now() + 60000).toISOString(), updated_by: auth.user.id, updated_at: new Date().toISOString()
     }, { onConflict: "church_id" });
     if (error) return reply({ error: "Unable to save backup schedule." }, 500);
     return reply({ message: "Backup schedule saved. Automatic execution will be enabled after the backup worker is deployed and verified." });
