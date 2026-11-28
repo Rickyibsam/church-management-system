@@ -123,12 +123,11 @@ Deno.serve(async (req) => {
       if (error) return reply({ error: "Unable to load support conversation history." }, 500);
       await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
         .eq("church_id", churchId).eq("direction", "outbound").eq("is_read", false);
-      const paths = [...new Set((data ?? []).map(item => item.attachment_path).filter((path): path is string => Boolean(path)))];
-      const { data: signedFiles } = paths.length
-        ? await admin.storage.from("support-attachments").createSignedUrls(paths, 3600)
-        : { data: [] };
-      const urlMap = new Map((signedFiles ?? []).map(file => [file.path, file.signedUrl]));
-      const messages = (data ?? []).map(item => ({ ...item, attachment_url: item.attachment_path ? urlMap.get(item.attachment_path) ?? null : null }));
+      const messages = await Promise.all((data ?? []).map(async item => {
+        if (!item.attachment_path) return { ...item, attachment_url: null };
+        const { data: signed, error: signedError } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
+        return { ...item, attachment_url: signedError ? null : signed?.signedUrl ?? null };
+      }));
       return reply({ messages });
     }
     if (action === "mark_church_messages_read") {
@@ -141,7 +140,7 @@ Deno.serve(async (req) => {
       const fileName = String((body as Record<string, unknown>).fileName ?? "attachment").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
       const mimeType = String((body as Record<string, unknown>).mimeType ?? "");
       const size = Number((body as Record<string, unknown>).fileSize ?? 0);
-      const allowed = ["audio/webm","audio/ogg","audio/mp4","audio/mpeg","image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","video/mp4","video/webm"];
+      const allowed = ["audio/webm","audio/ogg","audio/mp4","audio/mpeg","audio/wav","audio/aac","image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","video/mp4","video/webm"];
       if (!allowed.includes(mimeType) || !Number.isFinite(size) || size < 1 || size > 52428800)
         return reply({ error: "This file type is not supported or the file exceeds 50 MB." }, 400);
       const path = churchId + "/" + authData.user.id + "/" + crypto.randomUUID() + "-" + fileName;
@@ -437,12 +436,11 @@ Deno.serve(async (req) => {
       .select("id,church_id,sender_user_id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
       .order("created_at", { ascending: false }).limit(200);
     if (error) return reply({ error: "Unable to load support inbox." }, 500);
-    const paths = [...new Set((data ?? []).map(item => item.attachment_path).filter((path): path is string => Boolean(path)))];
-    const { data: signedFiles } = paths.length
-      ? await admin.storage.from("support-attachments").createSignedUrls(paths, 3600)
-      : { data: [] };
-    const urlMap = new Map((signedFiles ?? []).map(file => [file.path, file.signedUrl]));
-    const messages = (data ?? []).map(item => ({ ...item, attachment_url: item.attachment_path ? urlMap.get(item.attachment_path) ?? null : null }));
+    const messages = await Promise.all((data ?? []).map(async item => {
+      if (!item.attachment_path) return { ...item, attachment_url: null };
+      const { data: signed, error: signedError } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
+      return { ...item, attachment_url: signedError ? null : signed?.signedUrl ?? null };
+    }));
     return reply({ messages });
   }
 
