@@ -82,12 +82,19 @@ Deno.serve(async(req)=>{
    await admin.from("platform_backup_schedules").update({next_run_at:next.toISOString(),updated_at:new Date().toISOString()}).eq("church_id",schedule.church_id);
    const keep=Number(schedule.retention_count??7);
    const {data:oldRuns}=await admin.from("platform_backup_runs").select("id,storage_path").eq("church_id",schedule.church_id).eq("status","completed").order("created_at",{ascending:false}).range(keep,999);
+   async function removeBackupTree(prefix:string):Promise<void>{
+    const {data:items}=await admin.storage.from("platform-backups").list(prefix,{limit:1000});
+    const files:string[]=[];
+    for(const item of items??[]){
+     const itemPath=prefix+"/"+item.name;
+     if(!item.id)await removeBackupTree(itemPath);
+     else files.push(itemPath);
+    }
+    if(files.length)await admin.storage.from("platform-backups").remove(files);
+   }
    for(const oldRun of oldRuns??[]){
-    const removePaths:string[]=[];
-    if(oldRun.storage_path)removePaths.push(oldRun.storage_path);
-    const {data:oldFiles}=await admin.storage.from("platform-backups").list(schedule.church_id+"/"+oldRun.id,{limit:1000});
-    for(const file of oldFiles??[])if(file.id)removePaths.push(schedule.church_id+"/"+oldRun.id+"/"+file.name);
-    if(removePaths.length)await admin.storage.from("platform-backups").remove(removePaths);
+    if(oldRun.storage_path)await admin.storage.from("platform-backups").remove([oldRun.storage_path]);
+    await removeBackupTree(schedule.church_id+"/"+oldRun.id);
     await admin.from("platform_backup_runs").update({status:"expired"}).eq("id",oldRun.id);
    }
    results.push({churchId:schedule.church_id,status:"completed",records:recordCount,path});
