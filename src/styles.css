@@ -954,3 +954,32 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 @media(max-width:640px){.support-page-heading{align-items:flex-start;flex-direction:column}.church-support-inbox-page .church-support-history{max-height:65vh}}
 
 .support-audio-attachment{display:grid;gap:8px;max-width:100%;margin-top:10px}.support-audio-attachment audio{display:block;width:min(100%,420px);max-width:100%;min-height:40px}.support-audio-attachment a{width:max-content;max-width:100%;font-size:13px}
+
+
+/* Support Portal platform configuration */
+.platform-config{display:grid;gap:16px}
+.platform-config-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}
+.platform-config-tabs button{border:1px solid #dce3ed;background:#fff;color:#40536c;padding:10px 14px;border-radius:9px;font-size:11px;font-weight:700}
+.platform-config-tabs button.active{background:#193554;color:#fff;border-color:#193554}
+.platform-config .form-grid{margin-top:16px}
+.platform-config .form-grid>label{display:block;font-size:10px;font-weight:700;color:#526176;margin:8px 0}
+.platform-config .form-grid>label span{display:block;margin-bottom:6px}
+.platform-config .module-toggle-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0}
+.platform-config .module-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e4eaf1;border-radius:9px;background:#fbfcfe}
+.platform-config .module-toggle b,.platform-config .module-toggle small{display:block}
+.platform-config .module-toggle b{font-size:11px;color:#263b56}
+.platform-config .module-toggle small{font-size:9px;color:#8996a8;margin-top:4px}
+.platform-config .module-toggle input{width:17px;height:17px;accent-color:#1d4d78}
+.platform-config .upload-wallpaper{display:flex;align-items:center;gap:8px;margin:16px 0;padding:12px;border:1px dashed #9aadc2;border-radius:9px;color:#395b7c;font-size:11px;font-weight:700;cursor:pointer}
+.platform-config .upload-wallpaper input{max-width:220px;font-size:10px}
+.platform-config .wallpaper-thumb{display:flex;align-items:center;gap:12px;margin:12px 0}
+.platform-config .wallpaper-thumb img{width:150px;height:82px;object-fit:cover;border-radius:8px;border:1px solid #dce3ed}
+.platform-config .login-preview{min-height:300px;display:grid;place-items:center;padding:20px;border-radius:12px;background-color:#102a53;background-size:cover;background-position:center;border:1px solid #dce3ed}
+.platform-config .login-preview-card{width:min(100%,330px);padding:22px;border:1px solid #e4c67e;border-radius:14px;background:rgba(6,26,62,.88);color:white;box-shadow:0 12px 35px #0005}
+.platform-config .login-preview-card small{font-size:9px;letter-spacing:1.5px;color:#f3d37d}
+.platform-config .login-preview-card h3{margin:9px 0 4px}
+.platform-config .login-preview-card p{font-size:11px}
+.platform-config .preview-field{padding:9px 10px;margin:7px 0;border:1px solid #ffffff40;border-radius:6px;font-size:10px;color:#e8edf5}
+.platform-config .login-preview-card button{width:100%;margin-top:10px;border:0;border-radius:20px;padding:10px;color:#082653;font-weight:800}
+@media(max-width:900px){.platform-config .module-toggle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.platform-config .module-toggle-grid{grid-template-columns:1fr}.platform-config-tabs button{flex:1}}
