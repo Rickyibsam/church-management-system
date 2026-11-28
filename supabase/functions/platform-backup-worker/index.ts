@@ -2,6 +2,29 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json"}});
+function localParts(date:Date,timeZone:string){
+ const parts=new Intl.DateTimeFormat("en-CA",{timeZone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(date);
+ const get=(key:string)=>Number(parts.find(p=>p.type===key)?.value??0);
+ return {year:get("year"),month:get("month"),day:get("day")};
+}
+function localDateTimeToUtc(dateText:string,timeText:string,timeZone:string){
+ const [year,month,day]=dateText.split("-").map(Number);
+ const [hour,minute]=timeText.slice(0,5).split(":").map(Number);
+ const naive=Date.UTC(year,month-1,day,hour,minute,0);
+ const parts=new Intl.DateTimeFormat("en-CA",{timeZone,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date(naive));
+ const get=(key:string)=>Number(parts.find(p=>p.type===key)?.value??0);
+ const asUtc=Date.UTC(get("year"),get("month")-1,get("day"),get("hour"),get("minute"),get("second"));
+ return new Date(naive-(asUtc-naive));
+}
+function nextScheduledRun(frequency:string,runTime:string,timeZone:string){
+ const now=new Date();const local=localParts(now,timeZone);
+ let day=new Date(Date.UTC(local.year,local.month-1,local.day));
+ if(frequency==="daily")day.setUTCDate(day.getUTCDate()+1);
+ else if(frequency==="weekly")day.setUTCDate(day.getUTCDate()+7);
+ else {const targetMonth=day.getUTCMonth()+1;day.setUTCDate(1);day.setUTCMonth(targetMonth);const lastDay=new Date(Date.UTC(day.getUTCFullYear(),day.getUTCMonth()+1,0)).getUTCDate();day.setUTCDate(Math.min(local.day,lastDay));}
+ const dateText=day.getUTCFullYear()+"-"+String(day.getUTCMonth()+1).padStart(2,"0")+"-"+String(day.getUTCDate()).padStart(2,"0");
+ return localDateTimeToUtc(dateText,runTime,timeZone);
+}
 Deno.serve(async(req)=>{
  if(req.method!=="POST")return reply({error:"Method not allowed."},405);
  const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -36,14 +59,8 @@ Deno.serve(async(req)=>{
     records_included:recordCount,completed_at:new Date().toISOString()
    }).eq("id",run.id);
    if(updateError)throw new Error("Backup completed but run status could not be saved.");
-   const next=new Date();
-   const frequency=schedule.frequency;
-   if(frequency==="daily")next.setUTCDate(next.getUTCDate()+1);
-   else if(frequency==="weekly")next.setUTCDate(next.getUTCDate()+7);
-   else next.setUTCMonth(next.getUTCMonth()+1);
-   const [hh,mm]=String(schedule.run_time??"02:00").slice(0,5).split(":").map(Number);
-   next.setUTCHours(hh,mm,0,0);
-   if(next.getTime()<=Date.now())next.setTime(Date.now()+(frequency==="daily"?86400000:frequency==="weekly"?604800000:2592000000));
+   const next=nextScheduledRun(schedule.frequency,String(schedule.run_time??"02:00"),String(schedule.timezone??"Asia/Karachi"));
+   if(next.getTime()<=Date.now())throw new Error("The next backup time could not be calculated.");
    await admin.from("platform_backup_schedules").update({next_run_at:next.toISOString(),updated_at:new Date().toISOString()}).eq("church_id",schedule.church_id);
    const {data:files}=await admin.storage.from("platform-backups").list(schedule.church_id,{limit:1000,sortBy:{column:"created_at",order:"desc"}});
    const keep=Number(schedule.retention_count??7);
