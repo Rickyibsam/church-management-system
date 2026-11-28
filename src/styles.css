@@ -197,8 +197,7 @@ body{background:#f3f6fc;color:#172a49}
 .dashboard-alert-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
 .dashboard-alert-copy b{font-size:11px;color:#304863}
 .dashboard-alert-copy small{font-size:10px;line-height:1.45;color:#7c899b}
-.dashboard-alert-open{font-size:10px;font-weight:700;color:#4b6889}
-@media(max-width:760px){.dashboard-alerts{padding:4px 10px}.dashboard-alert{gap:9px}.dashboard-alert-copy small{font-size:9px}}
+.dashboard-alert-open{font-size:10px;font-weight:700;color:#4b6889}@media(max-width:760px){.dashboard-alerts{padding:4px 10px}.dashboard-alert{gap:9px}.dashboard-alert-copy small{font-size:9px}}
 
 
 /* Church360 inspirational split-screen authentication */
@@ -397,8 +396,7 @@ body{background:#f3f6fc;color:#172a49}
 .church360-login-page{
  width:100%!important;max-width:1440px!important;height:100vh!important;min-height:620px!important;max-height:900px!important;
  display:grid!important;grid-template-columns:1.02fr .98fr!important;overflow:hidden!important;
- border:2px solid #f2d58e!important;border-radius:18px!important;background:#082354!important;
- box-shadow:0 20px 70px rgba(0,0,0,.5)!important
+ border:2px solid #f2d58e!important;border-radius:18px!important;background:#082354!important; box-shadow:0 20px 70px rgba(0,0,0,.5)!important
 }
 .auth-visual{
  min-width:0!important;min-height:0!important;position:relative!important;
@@ -559,7 +557,7 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 
 /* Church360 modern church sunrise background — royal blue and gold */
 .auth-visual{
- background-image:url("/church360-modern-church.svg?v=20261126")!important;
+ background-image:url("/church360-modern-church.svg?v=20261128")!important;
  background-position:center center!important;
  background-size:cover!important;
  background-repeat:no-repeat!important;
