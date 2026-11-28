@@ -121,9 +121,9 @@ function App() {
         supabase.from("platform_module_catalog").select("module_key,is_active")
       ]);
       if (!alive) return;
-      const activeCatalog = new Set((catalog ?? []).filter(x => x.is_active).map(x => x.module_key));
-      const enabledRows = (assigned ?? []).filter(x => x.is_enabled && activeCatalog.has(x.module_key)).map(x => x.module_key);
-      setEnabledModuleKeys(assigned?.length ? enabledRows : null);
+      const assignedMap = new Map((assigned ?? []).map(x => [x.module_key, x.is_enabled]));
+      const enabledRows = (catalog ?? []).filter(x => x.is_active && assignedMap.get(x.module_key) !== false).map(x => x.module_key);
+      setEnabledModuleKeys(enabledRows);
     }
     void loadChurchModules();
     return () => { alive = false; };
