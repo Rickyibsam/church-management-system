@@ -1,7 +1,7 @@
 export type ModuleKey =
   | "dashboard" | "churches" | "team" | "members" | "families" | "certificates"
   | "documents" | "attendance" | "ministries" | "events" | "pastoral"
-  | "finance" | "donations" | "assets" | "reports" | "settings" | "support";
+  | "finance" | "donations" | "donationTypes" | "assets" | "reports" | "settings" | "support";
 
 export type CertificateType =
   | "marriage" | "birth" | "death" | "baptism" | "family"
