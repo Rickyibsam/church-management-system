@@ -98,6 +98,56 @@ Deno.serve(async (req) => {
     return reply({ session: data.session, username: account.username, mode: "support_owner", message: "Signed in successfully." });
   }
 
+  if (action === "create_church_attachment_upload" || action === "send_church_message") {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!token) return reply({ error: "Church user authentication is required." }, 401);
+    const client = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: authData, error: authError } = await client.auth.getUser(token);
+    if (authError || !authData.user) return reply({ error: "Your church session is invalid or expired." }, 401);
+    const churchId = body.churchId?.trim();
+    if (!churchId) return reply({ error: "Church workspace is required." }, 400);
+    const [{ data: membership }, { data: account }, { data: control }] = await Promise.all([
+      admin.from("church_members").select("status").eq("church_id", churchId).eq("user_id", authData.user.id).maybeSingle(),
+      admin.from("church_login_accounts").select("username,is_active").eq("church_id", churchId).eq("user_id", authData.user.id).maybeSingle(),
+      admin.from("platform_church_controls").select("access_status").eq("church_id", churchId).maybeSingle()
+    ]);
+    if (!membership || membership.status !== "active" || !account?.is_active || control?.access_status === "suspended")
+      return reply({ error: "This church account is not active." }, 403);
+
+    if (action === "create_church_attachment_upload") {
+      const fileName = String((body as Record<string, unknown>).fileName ?? "attachment").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
+      const mimeType = String((body as Record<string, unknown>).mimeType ?? "");
+      const size = Number((body as Record<string, unknown>).fileSize ?? 0);
+      const allowed = ["audio/webm","audio/ogg","audio/mp4","audio/mpeg","image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","video/mp4","video/webm"];
+      if (!allowed.includes(mimeType) || !Number.isFinite(size) || size < 1 || size > 52428800)
+        return reply({ error: "This file type is not supported or the file exceeds 50 MB." }, 400);
+      const path = churchId + "/" + authData.user.id + "/" + crypto.randomUUID() + "-" + fileName;
+      const { data, error } = await admin.storage.from("support-attachments").createSignedUploadUrl(path);
+      if (error || !data) return reply({ error: "Unable to prepare a secure attachment upload." }, 500);
+      return reply({ path, token: data.token });
+    }
+
+    const message = String((body as Record<string, unknown>).message ?? "").trim();
+    const kind = String((body as Record<string, unknown>).messageKind ?? "text");
+    const path = String((body as Record<string, unknown>).attachmentPath ?? "");
+    const fileName = String((body as Record<string, unknown>).attachmentName ?? "");
+    const mimeType = String((body as Record<string, unknown>).attachmentMimeType ?? "");
+    const size = Number((body as Record<string, unknown>).attachmentSize ?? 0);
+    if (!message && !path) return reply({ error: "Write a message or attach a file." }, 400);
+    if (!["text","voice"].includes(kind)) return reply({ error: "Unsupported message type." }, 400);
+    if (path && !path.startsWith(churchId + "/" + authData.user.id + "/"))
+      return reply({ error: "The attachment does not belong to this account." }, 403);
+    const { error } = await admin.from("platform_support_messages").insert({
+      church_id: churchId, sender_user_id: authData.user.id, sender_label: account.username,
+      direction: "inbound", message_kind: kind, body: message || null,
+      attachment_path: path || null, attachment_name: fileName || null,
+      attachment_mime_type: mimeType || null, attachment_size_bytes: size || null
+    });
+    if (error) return reply({ error: "Unable to send the support message." }, 500);
+    return reply({ message: "Your message was sent to the Support Owner." });
+  }
+
   const auth = await requireOwner();
   if (auth.error || !auth.user) return reply({ error: auth.error }, 403);
 
@@ -237,7 +287,12 @@ Deno.serve(async (req) => {
       .select("id,church_id,sender_user_id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
       .order("created_at", { ascending: false }).limit(100);
     if (error) return reply({ error: "Unable to load support inbox." }, 500);
-    return reply({ messages: data ?? [] });
+    const messages = await Promise.all((data ?? []).map(async (item) => {
+      if (!item.attachment_path) return item;
+      const { data: signed } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
+      return { ...item, attachment_url: signed?.signedUrl ?? null };
+    }));
+    return reply({ messages });
   }
 
   if (action === "mark_message_read") {
