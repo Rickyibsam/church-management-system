@@ -103,7 +103,7 @@ function App() {
   const [loginSettings, setLoginSettings] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
-    if (!supabase || !authOpen) return;
+    if (!supabase) return;
     let alive = true;
     const timer = window.setTimeout(async () => {
       const { data } = await supabase!.functions.invoke("support-portal-auth", { body: { action: "public_login_settings", churchCode: loginChurchCode } });
@@ -111,6 +111,14 @@ function App() {
     }, 250);
     return () => { alive = false; window.clearTimeout(timer); };
   }, [loginChurchCode, authOpen]);
+
+  useEffect(() => {
+    const href = String(loginSettings.faviconUrl || "/cross-favicon.svg");
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+    link.href = href;
+    link.type = href.toLowerCase().includes(".svg") ? "image/svg+xml" : href.toLowerCase().includes(".webp") ? "image/webp" : href.toLowerCase().includes(".png") ? "image/png" : "image/jpeg";
+  }, [loginSettings.faviconUrl]);
 
   useEffect(() => {
     let alive = true;
