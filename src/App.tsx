@@ -113,6 +113,10 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (authMode === "support" && !supportOwner && supabase) void supabase.functions.invoke("support-portal-auth", { body: { action: "warmup" } });
+  }, [authMode, supportOwner]);
+
+  useEffect(() => {
     let alive = true;
     async function loadWorkspace() {
       if (!supabase || !userEmail) { setChurchId(null); setChurchName(""); return; }
