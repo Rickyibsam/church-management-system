@@ -303,6 +303,31 @@ Deno.serve(async (req) => {
     return reply({ message: "Message marked as read." });
   }
 
+  if (action === "query_records") {
+    const table = String((body as Record<string, unknown>).table ?? "");
+    const churchId = String((body as Record<string, unknown>).churchId ?? "");
+    const search = String((body as Record<string, unknown>).search ?? "").trim().slice(0, 100);
+    const configs: Record<string, { columns: string; search: string[]; date: string }> = {
+      churches: { columns: "id,display_name,church_code,email,phone,created_at", search: ["display_name","church_code","email"], date: "created_at" },
+      church_branches: { columns: "id,church_id,name,branch_code,is_head_office,is_active,created_at", search: ["name","branch_code"], date: "created_at" },
+      members: { columns: "id,church_id,member_number,first_name,last_name,phone,email,membership_status,joined_on,created_at", search: ["first_name","last_name","member_number","phone"], date: "created_at" },
+      families: { columns: "id,church_id,family_number,family_name,phone,address,created_at", search: ["family_name","family_number","phone"], date: "created_at" },
+      donations: { columns: "id,church_id,donor_name,donation_type,amount,currency_code,donated_at,receipt_number,payment_method", search: ["donor_name","receipt_number","donation_type"], date: "donated_at" },
+      expenses: { columns: "id,church_id,expense_category,description,amount,currency_code,spent_at,status", search: ["description","expense_category"], date: "spent_at" },
+      certificates: { columns: "id,church_id,registration_number,certificate_type,status,primary_person_name,secondary_person_name,event_date,created_at", search: ["registration_number","primary_person_name","secondary_person_name"], date: "created_at" },
+      church_events: { columns: "id,church_id,title,event_type,starts_at,location,created_at", search: ["title","event_type","location"], date: "starts_at" },
+      attendance_records: { columns: "id,church_id,visitor_name,check_in_at,attendance_method,notes", search: ["visitor_name","notes"], date: "check_in_at" }
+    };
+    const config = configs[table];
+    if (!config) return reply({ error: "Choose a supported report dataset." }, 400);
+    let query = admin.from(table).select(config.columns).order(config.date, { ascending: false }).limit(100);
+    if (churchId && table !== "churches") query = query.eq("church_id", churchId);
+    if (search) query = query.or(config.search.map(column => column + ".ilike.%" + search.replace(/[,%()]/g, " ") + "%").join(","));
+    const { data, error } = await query;
+    if (error) return reply({ error: "Unable to run this query. Check the selected filters." }, 400);
+    return reply({ rows: data ?? [], columns: config.columns.split(","), rowCount: data?.length ?? 0, limit: 100 });
+  }
+
   if (action === "report") {
     const from = body.from ? new Date(body.from).toISOString() : new Date(Date.now() - 30 * 86400000).toISOString();
     const to = body.to ? new Date(body.to).toISOString() : new Date().toISOString();
