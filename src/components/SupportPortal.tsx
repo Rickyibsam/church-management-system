@@ -26,7 +26,7 @@ export default function SupportPortal({username,onSignOut}:{username:string;onSi
  async function loadInbox(){const d=await call("inbox");setMessages(d.messages??[]);}
  async function refresh(){setBusy(true);setError("");try{if(tab==="users"&&selected)await loadUsers(selected);else if(tab==="backups")await loadBackups(selected||undefined);else if(tab==="inbox")await loadInbox();else await loadOverview();}catch(e){setError(e instanceof Error?e.message:"Unable to refresh portal.");}finally{setBusy(false);}}
  useEffect(()=>{void refresh();},[tab]);
- useEffect(()=>{if(selected){const c=churches.find(x=>x.id===selected);if(c){setFee(String(c.monthly_fee??0));setPlan(c.plan_name||"Free");setCycle(c.billing_cycle||"free");}if(tab==="users")void loadUsers(selected).catch(e=>setError(e.message));if(tab==="backups")void loadBackups(selected).catch(e=>setError(e.message));}},[selected,tab,churches]);
+ useEffect(()=>{setBulkCredentials([]);setTempPassword("");if(selected){const c=churches.find(x=>x.id===selected);if(c){setFee(String(c.monthly_fee??0));setPlan(c.plan_name||"Free");setCycle(c.billing_cycle||"free");}if(tab==="users")void loadUsers(selected).catch(e=>setError(e.message));if(tab==="backups")void loadBackups(selected).catch(e=>setError(e.message));}},[selected,tab,churches]);
  const selectedChurch=churches.find(c=>c.id===selected);
  const visible=useMemo(()=>churches.filter(c=>(c.display_name+" "+c.church_code+" "+(c.email??"")).toLowerCase().includes(search.toLowerCase())),[churches,search]);
  const active=churches.filter(c=>c.access_status!=="suspended").length;
