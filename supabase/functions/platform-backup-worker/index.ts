@@ -46,6 +46,24 @@ Deno.serve(async(req)=>{
   try{
    const {data:payload,error:exportError}=await admin.rpc("platform_export_church_backup",{p_church_id:schedule.church_id});
    if(exportError||!payload)throw new Error("Church data export failed.");
+   const storageFiles:Array<{bucket:string;source_path:string;backup_path:string;content_type:string;size:number}>=[];
+   async function copyStorageTree(bucket:string,prefix:string,depth=0):Promise<void>{
+    if(depth>8)throw new Error("Storage folder nesting is too deep.");
+    const {data:items,error:listError}=await admin.storage.from(bucket).list(prefix,{limit:1000});
+    if(listError)throw new Error("Unable to list church attachment files.");
+    for(const item of items??[]){
+     const sourcePath=prefix+"/"+item.name;
+     if(!item.id){await copyStorageTree(bucket,sourcePath,depth+1);continue;}
+     const {data:file,error:downloadError}=await admin.storage.from(bucket).download(sourcePath);
+     if(downloadError||!file)throw new Error("Unable to read a church attachment for backup.");
+     const backupPath=schedule.church_id+"/"+run.id+"/files/"+bucket+"/"+sourcePath.slice(schedule.church_id.length+1);
+     const {error:copyError}=await admin.storage.from("platform-backups").upload(backupPath,file,{contentType:file.type||"application/octet-stream",upsert:false});
+     if(copyError)throw new Error("Unable to copy a church attachment into backup storage.");
+     storageFiles.push({bucket,source_path:sourcePath,backup_path:backupPath,content_type:file.type||"application/octet-stream",size:file.size});
+    }
+   }
+   for(const bucket of ["church-branding","church-private-documents"])await copyStorageTree(bucket,schedule.church_id);
+   payload.storage_files=storageFiles;
    const json=JSON.stringify(payload);
    const bytes=new TextEncoder().encode(json);
    const stamp=new Date().toISOString().replace(/[:.]/g,"-");
@@ -55,17 +73,23 @@ Deno.serve(async(req)=>{
    const tables=payload.tables??{};
    const recordCount=Object.values(tables).reduce((n,value)=>n+(Array.isArray(value)?value.length:0),0);
    const {error:updateError}=await admin.from("platform_backup_runs").update({
-    status:"completed",storage_path:path,file_size_bytes:bytes.length,tables_included:Object.keys(tables).length,
+    status:"completed",storage_path:path,file_size_bytes:bytes.length+storageFiles.reduce((n,file)=>n+file.size,0),tables_included:Object.keys(tables).length,
     records_included:recordCount,completed_at:new Date().toISOString()
    }).eq("id",run.id);
    if(updateError)throw new Error("Backup completed but run status could not be saved.");
    const next=nextScheduledRun(schedule.frequency,String(schedule.run_time??"02:00"),String(schedule.timezone??"Asia/Karachi"));
    if(next.getTime()<=Date.now())throw new Error("The next backup time could not be calculated.");
    await admin.from("platform_backup_schedules").update({next_run_at:next.toISOString(),updated_at:new Date().toISOString()}).eq("church_id",schedule.church_id);
-   const {data:files}=await admin.storage.from("platform-backups").list(schedule.church_id,{limit:1000,sortBy:{column:"created_at",order:"desc"}});
    const keep=Number(schedule.retention_count??7);
-   const old=(files??[]).slice(keep).map(file=>schedule.church_id+"/"+file.name);
-   if(old.length)await admin.storage.from("platform-backups").remove(old);
+   const {data:oldRuns}=await admin.from("platform_backup_runs").select("id,storage_path").eq("church_id",schedule.church_id).eq("status","completed").order("created_at",{ascending:false}).range(keep,999);
+   for(const oldRun of oldRuns??[]){
+    const removePaths:string[]=[];
+    if(oldRun.storage_path)removePaths.push(oldRun.storage_path);
+    const {data:oldFiles}=await admin.storage.from("platform-backups").list(schedule.church_id+"/"+oldRun.id,{limit:1000});
+    for(const file of oldFiles??[])if(file.id)removePaths.push(schedule.church_id+"/"+oldRun.id+"/"+file.name);
+    if(removePaths.length)await admin.storage.from("platform-backups").remove(removePaths);
+    await admin.from("platform_backup_runs").update({status:"expired"}).eq("id",oldRun.id);
+   }
    results.push({churchId:schedule.church_id,status:"completed",records:recordCount,path});
   }catch(error){
    await admin.from("platform_backup_runs").update({status:"failed",error_message:error instanceof Error?error.message:"Backup failed.",completed_at:new Date().toISOString()}).eq("id",run.id);
