@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
   };
   try { body = await req.json(); } catch { return reply({ error: "Invalid request body." }, 400); }
   const action = body.action;
+  if (action === "warmup") return reply({ ready: true });
 
   async function requireOwner() {
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -120,6 +121,8 @@ Deno.serve(async (req) => {
         .select("id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
         .eq("church_id", churchId).order("created_at", { ascending: true }).limit(100);
       if (error) return reply({ error: "Unable to load support conversation history." }, 500);
+      await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("church_id", churchId).eq("direction", "outbound").eq("is_read", false);
       const messages = await Promise.all((data ?? []).map(async item => {
         if (!item.attachment_path) return item;
         const { data: signed } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
