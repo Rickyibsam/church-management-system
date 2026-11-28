@@ -985,3 +985,27 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 @media(max-width:560px){.platform-config .module-toggle-grid{grid-template-columns:1fr}.platform-config-tabs button{flex:1}}
 
 .church360-login-page .custom-login-wallpaper::before,.church360-login-page .custom-login-wallpaper::after{display:none}
+
+
+/* Uploaded login wallpaper must override the legacy hard-coded scenic background. */
+.church360-login-page .auth-visual.custom-login-wallpaper{
+  background:none!important;
+  overflow:hidden!important;
+}
+.church360-login-page .auth-visual.custom-login-wallpaper::before,
+.church360-login-page .auth-visual.custom-login-wallpaper::after{
+  display:none!important;
+  content:none!important;
+}
+.church360-login-page .auth-visual.custom-login-wallpaper .login-wallpaper-image{
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+}
