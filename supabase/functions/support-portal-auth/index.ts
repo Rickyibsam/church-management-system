@@ -227,6 +227,20 @@ Deno.serve(async (req) => {
     return reply({ message: status === "suspended" ? "Church access suspended. Its saved account states can be restored when reactivated." : "Church access reactivated using its saved account states." });
   }
 
+  if (action === "set_user_password") {
+    const churchId = body.churchId?.trim();
+    const targetUserId = body.targetUserId?.trim();
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+    if (!churchId || !targetUserId) return reply({ error: "Select a church user first." }, 400);
+    if (newPassword.length < 12 || newPassword.length > 128) return reply({ error: "Password must be between 12 and 128 characters." }, 400);
+    const { data: target, error: targetError } = await admin.from("church_login_accounts")
+      .select("user_id,username").eq("church_id", churchId).eq("user_id", targetUserId).maybeSingle();
+    if (targetError || !target) return reply({ error: "The selected user does not belong to this church." }, 404);
+    const { error: updateError } = await admin.auth.admin.updateUserById(targetUserId, { password: newPassword });
+    if (updateError) return reply({ error: "Password update failed. Please try again." }, 400);
+    return reply({ message: "New password saved for " + target.username + ". The user can now sign in with this password." });
+  }
+
   if (action === "reset_user_password") {
     const churchId = body.churchId?.trim();
     const targetUserId = body.targetUserId?.trim();
