@@ -13,9 +13,9 @@ Deno.serve(async req => {
   try { body=await req.json(); } catch { return reply({error:"Invalid request body."},400); }
   const churchName=body.churchName?.trim(), churchEmail=body.churchEmail?.trim().toLowerCase(), username=body.username?.trim(), password=body.password??"";
   const emailAt=churchEmail?.indexOf("@")??-1, emailDot=churchEmail?.lastIndexOf(".")??-1;
-  const emailValid=!!churchEmail&&emailAt>0&&emailAt===churchEmail.lastIndexOf("@")&&emailDot>emailAt+1&&emailDot<churchEmail.length-1&&![...churchEmail].some(ch=>ch.charCodeAt(0)<=32);
-  if (!churchName || churchName.length>160 || !churchEmail || churchEmail.length>254 || !emailValid || !username || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,29}$/.test(username) || password.length<12 || password.length>128)
-    return reply({error:"Enter a church name, valid official email, a 3–30 character username, and a password of at least 12 characters."},400);
+  const emailValid=!churchEmail || (emailAt>0&&emailAt===churchEmail.lastIndexOf("@")&&emailDot>emailAt+1&&emailDot<churchEmail.length-1&&![...churchEmail].some(ch=>ch.charCodeAt(0)<=32));
+  if (!churchName || churchName.length>160 || (churchEmail && (churchEmail.length>254 || !emailValid)) || !username || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,29}$/.test(username) || password.length<12 || password.length>128)
+    return reply({error:"Enter a church name, an optional valid church email, a 3–30 character username, and a password of at least 12 characters."},400);
   const admin=createClient(url,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}});
   const authEmail="u-"+crypto.randomUUID()+"@login.church360.invalid";
   const {data:created,error:createError}=await admin.auth.admin.createUser({email:authEmail,password,email_confirm:true,user_metadata:{display_name:body.displayName?.trim()||username,username}});
@@ -26,8 +26,10 @@ Deno.serve(async req => {
   const country=(body.countryCode||"PK").toUpperCase(), currency=(body.currencyCode||"PKR").toUpperCase();
   const {data:churchId,error:churchError}=await admin.rpc("create_church",{p_owner_user_id:created.user.id,p_legal_name:churchName,p_display_name:churchName,p_country_code:country,p_currency_code:currency,p_timezone:body.timezone||(country==="PK"?"Asia/Karachi":"UTC")});
   if (churchError || !churchId) { await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Church registration could not be completed."},400); }
-  const {error:emailError}=await admin.from("churches").update({email:churchEmail}).eq("id",churchId);
-  if (emailError) { await admin.from("churches").delete().eq("id",churchId); await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Unable to save the church email address."},400); }
+  if (churchEmail) {
+    const {error:emailError}=await admin.from("churches").update({email:churchEmail}).eq("id",churchId);
+    if (emailError) { await admin.from("churches").delete().eq("id",churchId); await admin.auth.admin.deleteUser(created.user.id); return reply({error:"Unable to save the church email address."},400); }
+  }
   const {error:mapError}=await admin.from("church_login_accounts").insert({church_id:churchId,user_id:created.user.id,username,auth_email:authEmail,created_by:created.user.id});
   if (mapError) { await admin.from("churches").delete().eq("id",churchId); await admin.auth.admin.deleteUser(created.user.id); return reply({error:mapError.code==="23505"?"This username is already in use. Please choose another.":"Unable to finish login setup."},400); }
   const {data:church}=await admin.from("churches").select("church_code").eq("id",churchId).single();
