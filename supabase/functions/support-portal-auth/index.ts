@@ -123,11 +123,12 @@ Deno.serve(async (req) => {
       if (error) return reply({ error: "Unable to load support conversation history." }, 500);
       await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
         .eq("church_id", churchId).eq("direction", "outbound").eq("is_read", false);
-      const messages = await Promise.all((data ?? []).map(async item => {
-        if (!item.attachment_path) return item;
-        const { data: signed } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
-        return { ...item, attachment_url: signed?.signedUrl ?? null };
-      }));
+      const paths = [...new Set((data ?? []).map(item => item.attachment_path).filter((path): path is string => Boolean(path)))];
+      const { data: signedFiles } = paths.length
+        ? await admin.storage.from("support-attachments").createSignedUrls(paths, 3600)
+        : { data: [] };
+      const urlMap = new Map((signedFiles ?? []).map(file => [file.path, file.signedUrl]));
+      const messages = (data ?? []).map(item => ({ ...item, attachment_url: item.attachment_path ? urlMap.get(item.attachment_path) ?? null : null }));
       return reply({ messages });
     }
     if (action === "mark_church_messages_read") {
@@ -436,11 +437,12 @@ Deno.serve(async (req) => {
       .select("id,church_id,sender_user_id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
       .order("created_at", { ascending: false }).limit(200);
     if (error) return reply({ error: "Unable to load support inbox." }, 500);
-    const messages = await Promise.all((data ?? []).map(async (item) => {
-      if (!item.attachment_path) return item;
-      const { data: signed } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
-      return { ...item, attachment_url: signed?.signedUrl ?? null };
-    }));
+    const paths = [...new Set((data ?? []).map(item => item.attachment_path).filter((path): path is string => Boolean(path)))];
+    const { data: signedFiles } = paths.length
+      ? await admin.storage.from("support-attachments").createSignedUrls(paths, 3600)
+      : { data: [] };
+    const urlMap = new Map((signedFiles ?? []).map(file => [file.path, file.signedUrl]));
+    const messages = (data ?? []).map(item => ({ ...item, attachment_url: item.attachment_path ? urlMap.get(item.attachment_path) ?? null : null }));
     return reply({ messages });
   }
 
