@@ -11,7 +11,7 @@ export default function ChurchSupportContact({churchId}:{churchId:string|null}) 
    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
    const media=new MediaRecorder(stream);recorder.current=media;chunks.current=[];
    media.ondataavailable=e=>{if(e.data.size)chunks.current.push(e.data);};
-   media.onstop=()=>{const blob=new Blob(chunks.current,{type:media.mimeType||"audio/webm"});setFile(new File([blob],"church-voice-message.webm",{type:blob.type}));stream.getTracks().forEach(t=>t.stop());};
+   media.onstop=()=>{const audioType=media.mimeType.startsWith("audio/ogg")?"audio/ogg":"audio/webm";const blob=new Blob(chunks.current,{type:audioType});setFile(new File([blob],"church-voice-message.webm",{type:audioType}));stream.getTracks().forEach(t=>t.stop());};
    media.start();setRecording(true);setNotice("Recording voice message… press Stop when finished.");
   }catch{setNotice("Microphone access was not granted. You can attach an audio file instead.");}
  }
