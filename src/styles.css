@@ -887,3 +887,18 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 .error-notice{border-color:#f0c2bf!important;background:#fff5f4!important;color:#a42b23!important}
 @media(max-width:900px){.support-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.support-tabs{overflow-x:auto;flex-wrap:nowrap}.support-tabs button{white-space:nowrap}}
 @media(max-width:560px){.support-kpis{grid-template-columns:1fr 1fr}.support-search{min-width:100%}.support-select{min-width:100%;max-width:none}.support-report-filters>div,.support-report-filters .field{width:100%}.support-report-filters .primary-button{width:100%}}
+
+
+.church-support-widget{position:fixed;right:24px;bottom:22px;z-index:80}
+.church-support-launcher{display:flex;align-items:center;gap:9px;border:0;border-radius:30px;padding:13px 19px;background:linear-gradient(135deg,#153b70,#235a91);color:#fff;font-weight:750;box-shadow:0 8px 28px #102b4b55;cursor:pointer}
+.church-support-panel{position:absolute;right:0;bottom:60px;width:min(390px,calc(100vw - 28px));padding:16px;border:1px solid #d5deea;border-radius:16px;background:#fff;color:#172b45;box-shadow:0 18px 50px #0f274433}
+.church-support-panel header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.church-support-panel header small{display:block;color:#66758a;font-size:11px;margin-top:3px}
+.church-support-panel textarea{width:100%;resize:vertical;margin-bottom:10px}
+.church-support-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.church-support-actions .primary-button{margin-left:auto;display:flex;align-items:center;gap:6px}
+.support-contact-notice{font-size:12px;color:#34516f;margin:8px 0}
+.support-selected-file{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;background:#f0f4f9;padding:8px;border-radius:8px;margin:8px 0}
+.support-selected-file button{border:0;background:transparent;color:#a52b22;cursor:pointer}
+.support-file-hint{display:block;color:#748198;font-size:10px;line-height:1.5;margin-top:10px}
+@media(max-width:560px){.church-support-widget{right:14px;bottom:14px}.church-support-launcher{padding:11px 15px}.church-support-panel{right:-4px}}
