@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
   let body: {
     action?: string; username?: string; password?: string; setupKey?: string;
-    churchId?: string; status?: string; targetUserId?: string; planName?: string;
+    churchId?: string; status?: string; targetUserId?: string; backupId?: string; planName?: string;
     monthlyFee?: number; currencyCode?: string; billingCycle?: string;
     frequency?: string; runTime?: string; timezone?: string; retentionCount?: number;
     from?: string; to?: string;
@@ -271,6 +271,55 @@ Deno.serve(async (req) => {
     }, { onConflict: "church_id" });
     if (error) return reply({ error: "Unable to save backup schedule." }, 500);
     return reply({ message: "Backup schedule saved. Automatic execution will be enabled after the backup worker is deployed and verified." });
+  }
+
+  if (action === "restore_backup") {
+    const backupId = String((body as Record<string, unknown>).backupId ?? "").trim();
+    if (!backupId) return reply({ error: "Select a completed backup to restore." }, 400);
+    const { data: backup, error: backupError } = await admin.from("platform_backup_runs")
+      .select("id,church_id,status,storage_path").eq("id", backupId).maybeSingle();
+    if (backupError || !backup || backup.status !== "completed" || !backup.storage_path)
+      return reply({ error: "The selected backup is not available for restore." }, 404);
+    const { data: restoreRun, error: restoreCreateError } = await admin.from("platform_backup_restore_runs")
+      .insert({ backup_run_id: backup.id, church_id: backup.church_id, restored_by: auth.user.id, status: "running" })
+      .select("id").single();
+    if (restoreCreateError || !restoreRun) return reply({ error: "Unable to create restore history record." }, 500);
+    try {
+      const { data: file, error: downloadError } = await admin.storage.from("platform-backups").download(backup.storage_path);
+      if (downloadError || !file) throw new Error("The backup file could not be downloaded.");
+      const payload = JSON.parse(await file.text());
+      const { data: restored, error: restoreError } = await admin.rpc("platform_restore_church_backup", {
+        p_church_id: backup.church_id, p_payload: payload
+      });
+      if (restoreError || !restored) throw new Error(restoreError?.message ?? "Church records could not be restored.");
+      let storageCount = 0;
+      const storageFiles = Array.isArray(payload.storage_files) ? payload.storage_files : [];
+      for (const item of storageFiles) {
+        if (!["church-branding", "church-private-documents"].includes(item.bucket) ||
+          typeof item.source_path !== "string" || !item.source_path.startsWith(backup.church_id + "/") ||
+          typeof item.backup_path !== "string" || !item.backup_path.startsWith(backup.church_id + "/")) continue;
+        const { data: attachment, error: attachmentError } = await admin.storage.from("platform-backups").download(item.backup_path);
+        if (attachmentError || !attachment) throw new Error("A church attachment could not be restored.");
+        const { error: uploadError } = await admin.storage.from(item.bucket).upload(item.source_path, attachment, {
+          contentType: item.content_type || "application/octet-stream", upsert: true
+        });
+        if (uploadError) throw new Error("A church attachment could not be written back to its original storage.");
+        storageCount++;
+      }
+      await admin.from("platform_backup_restore_runs").update({
+        status: "completed", tables_restored: restored.tables_restored ?? 0,
+        rows_upserted: restored.rows_upserted ?? 0, storage_files_restored: storageCount,
+        completed_at: new Date().toISOString()
+      }).eq("id", restoreRun.id);
+      return reply({
+        message: "Merge restore completed. Existing rows were restored and missing rows were re-created; records created after this backup were not deleted. Authentication passwords are not stored in backups and must be reset separately.",
+        summary: { ...restored, storage_files_restored: storageCount }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Restore failed.";
+      await admin.from("platform_backup_restore_runs").update({ status: "failed", error_message: message, completed_at: new Date().toISOString() }).eq("id", restoreRun.id);
+      return reply({ error: message }, 400);
+    }
   }
 
   if (action === "backup_history") {
