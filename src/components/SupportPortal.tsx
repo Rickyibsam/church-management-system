@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownToLine, ArrowUpRight, AudioLines, Building2, CheckCircle2, CirclePause, Clock3, FileBarChart2, HardDrive, Inbox, LayoutDashboard, MessageSquareText, RefreshCw, Search, ShieldCheck, Sparkles, Users, Wallet, Zap } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowUpRight, AudioLines, Building2, CheckCircle2, CirclePause, Clock3, FileBarChart2, HardDrive, Inbox, MessageSquareText, RefreshCw, Search, ShieldCheck, Sparkles, Users, Wallet, Zap } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Church={id:string;display_name:string;church_code:string;email:string|null;created_at:string;access_status:string;plan_name:string;monthly_fee:number|string;currency_code:string;billing_cycle:string;activeUsers:number};
@@ -24,7 +24,7 @@ export default function SupportPortal({username,onSignOut}:{username:string;onSi
  async function loadUsers(id:string){const d=await call("church_users",{churchId:id});setUsers(d.users??[]);}
  async function loadBackups(id?:string){const d=await call("backup_history",id?{churchId:id}:{});setBackups(d.backups??[]);}
  async function loadInbox(){const d=await call("inbox");setMessages(d.messages??[]);}
- async function refresh(){setBusy(true);setError("");try{if(tab==="users"&&selected)await loadUsers(selected);else if(tab==="backups")await loadBackups(selected||undefined);else if(tab==="inbox")await loadInbox();else await loadOverview();}catch(e){setError(e instanceof Error?e.message:"Unable to refresh portal.");}finally{setBusy(false);}}
+ async function refresh(){setBusy(true);setError("");try{if(tab==="users"&&selected)await loadUsers(selected);else if(tab==="backups")await loadBackups(selected||undefined);else if(tab==="inbox")await loadInbox();else{await loadOverview();if(tab==="overview")await loadInbox();}}catch(e){setError(e instanceof Error?e.message:"Unable to refresh portal.");}finally{setBusy(false);}}
  useEffect(()=>{void refresh();},[tab]);
  useEffect(()=>{setBulkCredentials([]);setTempPassword("");if(selected){const c=churches.find(x=>x.id===selected);if(c){setFee(String(c.monthly_fee??0));setPlan(c.plan_name||"Free");setCycle(c.billing_cycle||"free");}if(tab==="users")void loadUsers(selected).catch(e=>setError(e.message));if(tab==="backups")void loadBackups(selected).catch(e=>setError(e.message));}},[selected,tab,churches]);
  const selectedChurch=churches.find(c=>c.id===selected);
