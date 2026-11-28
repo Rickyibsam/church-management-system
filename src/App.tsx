@@ -9,6 +9,7 @@ import {
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import type { CertificateType, ModuleKey } from "./types";
 import DataModule from "./components/DataModule";
+import DonationsModule from "./components/DonationsModule";
 import DocumentReview from "./components/DocumentReview";
 import TeamManagement from "./components/TeamManagement";
 import CertificatePrint from "./components/CertificatePrint";
@@ -33,7 +34,7 @@ const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[]
   { key: "events", label: "Events & Calendar", icon: CalendarDays, group: "Ministry" },
   { key: "pastoral", label: "Pastoral Care", icon: HeartHandshake, group: "Ministry" },
   { key: "finance", label: "Accounts & Expenses", icon: Wallet, group: "Finance" },
-  { key: "donations", label: "Tithes & Donations", icon: Banknote, group: "Finance" },
+  { key: "donations", label: "Donations", icon: Banknote, group: "Finance" },
   { key: "assets", label: "Assets & Inventory", icon: Building2, group: "Management" },
   { key: "reports", label: "Reports & Audit", icon: Activity, group: "Management" },
   { key: "settings", label: "Settings", icon: Settings, group: "Management" },
@@ -238,7 +239,7 @@ function App() {
           active === "ministries" ? <><DataModule churchId={churchId} table="ministries" permissionModule="ministries" title="Ministries" description="Organize ministry teams, leaders and activities." fields={[{name:"name",label:"Ministry name",required:true},{name:"branch_id",label:"Branch",lookup:{table:"church_branches",labelField:"name"}},{name:"description",label:"Description"},{name:"leader_member_id",label:"Ministry leader",lookup:{table:"members",labelField:"member_number"}}]}/><DataModule churchId={churchId} table="ministry_members" permissionModule="ministries" title="Ministry team members" description="Assign church members to ministry teams and record their roles." fields={[{name:"ministry_id",label:"Ministry",required:true,lookup:{table:"ministries",labelField:"name"}},{name:"member_id",label:"Member",required:true,lookup:{table:"members",labelField:"member_number"}},{name:"ministry_role",label:"Team role"},{name:"joined_at",label:"Joined date",type:"date"}]}/></> :
           active === "events" ? <DataModule churchId={churchId} table="church_events" permissionModule="events" title="Events & Calendar" description="Plan worship services, celebrations, meetings and community events." fields={[{name:"title",label:"Event title"},{name:"branch_id",label:"Branch",lookup:{table:"church_branches",labelField:"name"}},{name:"event_type",label:"Event type"},{name:"starts_at",label:"Starts at",type:"datetime-local"},{name:"location",label:"Location"},{name:"description",label:"Description"}]}/> :
           active === "pastoral" ? <OperationsHub churchId={churchId} kind="pastoral"/> :
-          active === "finance" ? <OperationsHub churchId={churchId} kind="finance"/> : active === "donations" ? <DataModule churchId={churchId} table="donations" permissionModule="donations" title="Tithes & Donations" description="Record donations, post them to the general ledger and generate receipt numbers." financialAction="donation" extraColumns={["status","receipt_number"]} extraDisplay={[{name:"receipt_number",label:"Receipt no."},{name:"status",label:"Status"}]} fields={[{name:"donor_name",label:"Donor name"},{name:"branch_id",label:"Branch",lookup:{table:"church_branches",labelField:"name"}},{name:"donation_type",label:"Donation type"},{name:"amount",label:"Amount",type:"number"},{name:"currency_code",label:"Currency code"},{name:"donated_at",label:"Donation date",type:"datetime-local"},{name:"account_id",label:"Cash / bank account",lookup:{table:"financial_accounts",labelField:"name"}},{name:"income_account_id",label:"Income chart account",lookup:{table:"chart_of_accounts",labelField:"account_name",filterField:"account_type",filterValue:"income"}},{name:"payment_method",label:"Payment method"},{name:"notes",label:"Notes"}]}/> :
+          active === "finance" ? <OperationsHub churchId={churchId} kind="finance"/> : active === "donations" ? <DonationsModule churchId={churchId}/> :
           active === "assets" ? <OperationsHub churchId={churchId} kind="assets"/> :
           active === "reports" ? <OperationsHub churchId={churchId} kind="reports"/> :
           active === "support" ? <ChurchSupportContact churchId={churchId} fullPage/> : <SettingsPage churchId={churchId}/>}
