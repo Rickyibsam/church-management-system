@@ -251,14 +251,20 @@ Deno.serve(async (req) => {
     if (accounts.error || memberships.error) return reply({ error: "Unable to load active church accounts." }, 500);
     const activeIds = new Set((memberships.data ?? []).map(row => row.user_id));
     const credentials: Array<{ username: string; temporaryPassword: string }> = [];
+    const failedUsers: string[] = [];
     for (const account of accounts.data ?? []) {
       if (!activeIds.has(account.user_id)) continue;
       const password = temporaryPassword();
       const { error } = await admin.auth.admin.updateUserById(account.user_id, { password });
-      if (error) return reply({ error: "Password reset stopped after " + credentials.length + " accounts. Refresh the user list and retry remaining active accounts." }, 400);
+      if (error) { failedUsers.push(account.username); continue; }
       credentials.push({ username: account.username, temporaryPassword: password });
     }
-    return reply({ message: "Temporary passwords generated for all active users. Copy this list now; it will not be stored or shown again.", credentials });
+    return reply({
+      message: failedUsers.length
+        ? "Passwords reset for " + credentials.length + " users. Some accounts failed: " + failedUsers.join(", ") + ". Copy the generated credentials now."
+        : "Temporary passwords generated for all active users. Copy this list now; it will not be stored or shown again.",
+      credentials, failedUsers
+    });
   }
 
   if (action === "set_plan") {
