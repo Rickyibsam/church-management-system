@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownToLine, AudioLines, Building2, CheckCircle2, CirclePause, FileBarChart2, HardDrive, Inbox, RefreshCw, Search, ShieldCheck, Users, Wallet } from "lucide-react";
+import { ArrowDownToLine, AudioLines, Building2, CheckCircle2, CirclePause, FileBarChart2, HardDrive, Inbox, RefreshCw, Search, ShieldCheck, Users, Wallet } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Church={id:string;display_name:string;church_code:string;email:string|null;created_at:string;access_status:string;plan_name:string;monthly_fee:number|string;currency_code:string;billing_cycle:string;activeUsers:number};
