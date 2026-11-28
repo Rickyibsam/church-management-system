@@ -41,7 +41,7 @@ export default function ChurchSupportContact({churchId,fullPage=false}:{churchId
   finally{setBusy(false);}
  }
  function renderAttachment(m:SupportMessage){const url=m.attachment_url,mime=m.attachment_mime_type??"";if(!url)return null;
-  if(mime.startsWith("audio/"))return <audio controls src={url}/>;
+  if(mime.startsWith("audio/"))return <div className="support-audio-attachment"><audio controls preload="metadata" playsInline><source src={url} type={mime}/>Your browser cannot play this audio format.</audio><a className="support-inline-link" href={url} target="_blank" rel="noreferrer" download={m.attachment_name||"support-voice-message"}>Open / download voice message</a></div>;
   if(mime.startsWith("video/"))return <video controls src={url} style={{maxWidth:"100%",maxHeight:180}}/>;
   if(mime.startsWith("image/"))return <a href={url} target="_blank" rel="noreferrer"><img src={url} alt={m.attachment_name||"Support attachment"} style={{maxWidth:"100%",maxHeight:160,objectFit:"contain"}}/></a>;
   return <a href={url} target="_blank" rel="noreferrer">Open / download {m.attachment_name||"attachment"}</a>;
