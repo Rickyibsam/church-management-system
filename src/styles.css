@@ -952,3 +952,5 @@ html:has(.auth-overlay),body:has(.auth-overlay),body:has(.auth-overlay) #root{
 .church-support-inbox-page .church-support-panel>header{border-radius:12px;background:linear-gradient(115deg,#071a45,#153a78);color:#fff;padding:15px 18px}
 .church-support-inbox-page .church-support-panel>header small{color:#e7edf9}
 @media(max-width:640px){.support-page-heading{align-items:flex-start;flex-direction:column}.church-support-inbox-page .church-support-history{max-height:65vh}}
+
+.support-audio-attachment{display:grid;gap:8px;max-width:100%;margin-top:10px}.support-audio-attachment audio{display:block;width:min(100%,420px);max-width:100%;min-height:40px}.support-audio-attachment a{width:max-content;max-width:100%;font-size:13px}
