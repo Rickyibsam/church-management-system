@@ -17,6 +17,7 @@ import OperationsHub from "./components/OperationsHub";
 import MemberDocuments from "./components/MemberDocuments";
 import CertificateTemplateAssets from "./components/CertificateTemplateAssets";
 import ChurchDataBackup from "./components/ChurchDataBackup";
+import SupportPortal from "./components/SupportPortal";
 
 const nav: { key: ModuleKey; label: string; icon: typeof Home; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -190,7 +191,7 @@ function App() {
 
   const verificationToken = new URLSearchParams(window.location.search).get("verify");
   if (verificationToken) return <CertificateVerify token={verificationToken}/>;
-  if (supportOwner) return <SupportDashboard username={userEmail ?? "Support Owner"} onSignOut={signOut}/>;
+  if (supportOwner) return <SupportPortal username={userEmail ?? "Support Owner"} onSignOut={signOut}/>;
 
   return <div className="app-shell">
     {sidebarOpen && <button className="scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
@@ -579,22 +580,6 @@ function FamilyMembersPanel({churchId,familyId,familyName,familyCode,refresh,can
 }
 
 
-function SupportDashboard({username,onSignOut}:{username:string;onSignOut:()=>void}) {
-  const [churches,setChurches]=useState<Array<{id:string;display_name:string;church_code:string;email:string|null;created_at:string}>>([]);
-  const [message,setMessage]=useState("Loading secure church directory...");
-  useEffect(()=>{
-    let alive=true;
-    async function load(){
-      if(!supabase)return;
-      const {data,error}=await supabase.functions.invoke("support-portal-auth",{body:{action:"overview"}});
-      if(!alive)return;
-      if(error||data?.error){setMessage(data?.error??error?.message??"Unable to load support overview.");return;}
-      setChurches(data.churches??[]);setMessage("");
-    }
-    void load();return()=>{alive=false;};
-  },[]);
-  return <div className="app-shell"><main className="main-area" style={{marginLeft:0,width:"100%"}}><header className="topbar"><div><div className="breadcrumbs">Church360 / Restricted access</div><h1>Supporting Portal</h1></div><div className="top-actions"><span className="connection online"><i/> Support Owner</span><span className="user-chip">{username}</span><button className="secondary-button" onClick={onSignOut}>Sign out</button></div></header><div className="content"><div className="page-intro"><div><h2>Platform Support Overview</h2><p>Private support workspace. Church administration remains isolated from this account.</p></div><div className="kpi-card"><small>Registered churches</small><strong>{churches.length}</strong></div></div>{message&&<div className="notice">{message}</div>}<div className="panel"><div className="panel-heading"><div><h3>Church Directory</h3><p>Latest 100 church workspaces</p></div></div><div className="table-wrap"><table><thead><tr><th>Church</th><th>Church ID</th><th>Official Email</th><th>Registered</th></tr></thead><tbody>{churches.map(ch=><tr key={ch.id}><td>{ch.display_name}</td><td>{ch.church_code}</td><td>{ch.email||"Not provided"}</td><td>{ch.created_at?new Date(ch.created_at).toLocaleDateString():"—"}</td></tr>)}{!churches.length&&!message&&<tr><td colSpan={4}>No church registrations yet.</td></tr>}</tbody></table></div></div></div></main></div>;
-}
 function SettingsPage({churchId}:{churchId:string|null}) {
   const [form,setForm]=useState<Record<string,string>>({legal_name:"",display_name:"",country_code:"PK",currency_code:"PKR",timezone:"Asia/Karachi",address:"",phone:"",email:"",website:"",header_text:"",footer_text:"",logo_path:""});
   const [message,setMessage]=useState("");
