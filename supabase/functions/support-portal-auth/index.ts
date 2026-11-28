@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     churchId?: string; status?: string; targetUserId?: string; newPassword?: string; backupId?: string; planName?: string;
     monthlyFee?: number; currencyCode?: string; billingCycle?: string;
     frequency?: string; runTime?: string; timezone?: string; retentionCount?: number;
-    from?: string; to?: string;
+    from?: string; to?: string; fileName?: string; mimeType?: string; fileSize?: number; message?: string; messageKind?: string; attachmentPath?: string; attachmentName?: string; attachmentMimeType?: string; attachmentSize?: number;
   };
   try { body = await req.json(); } catch { return reply({ error: "Invalid request body." }, 400); }
   const action = body.action;
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     return reply({ session: data.session, username: account.username, mode: "support_owner", message: "Signed in successfully." });
   }
 
-  if (action === "create_church_attachment_upload" || action === "send_church_message") {
+  if (action === "create_church_attachment_upload" || action === "send_church_message" || action === "get_church_messages" || action === "mark_church_messages_read") {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
     if (!token) return reply({ error: "Church user authentication is required." }, 401);
@@ -115,6 +115,24 @@ Deno.serve(async (req) => {
     if (!membership || membership.status !== "active" || !account?.is_active || control?.access_status === "suspended")
       return reply({ error: "This church account is not active." }, 403);
 
+    if (action === "get_church_messages") {
+      const { data, error } = await admin.from("platform_support_messages")
+        .select("id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
+        .eq("church_id", churchId).order("created_at", { ascending: true }).limit(100);
+      if (error) return reply({ error: "Unable to load support conversation history." }, 500);
+      const messages = await Promise.all((data ?? []).map(async item => {
+        if (!item.attachment_path) return item;
+        const { data: signed } = await admin.storage.from("support-attachments").createSignedUrl(item.attachment_path, 3600);
+        return { ...item, attachment_url: signed?.signedUrl ?? null };
+      }));
+      return reply({ messages });
+    }
+    if (action === "mark_church_messages_read") {
+      const { error } = await admin.from("platform_support_messages").update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("church_id", churchId).eq("direction", "outbound").eq("is_read", false);
+      if (error) return reply({ error: "Unable to update support message read status." }, 500);
+      return reply({ message: "Support replies marked as read." });
+    }
     if (action === "create_church_attachment_upload") {
       const fileName = String((body as Record<string, unknown>).fileName ?? "attachment").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
       const mimeType = String((body as Record<string, unknown>).mimeType ?? "");
@@ -150,6 +168,43 @@ Deno.serve(async (req) => {
 
   const auth = await requireOwner();
   if (auth.error || !auth.user) return reply({ error: auth.error }, 403);
+
+  if (action === "create_support_attachment_upload") {
+    const churchId = body.churchId?.trim();
+    const fileName = String(body.fileName ?? "attachment").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
+    const mimeType = String(body.mimeType ?? "");
+    const size = Number(body.fileSize ?? 0);
+    const allowed = ["audio/webm","audio/ogg","audio/mp4","audio/mpeg","image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","video/mp4","video/webm"];
+    if (!churchId || !allowed.includes(mimeType) || !Number.isFinite(size) || size < 1 || size > 52428800)
+      return reply({ error: "Select a supported attachment under 50 MB." }, 400);
+    const { data: church } = await admin.from("churches").select("id").eq("id", churchId).maybeSingle();
+    if (!church) return reply({ error: "Church workspace not found." }, 404);
+    const path = churchId + "/support/" + crypto.randomUUID() + "-" + fileName;
+    const { data, error } = await admin.storage.from("support-attachments").createSignedUploadUrl(path);
+    if (error || !data) return reply({ error: "Unable to prepare a secure attachment upload." }, 500);
+    return reply({ path, token: data.token });
+  }
+
+  if (action === "send_support_reply") {
+    const churchId = body.churchId?.trim();
+    const message = String(body.message ?? "").trim();
+    const path = String(body.attachmentPath ?? "");
+    const fileName = String(body.attachmentName ?? "");
+    const mimeType = String(body.attachmentMimeType ?? "");
+    const size = Number(body.attachmentSize ?? 0);
+    if (!churchId || (!message && !path)) return reply({ error: "Choose a church and write a reply or attach a file." }, 400);
+    const { data: church } = await admin.from("churches").select("id").eq("id", churchId).maybeSingle();
+    if (!church) return reply({ error: "Church workspace not found." }, 404);
+    if (path && !path.startsWith(churchId + "/support/")) return reply({ error: "The attachment path is invalid." }, 403);
+    const { error } = await admin.from("platform_support_messages").insert({
+      church_id: churchId, sender_user_id: auth.user.id, sender_label: "NOSHAAB TECH Support",
+      direction: "outbound", message_kind: body.messageKind === "voice" ? "voice" : "text",
+      body: message || null, attachment_path: path || null, attachment_name: fileName || null,
+      attachment_mime_type: mimeType || null, attachment_size_bytes: size || null, is_read: false
+    });
+    if (error) return reply({ error: "Unable to save the support reply." }, 500);
+    return reply({ message: "Support reply sent and saved." });
+  }
 
   if (action === "overview") {
     const [churchResult, controlsResult, memberResult, messageCount, backupResult] = await Promise.all([
@@ -376,7 +431,7 @@ Deno.serve(async (req) => {
   if (action === "inbox") {
     const { data, error } = await admin.from("platform_support_messages")
       .select("id,church_id,sender_user_id,sender_label,direction,message_kind,body,attachment_path,attachment_name,attachment_mime_type,attachment_size_bytes,is_read,created_at")
-      .order("created_at", { ascending: false }).limit(100);
+      .order("created_at", { ascending: false }).limit(200);
     if (error) return reply({ error: "Unable to load support inbox." }, 500);
     const messages = await Promise.all((data ?? []).map(async (item) => {
       if (!item.attachment_path) return item;
